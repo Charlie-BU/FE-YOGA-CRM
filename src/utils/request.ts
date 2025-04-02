@@ -1,6 +1,10 @@
-import axios, { AxiosInstance, AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+
+const DEVELOP_URL = "http://localhost:8052";
+const PRODUCTION_URL = "";
 
 const service: AxiosInstance = axios.create({
+    baseURL: DEVELOP_URL,
     timeout: 5000
 });
 

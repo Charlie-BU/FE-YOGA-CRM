@@ -33,29 +33,19 @@
                     </div>
                 </div>
             </el-card>
-            <el-card
-                class="user-content"
-                shadow="hover"
-                :body-style="{ padding: '20px 50px', height: '100%', boxSizing: 'border-box' }"
-            >
+            <el-card class="user-content" shadow="hover"
+                :body-style="{ padding: '20px 50px', height: '100%', boxSizing: 'border-box' }">
                 <el-tabs tab-position="left" v-model="activeName">
                     <el-tab-pane name="label1" label="消息通知" class="user-tabpane">
                         <TabsComp />
                     </el-tab-pane>
                     <el-tab-pane name="label2" label="我的头像" class="user-tabpane">
                         <div class="crop-wrap" v-if="activeName === 'label2'">
-                            <vueCropper
-                                ref="cropper"
-                                :img="imgSrc"
-                                :autoCrop="true"
-                                :centerBox="true"
-                                :full="true"
-                                mode="contain"
-                            >
+                            <vueCropper ref="cropper" :img="imgSrc" :autoCrop="true" :centerBox="true" :full="true"
+                                mode="contain">
                             </vueCropper>
                         </div>
-                        <el-button class="crop-demo-btn" type="primary"
-                            >选择图片
+                        <el-button class="crop-demo-btn" type="primary">选择图片
                             <input class="crop-input" type="file" name="image" accept="image/*" @change="setImage" />
                         </el-button>
                         <el-button type="success" @click="saveAvatar">上传并保存</el-button>
@@ -79,9 +69,8 @@
                     <el-tab-pane name="label4" label="赞赏作者" class="user-tabpane">
                         <div class="plugins-tips">
                             如果该框架
-                            <el-link href="https://github.com/lin-xin/vue-manage-system" target="_blank"
-                                >vue-manage-system</el-link
-                            >
+                            <el-link href="https://github.com/lin-xin/vue-manage-system"
+                                target="_blank">vue-manage-system</el-link>
                             对你有帮助，那就请作者喝杯饮料吧！<el-icon>
                                 <ColdDrink />
                             </el-icon>
@@ -104,13 +93,14 @@ import 'vue-cropper/dist/index.css';
 import avatar from '@/assets/img/img.jpg';
 import TabsComp from '../element/tabs.vue';
 
+// TODO
 const name = localStorage.getItem('vuems_name');
 const form = reactive({
     new1: '',
     new: '',
     old: '',
 });
-const onSubmit = () => {};
+const onSubmit = () => { };
 
 const activeName = ref('label1');
 
@@ -258,7 +248,7 @@ const saveAvatar = () => {
     text-align: center;
 }
 
-.user-footer > div + div {
+.user-footer>div+div {
     border-left: 1px solid rgba(83, 70, 134, 0.1);
 }
 </style>

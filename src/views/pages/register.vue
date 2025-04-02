@@ -3,7 +3,7 @@
         <div class="login-container">
             <div class="login-header">
                 <img class="logo mr10" src="../../assets/img/logo.svg" alt="" />
-                <div class="login-title">后台管理系统</div>
+                <div class="login-title">亚太瑜伽后台管理系统</div>
             </div>
             <el-form :model="param" :rules="rules" ref="register" size="large">
                 <el-form-item prop="username">
@@ -25,12 +25,8 @@
                     </el-input>
                 </el-form-item>
                 <el-form-item prop="password">
-                    <el-input
-                        type="password"
-                        placeholder="密码"
-                        v-model="param.password"
-                        @keyup.enter="submitForm(register)"
-                    >
+                    <el-input type="password" placeholder="密码" v-model="param.password"
+                        @keyup.enter="submitForm(register)">
                         <template #prepend>
                             <el-icon>
                                 <Lock />

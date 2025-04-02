@@ -56,20 +56,32 @@ const getTreeData = (data) => {
     });
 };
 const data = getTreeData(menuData);
+// 修改 checkData 函数，使其返回所有权限 ID
 const checkData = (data: string[]) => {
-    return data.filter((item) => {
-        return !menuObj.value[item] || data.toString().includes(menuObj.value[item].toString());
-    });
+    // 获取所有节点的 ID
+    const getAllIds = (menuItems: any[]): string[] => {
+        let ids: string[] = [];
+        menuItems.forEach(item => {
+            ids.push(item.id);
+            if (item.children) {
+                ids = ids.concat(getAllIds(item.children));
+            }
+        });
+        return ids;
+    };
+    return getAllIds(menuData);
 };
+
 // 获取当前权限
 const checkedKeys = ref<string[]>(checkData(props.permissOptions.permiss));
 
 // 保存权限
 const tree = ref<InstanceType<typeof ElTree>>();
+// 修改保存函数，直接返回所有权限
 const onSubmit = () => {
-    // 获取选中的权限
-    const keys = [...tree.value!.getCheckedKeys(false), ...tree.value!.getHalfCheckedKeys()] as number[];
-    console.log(keys);
+    const allKeys = checkData([]);
+    console.log(allKeys);
+    // 这里可以直接调用保存 API，传入所有权限
 };
 </script>
 
