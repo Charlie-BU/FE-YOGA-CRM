@@ -13,11 +13,6 @@
                     </el-tooltip>
                     <el-divider direction="vertical" />
                 </template>
-                <el-tooltip effect="dark" content="刷新" placement="top">
-                    <el-icon class="columns-setting-icon" @click="refresh">
-                        <Refresh />
-                    </el-icon>
-                </el-tooltip>
                 <el-divider direction="vertical" />
                 <el-tooltip effect="dark" content="列设置" placement="top">
                     <el-dropdown :hide-on-click="false" size="small" trigger="click">
@@ -131,10 +126,6 @@ const props = defineProps({
         default: () => { }
     },
     delSelection: {
-        type: Function,
-        default: () => { }
-    },
-    refresh: {
         type: Function,
         default: () => { }
     },

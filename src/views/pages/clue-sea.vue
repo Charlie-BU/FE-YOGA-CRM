@@ -21,15 +21,20 @@
 </template>
 
 <script setup lang="ts" name="system-user">
-import { ref, reactive } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ref, reactive, onMounted } from 'vue';
+import { ElMessage, vLoading } from 'element-plus';
 import { CirclePlusFilled } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
-import { fetchUserData } from '@/api';
+import request from '@/utils/request';
 import TableCustom from '@/components/table-custom.vue';
 import TableDetail from '@/components/table-detail.vue';
 import TableSearch from '@/components/table-search.vue';
 import { FormOption, FormOptionList } from '@/types/form-option';
+import { ta } from 'element-plus/es/locale';
+
+onMounted(async () => {
+    await getData();
+})
 
 // 查询相关
 const query = reactive({
@@ -45,10 +50,23 @@ const handleSearch = () => {
 // 表格相关
 let columns = ref([
     { type: 'index', label: '序号', width: 55, align: 'center' },
-    { prop: 'name', label: '用户名' },
-    { prop: 'phone', label: '手机号' },
-    { prop: 'role', label: '角色' },
-    { prop: 'operator', label: '操作', width: 250 },
+    { prop: 'name', label: '姓名' },
+    { prop: 'fromSource', label: '渠道来源' },
+    { prop: 'gender', label: '性别' },
+    { prop: 'age', label: '年龄' },
+    { prop: 'IDNumber', label: '身份证' },
+    { prop: 'phone', label: '电话' },
+    { prop: 'weixin', label: '微信' },
+    { prop: 'QQ', label: 'QQ' },
+    { prop: 'douyin', label: '抖音' },
+    { prop: 'rednote', label: '小红书' },
+    { prop: 'shangwutong', label: '商务通' },
+    { prop: 'address', label: '地区' },
+    { prop: 'clientStatus', label: '客户状态' },
+    { prop: 'affiliatedUserId', label: '所属人' },
+    { prop: 'createdUserId', label: '创建人' },
+    { prop: 'createdTime', label: '创建时间' },
+    { prop: 'info', label: '备注' },
 ])
 const page = reactive({
     index: 1,
@@ -57,9 +75,17 @@ const page = reactive({
 })
 const tableData = ref<User[]>([]);
 const getData = async () => {
-    const res = await fetchUserData()
-    tableData.value = res.data.list;
-    page.total = res.data.pageTotal;
+    const res = await request.post("/extra/getAllClients", null, {
+        headers: {
+            sessionid: localStorage.getItem("sessionid")
+        }
+    });
+    if (res.data.code != 200) {
+        return;
+    }
+    tableData.value = res.data.clients;
+    console.log(res.data);
+    // page.total = res.data.pageTotal;
 };
 getData();
 
