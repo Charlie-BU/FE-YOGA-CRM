@@ -49,8 +49,6 @@ const onRoutes = computed(() => {
     return route.path;
 });
 
-
-
 const sidebar = useSidebarStore();
 </script>
 

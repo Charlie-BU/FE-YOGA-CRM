@@ -4,8 +4,8 @@ const DEVELOP_URL = "http://localhost:8052";
 const PRODUCTION_URL = "";
 
 const service: AxiosInstance = axios.create({
-    baseURL: DEVELOP_URL,
-    timeout: 5000
+    baseURL: DEVELOP_URL
+    // timeout: 10000
 });
 
 service.interceptors.request.use(

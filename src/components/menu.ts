@@ -1,3 +1,4 @@
+// 侧边栏在这边改
 import { Menus } from "@/types/menu";
 
 export const menuData: Menus[] = [
@@ -5,6 +6,12 @@ export const menuData: Menus[] = [
         id: "0",
         title: "系统首页",
         index: "/dashboard",
+        icon: "Odometer"
+    },
+    {
+        id: "01",
+        title: "线索公海",
+        index: "/clue-sea",
         icon: "Odometer"
     },
     {

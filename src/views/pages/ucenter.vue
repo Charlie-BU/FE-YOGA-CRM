@@ -4,42 +4,26 @@
             <el-card class="user-profile" shadow="hover" :body-style="{ padding: '0px' }">
                 <div class="user-profile-bg"></div>
                 <div class="user-avatar-wrap">
-                    <el-avatar class="user-avatar" :size="120" :src="avatarImg" />
+                    <el-avatar class="user-avatar" :size="120" :src="user?.avatarUrl || avatarImg" />
                 </div>
                 <div class="user-info">
-                    <div class="info-name">{{ name }}</div>
+                    <div class="info-name">{{ user?.username || "未登录" }}</div>
                     <div class="info-desc">
-                        <span>@lin-xin</span>
+                        <span>{{ user?.departmentName }}</span>
                         <el-divider direction="vertical" />
-                        <el-link href="https://lin-xin.gitee.io" target="_blank">lin-xin.gitee.io</el-link>
+                        <el-link href="https://lin-xin.gitee.io" target="_blank">{{ getVocation(user?.vocation)
+                            }}</el-link>
                     </div>
-                    <div class="info-desc">FE Developer</div>
-                    <div class="info-icon">
-                        <a href="https://github.com/lin-xin" target="_blank"> <i class="el-icon-lx-github-fill"></i></a>
-                        <i class="el-icon-lx-qq-fill"></i>
-                        <i class="el-icon-lx-facebook-fill"></i>
-                        <i class="el-icon-lx-twitter-fill"></i>
-                    </div>
-                </div>
-                <div class="user-footer">
-                    <div class="user-footer-item">
-                        <el-statistic title="Follower" :value="1800" />
-                    </div>
-                    <div class="user-footer-item">
-                        <el-statistic title="Following" :value="666" />
-                    </div>
-                    <div class="user-footer-item">
-                        <el-statistic title="Total Post" :value="888" />
-                    </div>
+                    <div class="info-desc">{{ user?.usertype > 1 ? "管理员" : "普通用户" }}</div>
                 </div>
             </el-card>
             <el-card class="user-content" shadow="hover"
                 :body-style="{ padding: '20px 50px', height: '100%', boxSizing: 'border-box' }">
                 <el-tabs tab-position="left" v-model="activeName">
-                    <el-tab-pane name="label1" label="消息通知" class="user-tabpane">
+                    <!-- <el-tab-pane name="label1" label="消息通知" class="user-tabpane">
                         <TabsComp />
-                    </el-tab-pane>
-                    <el-tab-pane name="label2" label="我的头像" class="user-tabpane">
+                    </el-tab-pane> -->
+                    <!-- <el-tab-pane name="label2" label="我的头像" class="user-tabpane">
                         <div class="crop-wrap" v-if="activeName === 'label2'">
                             <vueCropper ref="cropper" :img="imgSrc" :autoCrop="true" :centerBox="true" :full="true"
                                 mode="contain">
@@ -49,37 +33,24 @@
                             <input class="crop-input" type="file" name="image" accept="image/*" @change="setImage" />
                         </el-button>
                         <el-button type="success" @click="saveAvatar">上传并保存</el-button>
-                    </el-tab-pane>
+                    </el-tab-pane> -->
                     <el-tab-pane name="label3" label="修改密码" class="user-tabpane">
                         <el-form class="w500" label-position="top">
                             <el-form-item label="旧密码：">
-                                <el-input type="password" v-model="form.old"></el-input>
+                                <el-input type="password" v-model="form.oldPwd"></el-input>
                             </el-form-item>
                             <el-form-item label="新密码：">
-                                <el-input type="password" v-model="form.new"></el-input>
+                                <el-input type="password" v-model="form.newPwd"></el-input>
                             </el-form-item>
                             <el-form-item label="确认新密码：">
-                                <el-input type="password" v-model="form.new1"></el-input>
+                                <el-input type="password" v-model="form.newPwd2"></el-input>
                             </el-form-item>
                             <el-form-item>
-                                <el-button type="primary" @click="onSubmit">保存</el-button>
+                                <el-button type="primary" @click="submitModify">确定</el-button>
                             </el-form-item>
                         </el-form>
                     </el-tab-pane>
-                    <el-tab-pane name="label4" label="赞赏作者" class="user-tabpane">
-                        <div class="plugins-tips">
-                            如果该框架
-                            <el-link href="https://github.com/lin-xin/vue-manage-system"
-                                target="_blank">vue-manage-system</el-link>
-                            对你有帮助，那就请作者喝杯饮料吧！<el-icon>
-                                <ColdDrink />
-                            </el-icon>
-                            加微信号 linxin_20 探讨问题。
-                        </div>
-                        <div>
-                            <img src="https://lin-xin.gitee.io/images/weixin.jpg" />
-                        </div>
-                    </el-tab-pane>
+
                 </el-tabs>
             </el-card>
         </div>
@@ -87,48 +58,85 @@
 </template>
 
 <script setup lang="ts" name="ucenter">
-import { reactive, ref } from 'vue';
+import { reactive, ref, onMounted } from 'vue';
+import request from '@/utils/request';
 import { VueCropper } from 'vue-cropper';
 import 'vue-cropper/dist/index.css';
 import avatar from '@/assets/img/img.jpg';
 import TabsComp from '../element/tabs.vue';
+import { getVocation } from '@/utils/conventions';
+import { ElMessage } from 'element-plus';
 
-// TODO
-const name = localStorage.getItem('vuems_name');
+onMounted(async () => {
+    await getUserInfo();
+})
+
+const user = ref(null);
+const getUserInfo = async () => {
+    const res = await request.post('/user/getUserInfo', null, {
+        headers: {
+            sessionid: localStorage.getItem('sessionid'),
+        }
+    });
+    if (res.data.status < 0) {
+        return
+    }
+    user.value = res.data.user;
+}
+
 const form = reactive({
-    new1: '',
-    new: '',
-    old: '',
+    oldPwd: '',
+    newPwd: '',
+    newPwd2: '',
 });
-const onSubmit = () => { };
-
-const activeName = ref('label1');
-
-const avatarImg = ref(avatar);
-const imgSrc = ref(avatar);
-const cropImg = ref('');
-const cropper: any = ref();
-
-const setImage = (e: any) => {
-    const file = e.target.files[0];
-    if (!file.type.includes('image/')) {
+const submitModify = async () => {
+    if (!form.oldPwd || !form.newPwd || !form.newPwd2) {
+        ElMessage.error('请输入完整');
         return;
     }
-    const reader = new FileReader();
-    reader.onload = (event: any) => {
-        imgSrc.value = event.target.result;
-        cropper.value && cropper.value.replace(event.target.result);
-    };
-    reader.readAsDataURL(file);
+    if (form.newPwd !== form.newPwd2) {
+        ElMessage.error('两次密码不一致');
+        return;
+    }
+    const res = await request.post('/user/modifyPwd', {
+        form: form
+    }, {
+        headers: {
+            sessionid: localStorage.getItem('sessionid'),
+        }
+    })
+    if (res.data.status < 0) {
+        ElMessage.error(res.data.message);
+        return;
+    }
+    ElMessage.success(res.data.message);
+    form.oldPwd = '';
+    form.newPwd = '';
+    form.newPwd2 = '';
 };
 
-const cropImage = () => {
-    cropImg.value = cropper.value?.getCroppedCanvas().toDataURL();
-};
+const activeName = ref('label3');
 
-const saveAvatar = () => {
-    avatarImg.value = cropImg.value;
-};
+const avatarImg = ref(avatar);
+// const imgSrc = ref(avatar);
+// const cropImg = ref('');
+// const cropper: any = ref();
+
+// const setImage = (e: any) => {
+//     const file = e.target.files[0];
+//     if (!file.type.includes('image/')) {
+//         return;
+//     }
+//     const reader = new FileReader();
+//     reader.onload = (event: any) => {
+//         imgSrc.value = event.target.result;
+//         cropper.value && cropper.value.replace(event.target.result);
+//     };
+//     reader.readAsDataURL(file);
+// };
+// const saveAvatar = () => {
+//     avatarImg.value = cropImg.value;
+// };
 </script>
 
 <style scoped>

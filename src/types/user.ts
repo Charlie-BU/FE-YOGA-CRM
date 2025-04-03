@@ -1,4 +1,3 @@
-
 export interface User {
     id: number;
     name: string;
@@ -11,6 +10,13 @@ export interface User {
 
 export interface Register {
     username: string;
+    gender: number;
+    phone: string;
+    address?: string;
+    department?: number;
+    vocation?: number;
+    status?: number;
+    usertype: number;
     password: string;
-    email: string;
+    password2: string;
 }

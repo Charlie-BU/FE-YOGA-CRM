@@ -32,7 +32,7 @@
                     </el-tooltip>
                 </div>
                 <!-- 用户头像 -->
-                <el-avatar class="user-avator" :size="30" :src="imgurl" />
+                <el-avatar class="user-avator" :size="30" :src="user?.avatarUrl || imgurl" />
                 <!-- 用户名下拉菜单 -->
                 <el-dropdown class="user-name" trigger="click" @command="handleCommand">
                     <span class="el-dropdown-link">
@@ -44,6 +44,8 @@
                     <template #dropdown>
                         <el-dropdown-menu>
                             <el-dropdown-item command="user">个人中心</el-dropdown-item>
+                            <el-dropdown-item v-if="briefUserInfo?.usertype > 1"
+                                command="addUser">添加用户</el-dropdown-item>
                             <el-dropdown-item divided command="loginout">退出登录</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
@@ -54,12 +56,30 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useSidebarStore } from '../store/sidebar';
 import { useRouter } from 'vue-router';
 import imgurl from '../assets/img/img.jpg';
+import request from '@/utils/request';
+import { loginCheck } from '@/utils/login-check';
 
-// TODO
+onMounted(async () => {
+    await getUserInfo();
+})
+
+const user = ref(null);
+const getUserInfo = async () => {
+    const res = await request.post('/user/getUserInfo', null, {
+        headers: {
+            sessionid: localStorage.getItem('sessionid'),
+        }
+    });
+    if (res.data.status < 0) {
+        return
+    }
+    user.value = res.data.user;
+}
+
 const username: string | null = localStorage.getItem('vuems_name');
 const message: number = 2;
 
@@ -69,10 +89,12 @@ const collapseChage = () => {
     sidebar.handleCollapse();
 };
 
-onMounted(() => {
+const briefUserInfo = ref(null)
+onMounted(async () => {
     if (document.body.clientWidth < 1500) {
         collapseChage();
     }
+    briefUserInfo.value = await loginCheck();
 });
 
 // 用户名下拉菜单选择事件
@@ -83,6 +105,8 @@ const handleCommand = (command: string) => {
         router.push('/login');
     } else if (command == 'user') {
         router.push('/ucenter');
+    } else if (command == 'addUser') {
+        router.push('/register');
     }
 };
 

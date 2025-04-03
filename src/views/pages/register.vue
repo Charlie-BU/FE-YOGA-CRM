@@ -5,80 +5,152 @@
                 <img class="logo mr10" src="../../assets/img/logo.svg" alt="" />
                 <div class="login-title">亚太瑜伽后台管理系统</div>
             </div>
-            <el-form :model="param" :rules="rules" ref="register" size="large">
+            <el-form :model="form" ref="register" size="large">
                 <el-form-item prop="username">
-                    <el-input v-model="param.username" placeholder="用户名">
-                        <template #prepend>
-                            <el-icon>
-                                <User />
-                            </el-icon>
-                        </template>
+                    <el-input v-model="form.username" placeholder="姓名 *">
                     </el-input>
                 </el-form-item>
-                <el-form-item prop="email">
-                    <el-input v-model="param.email" placeholder="邮箱">
-                        <template #prepend>
-                            <el-icon>
-                                <Message />
-                            </el-icon>
-                        </template>
+                <el-form-item prop="gender">
+                    <el-select v-model="form.gender" placeholder="性别 *" style="width: 100%">
+                        <div v-for="(gender, index) in genders" :key="index">
+                            <el-option :label=gender.name :value=gender.id />
+                        </div>
+                    </el-select>
+                </el-form-item>
+                <el-form-item prop="phone">
+                    <el-input v-model="form.phone" placeholder="联系电话">
                     </el-input>
+                </el-form-item>
+                <el-form-item prop="address">
+                    <el-input v-model="form.address" placeholder="地址">
+                    </el-input>
+                </el-form-item>
+                <el-form-item prop="department">
+                    <el-select v-model="form.department" placeholder="部门 *" style="width: 100%">
+                        <div v-for="(dept, index) in depts" :key="index">
+                            <el-option :label=dept.name :value=dept.id />
+                        </div>
+                    </el-select>
+                </el-form-item>
+                <el-form-item prop="vocation">
+                    <el-select v-model="form.vocation" placeholder="职位 *" style="width: 100%">
+                        <div v-for="(voc, index) in vocations" :key="index">
+                            <el-option :label=voc.name :value=voc.id />
+                        </div>
+                    </el-select>
+                </el-form-item>
+                <el-form-item prop="status">
+                    <el-select v-model="form.status" placeholder="状态 *" style="width: 100%">
+                        <div v-for="(sta, index) in statuses" :key="index">
+                            <el-option :label=sta.name :value=sta.id />
+                        </div>
+                    </el-select>
+                </el-form-item>
+                <el-form-item prop="usertype">
+                    <el-select v-model="form.usertype" placeholder="用户权限 *" style="width: 100%">
+                        <el-option label="普通用户" value=1 />
+                        <el-option label="管理员" value=2 />
+                    </el-select>
                 </el-form-item>
                 <el-form-item prop="password">
-                    <el-input type="password" placeholder="密码" v-model="param.password"
-                        @keyup.enter="submitForm(register)">
-                        <template #prepend>
-                            <el-icon>
-                                <Lock />
-                            </el-icon>
-                        </template>
+                    <el-input type="password" placeholder="密码 *" v-model="form.password">
                     </el-input>
                 </el-form-item>
-                <el-button class="login-btn" type="primary" size="large" @click="submitForm(register)">注册</el-button>
-                <p class="login-text">
-                    已有账号，<el-link type="primary" @click="$router.push('/login')">立即登录</el-link>
-                </p>
+                <el-form-item prop="password2">
+                    <el-input type="password" placeholder="确认密码 *" v-model="form.password2"
+                        @keyup.enter="submitRegister">
+                    </el-input>
+                </el-form-item>
+                <div class="button-container">
+                    <el-button type="primary" size="large" @click="submitRegister">添加</el-button>
+                    <el-button type="danger" size="large" @click="router.go(-1);">返回</el-button>
+                </div>
             </el-form>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+import { ElMessage, type FormRules } from 'element-plus';
 import { Register } from '@/types/user';
+import { loginCheck } from '@/utils/login-check';
+import request from '@/utils/request';
+import { genders, statuses, vocations } from '@/utils/conventions';
+
+onMounted(async () => {
+    const briefUserInfo = await loginCheck();
+    if (!briefUserInfo || briefUserInfo?.usertype <= 1) {
+        ElMessage.warning('您没有权限添加用户');
+        router.push('/');
+    }
+    await getAllDepts();
+})
 
 const router = useRouter();
-const param = reactive<Register>({
+const depts = ref([])
+
+const getAllDepts = async () => {
+    const res = await request.post('/dept/getAllDepts', null, {
+        headers: {
+            sessionid: localStorage.getItem('sessionid')
+        }
+    });
+    if (res.data.status < 0) {
+        return
+    }
+    depts.value = res.data.depts;
+}
+
+const form = reactive<Register>({
     username: '',
+    gender: null,
+    phone: '',
+    address: '',
+    department: null,
+    vocation: null,
+    status: null,
+    usertype: null,
     password: '',
-    email: '',
+    password2: '',
 });
 
 const rules: FormRules = {
-    username: [
-        {
-            required: true,
-            message: '请输入用户名',
-            trigger: 'blur',
-        },
-    ],
+    username: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+    gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
+    department: [{ required: true, message: '请选择部门', trigger: 'change' }],
+    vocation: [{ required: true, message: '请选择职位', trigger: 'change' }],
+    status: [{ required: true, message: '请选择人员状态', trigger: 'change' }],
+    usertype: [{ required: true, message: '请选择用户权限', trigger: 'change' }],
     password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-    email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
+    password2: [{ required: true, message: '请再次输入密码', trigger: 'blur' }],
 };
-const register = ref<FormInstance>();
-const submitForm = (formEl: FormInstance | undefined) => {
-    if (!formEl) return;
-    formEl.validate((valid: boolean) => {
-        if (valid) {
-            ElMessage.success('注册成功，请登录');
-            router.push('/login');
-        } else {
-            return false;
+
+const submitRegister = async () => {
+    for (const rule in rules) {
+        if (form[rule as keyof Register] === null || form[rule as keyof Register] === '') {
+            ElMessage.error(rules[rule as keyof FormRules][0].message);
+            return;
+        }
+    }
+    if (form.password !== form.password2) {
+        ElMessage.error('两次密码不一致');
+        return;
+    }
+    const res = await request.post('/user/register', { form: form }, {
+        headers: {
+            sessionid: localStorage.getItem("sessionid")
         }
     });
+    if (res.data.status < 0) {
+        ElMessage.error(res.data.message);
+        return
+    }
+    ElMessage.success(res.data.message);
+    router.push('/');
 };
+
 </script>
 
 <style scoped>
@@ -108,24 +180,28 @@ const submitForm = (formEl: FormInstance | undefined) => {
     font-weight: bold;
 }
 
-.login-container {
-    width: 450px;
-    border-radius: 5px;
-    background: #fff;
-    padding: 40px 50px 50px;
-    box-sizing: border-box;
-}
-
-.login-btn {
-    display: block;
+.el-radio-group {
     width: 100%;
+    display: flex;
+    justify-content: space-between;
 }
 
-.login-text {
+.el-radio {
+    margin-right: 0;
+}
+
+.login-container {
+    width: 500px;
+    /* 稍微加宽一点以适应新增的表单项 */
+}
+
+.button-container {
     display: flex;
-    align-items: center;
+    justify-content: center;
     margin-top: 20px;
-    font-size: 14px;
-    color: #787878;
+}
+
+.button-container .el-button {
+    width: 200px;
 }
 </style>

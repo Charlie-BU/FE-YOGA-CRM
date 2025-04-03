@@ -1,3 +1,4 @@
+// router路由在这边改
 import { createRouter, createWebHashHistory, RouteRecordRaw } from "vue-router";
 // import { usePermissStore } from "../store/permiss";
 import Home from "../views/home.vue";
@@ -22,6 +23,14 @@ const routes: RouteRecordRaw[] = [
                     title: "系统首页"
                 },
                 component: () => import(/* webpackChunkName: "dashboard" */ "../views/dashboard.vue")
+            },
+            {
+                path: "/clue-sea",
+                name: "clue-sea",
+                meta: {
+                    title: "线索公海"
+                },
+                component: () => import(/* webpackChunkName: "clue-sea" */ "../views/pages/clue-sea.vue")
             },
             {
                 path: "/system-user",
