@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import { ElMessage } from "element-plus";
 
 const DEVELOP_URL = "http://localhost:8052";
 const PRODUCTION_URL = "";
@@ -13,7 +14,8 @@ service.interceptors.request.use(
         return config;
     },
     (error: AxiosError) => {
-        console.log(error);
+        ElMessage.error("服务器繁忙，请稍后重试");
+        // console.log(error);
         return Promise.reject();
     }
 );
@@ -27,7 +29,7 @@ service.interceptors.response.use(
         }
     },
     (error: AxiosError) => {
-        console.log(error);
+        // console.log(error);
         return Promise.reject();
     }
 );

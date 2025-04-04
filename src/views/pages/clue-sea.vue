@@ -3,15 +3,19 @@
         <TableSearch :query="query" :options="searchOpt" :search="handleSearch" />
         <div class="container">
             <el-button type="warning" :icon="CirclePlusFilled" @click="visible = true">新增</el-button>
+            <el-button type="primary" :disabled="!selectedRows.length" @click="handleAssign">分配</el-button>
+            <el-button type="danger" :disabled="!selectedRows.length" @click="handleUnassign">取消分配</el-button>
 
-            <el-table :data="tableData" style="width: 100%; margin-top: 20px;">
+            <el-table :data="tableData" style="width: 100%; margin-top: 20px;"
+                @selection-change="handleSelectionChange">
+                <el-table-column type="selection" width="55" align="center" />
                 <template v-for="item in columns" :key="item.prop">
                     <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"
                         :width="item.width" :align="item.align" />
                     <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width"
                         :align="item.align" />
                 </template>
-                <el-table-column label="操作" width="180" fixed="right">
+                <el-table-column label="操作" width="180" fixed="right" align="center">
                     <template #default="scope">
                         <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
                         <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
@@ -20,8 +24,10 @@
             </el-table>
 
             <div class="pagination" style="margin-top: 20px; text-align: right;">
-                <el-pagination v-model:current-page="page.index" v-model:page-size="page.size" :total="clientNumber"
-                    @current-change="changePage" layout="total, prev, pager, next" />
+                <el-pagination v-model:current-page="page.index" v-model:page-size="page.size" :total="page.total"
+                    @current-change="changePage" layout="total, prev, pager, next">
+                    <template #default></template>
+                </el-pagination>
             </div>
         </div>
         <el-dialog :title="isEdit ? '编辑' : '新增'" v-model="visible" width="700px" destroy-on-close
@@ -37,15 +43,10 @@ import { ElMessage, vLoading } from 'element-plus';
 import { CirclePlusFilled } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
 import request from '@/utils/request';
-import TableCustom from '@/components/table-custom.vue';
-import TableDetail from '@/components/table-detail.vue';
 import TableSearch from '@/components/table-search.vue';
 import { FormOption, FormOptionList } from '@/types/form-option';
-import { tr } from 'element-plus/es/locale';
 
 onMounted(async () => {
-    clientNumber.value = await getClientNumber();
-    console.log(clientNumber.value);
     await getClients();
 })
 
@@ -63,23 +64,23 @@ const handleSearch = () => {
 // 表格相关
 const columns = ref([
     { type: 'index', label: '序号', width: 55, align: 'center' },
-    { prop: 'name', label: '姓名' },
-    { prop: 'fromSource', label: '渠道来源' },
-    { prop: 'gender', label: '性别' },
-    { prop: 'age', label: '年龄' },
-    { prop: 'IDNumber', label: '身份证' },
-    { prop: 'phone', label: '电话' },
-    { prop: 'weixin', label: '微信' },
-    { prop: 'QQ', label: 'QQ' },
-    { prop: 'douyin', label: '抖音' },
-    { prop: 'rednote', label: '小红书' },
-    { prop: 'shangwutong', label: '商务通' },
-    { prop: 'address', label: '地区' },
-    { prop: 'clientStatus', label: '客户状态' },
-    { prop: 'affiliatedUserId', label: '所属人' },
-    { prop: 'createdUserId', label: '创建人' },
-    { prop: 'createdTime', label: '创建时间' },
-    { prop: 'info', label: '备注' },
+    { prop: 'name', label: '姓名', align: 'center' },
+    { prop: 'fromSource', label: '渠道来源', align: 'center' },
+    { prop: 'gender', label: '性别', align: 'center' },
+    { prop: 'age', label: '年龄', align: 'center' },
+    { prop: 'IDNumber', label: '身份证', align: 'center' },
+    { prop: 'phone', label: '电话', align: 'center' },
+    { prop: 'weixin', label: '微信', align: 'center' },
+    { prop: 'QQ', label: 'QQ', align: 'center' },
+    { prop: 'douyin', label: '抖音', align: 'center' },
+    { prop: 'rednote', label: '小红书', align: 'center' },
+    { prop: 'shangwutong', label: '商务通', align: 'center' },
+    { prop: 'address', label: '地区', align: 'center' },
+    { prop: 'clientStatus', label: '客户状态', align: 'center' },
+    { prop: 'affiliatedUserId', label: '所属人', align: 'center' },
+    { prop: 'createdUserId', label: '创建人', align: 'center' },
+    { prop: 'createdTime', label: '创建时间', align: 'center' },
+    { prop: 'info', label: '备注', align: 'center' },
 ])
 const page = reactive({
     index: 1,
@@ -88,24 +89,12 @@ const page = reactive({
 })
 
 
-const getClientNumber = async () => {
-    const res = await request.post("/extra/getClientNumber", {
-        clientStatus: 0
-    }, {
-        headers: {
-            sessionid: localStorage.getItem("sessionid")
-        }
-    });
-    if (res.data.status != 200) {
-        return 0;
-    }
-    return res.data.clientNumber;
-}
-
-const clientNumber = ref(0);
 const tableData = ref([]);
 const getClients = async () => {
-    const res = await request.post("/extra/getAllClients", null, {
+    const res = await request.post("/extra/getAllClients", {
+        pageIndex: page.index,   // 传入当前页
+        pageSize: page.size      // 传入每页大小
+    }, {
         headers: {
             sessionid: localStorage.getItem("sessionid")
         }
@@ -113,14 +102,16 @@ const getClients = async () => {
     if (res.data.status != 200) {
         return;
     }
-    tableData.value = res.data.clients;
-    // page.total = res.data.pageTotal;
+    tableData.value = res.data.clients;  // 更新表格数据
+    page.total = res.data.total;         // 更新总条数
 };
 
-const changePage = (val: number) => {
-    page.index = val;
-    getClients();
+
+const changePage = async (val: number) => {
+    page.index = val; // 更新当前页
+    await getClients();     // 重新获取数据
 };
+
 
 // 新增/编辑弹窗相关
 const options = ref({
@@ -188,51 +179,30 @@ const closeDialog = () => {
     isEdit.value = false;
 };
 
-// 查看详情弹窗相关
-const visible1 = ref(false);
-const viewData = ref({
-    row: {},
-    list: []
-});
-const handleView = (row: User) => {
-    viewData.value.row = { ...row }
-    viewData.value.list = [
-        {
-            prop: 'id',
-            label: '用户ID',
-        },
-        {
-            prop: 'name',
-            label: '用户名',
-        },
-        {
-            prop: 'password',
-            label: '密码',
-        },
-        {
-            prop: 'email',
-            label: '邮箱',
-        },
-        {
-            prop: 'phone',
-            label: '电话',
-        },
-        {
-            prop: 'role',
-            label: '角色',
-        },
-        {
-            prop: 'date',
-            label: '注册日期',
-        },
-    ]
-    visible1.value = true;
-};
 
 // 删除相关
 const handleDelete = (row: User) => {
     ElMessage.success('删除成功');
 }
+
+// 选择相关
+const selectedRows = ref<any[]>([]);
+
+const handleSelectionChange = (rows: any[]) => {
+    selectedRows.value = rows;
+};
+
+const handleAssign = async () => {
+    const ids = selectedRows.value.map(row => row.id);
+    // TODO: 实现分配逻辑
+    console.log(ids);
+};
+
+const handleUnassign = async () => {
+    const ids = selectedRows.value.map(row => row.id);
+    // TODO: 实现取消分配逻辑
+    console.log(ids);
+};
 </script>
 
 <style scoped></style>
