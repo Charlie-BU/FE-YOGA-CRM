@@ -1,9 +1,20 @@
 <template>
     <div>
         <TableSearch :query="query" :options="searchOpt" :search="handleSearch" />
+
         <div class="container">
             <!-- <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true"></el-button> -->
-            <el-button type="primary" :disabled="!selectedRows.length" @click="handleReserve">预约到店</el-button>
+            <el-button v-if="currClientStatus === 3" type="primary" :disabled="selectedRows.length !== 1"
+                @click="handleReserve">预约到店</el-button>
+            <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1"
+                @click="handleCancelReserve">取消预约</el-button>
+            <el-button v-if="currClientStatus === 4" type="success" :disabled="selectedRows.length !== 1" @click="">确认成单
+                -
+                签署合同</el-button>
+            <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1"
+                @click="">取消成单</el-button>
+            <el-button v-if="currClientStatus === 4" type="primary" :disabled="selectedRows.length !== 1"
+                @click="">交定金</el-button>
 
             <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
                 @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
@@ -28,6 +39,11 @@
                     @current-change="changePage" layout="total, prev, pager, next">
                     <template #default></template>
                 </el-pagination>
+                <el-button :type="currClientStatus === 3 ? 'success' : 'primary'" @click="switchClientStatus">{{
+                    currClientStatus
+                        === 3 ? "查看已预约到店客户" :
+                        "查看未预约到店客户"
+                }}</el-button>
             </div>
         </div>
         <el-dialog :title="isEdit ? '编辑' : '新增'" v-model="editModelVisible" width="700px" destroy-on-close
@@ -59,25 +75,25 @@
 
         <el-dialog title="预约到店" v-model="assignDialogVisible" width="700px" destroy-on-close>
             <el-form :model="assignForm" label-width="120px">
-                <el-form-item label="校区:">
+                <el-form-item label="* 校区:">
                     <el-select v-model="assignForm.schoolId" placeholder="请选择校区" style="width: 100%"
                         @change="handleBranchChange">
                         <el-option v-for="item in branchOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
                 </el-form-item>
-                <el-form-item label="预约日期:">
+                <el-form-item label="* 预约日期:">
                     <el-date-picker v-model="assignForm.appointDate" type="date" placeholder="选择日期"
                         style="width: 100%" />
                 </el-form-item>
-                <el-form-item label="预约人:">
+                <el-form-item label="* 预约人:">
                     <el-select v-model="assignForm.appointerId" placeholder="请选择预约人" style="width: 100%">
                         <el-option v-for="item in appointerOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
                 </el-form-item>
-                <el-form-item label="课程:">
-                    <el-select v-model="assignForm.course" placeholder="请选择课程" style="width: 100%">
+                <el-form-item label="* 课程:">
+                    <el-select v-model="assignForm.course" placeholder="请选择课程" style="width: 100%" multiple>
                         <el-option v-for="item in courseOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
@@ -129,32 +145,54 @@ const handleSearch = async () => {
 };
 
 // 表格相关
-const columns = ref([
+const defaultColumns = [
     { type: 'index', label: '序号', width: 55, align: 'center' },
-    { prop: 'name', label: '姓名', align: 'center' },
+    { prop: 'name', label: '姓名', width: 150, align: 'center' },
     { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
-    { prop: 'gender', label: '性别', align: 'center', formatter: (row) => conventions.getGender(row.gender) },
-    { prop: 'age', label: '年龄', align: 'center' },
-    { prop: 'IDNumber', label: '身份证', align: 'center' },
-    { prop: 'phone', label: '电话', align: 'center' },
-    { prop: 'weixin', label: '微信', align: 'center' },
-    { prop: 'QQ', label: 'QQ', align: 'center' },
-    { prop: 'douyin', label: '抖音', align: 'center' },
-    { prop: 'rednote', label: '小红书', align: 'center' },
-    { prop: 'shangwutong', label: '商务通', align: 'center' },
-    { prop: 'address', label: '地区', width: 120, align: 'center' },
-    { prop: 'clientStatus', label: '客户状态', align: 'center', formatter: (row) => conventions.getClientStatus(row.clientStatus) },
-    { prop: 'affiliatedUserName', label: '所属人', align: 'center' },
-    // { prop: 'createdappointerId', label: '创建人', align: 'center' },
-    { prop: 'createdTime', label: '创建时间', align: 'center' },
-    { prop: 'info', label: '备注', width: 120, align: 'center' },
-])
+    { prop: 'gender', label: '性别', width: 150, align: 'center', formatter: (row) => conventions.getGender(row.gender) },
+    { prop: 'age', label: '年龄', width: 150, align: 'center' },
+    { prop: 'IDNumber', label: '身份证', width: 150, align: 'center' },
+    { prop: 'phone', label: '电话', width: 150, align: 'center' },
+    { prop: 'weixin', label: '微信', width: 150, align: 'center' },
+    { prop: 'QQ', label: 'QQ', width: 150, align: 'center' },
+    { prop: 'douyin', label: '抖音', width: 150, align: 'center' },
+    { prop: 'rednote', label: '小红书', width: 150, align: 'center' },
+    { prop: 'shangwutong', label: '商务通', width: 150, align: 'center' },
+    { prop: 'address', label: '地区', width: 150, align: 'center' },
+    { prop: 'clientStatus', label: '客户状态', width: 150, align: 'center', formatter: (row) => conventions.getClientStatus(row.clientStatus) },
+    { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 150, align: 'center' },
+    { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
+    { prop: 'info', label: '备注', width: 150, align: 'center' },
+]
+
+const secondColumns = [
+    { type: 'index', label: '序号', width: 55, align: 'center' },
+    { prop: 'name', label: '姓名', width: 150, align: 'center' },
+    { prop: 'phone', label: '电话', width: 150, align: 'center' },
+    { prop: 'weixin', label: '微信', width: 150, align: 'center' },
+    { prop: 'schoolName', label: '校区', width: 150, align: 'center' },
+    { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 150, align: 'center' },
+    { prop: 'courseNames', label: '课程', width: 150, align: 'center' },
+    { prop: 'address', label: '地区', width: 150, align: 'center' },
+    { prop: 'processStatus', label: '跟进状态', width: 150, align: 'center', formatter: (row) => row.processStatus === 1 ? "未成单" : row.processStatus === 2 ? "已成单" : "" },
+    { prop: 'appointDate', label: '预约日期', width: 150, align: 'center' },
+    { prop: 'nextTalkDate', label: '下次沟通日期', width: 150, align: 'center' },
+    { prop: 'cooperateTime', label: '成单时间', width: 150, align: 'center' },
+    { prop: 'appointerName', label: '预约人', width: 150, align: 'center' },
+    { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
+    { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
+    { prop: 'gender', label: '性别', width: 150, align: 'center', formatter: (row) => conventions.getGender(row.gender) },
+    { prop: 'detailedInfo', label: '预约备注', width: 150, align: 'center' },
+    { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
+]
+const columns = ref(defaultColumns)
 const page = reactive({
     index: 1,
     size: 10,
     total: 0,
 })
 
+const currClientStatus = ref(3);
 const tableData = ref([]);
 // 添加 loading 状态
 const loading = ref(false);
@@ -163,6 +201,7 @@ const getClients = async () => {
     loading.value = true;
     try {
         const res = await request.post("/extra/getClients", {
+            clientStatus: currClientStatus.value,
             pageIndex: page.index,
             pageSize: page.size,
             name: query.name  // 只传递姓名查询参数
@@ -182,6 +221,17 @@ const getClients = async () => {
         loading.value = false;
     }
 };
+
+const switchClientStatus = async () => {
+    if (currClientStatus.value === 3) {
+        currClientStatus.value = 4;
+        columns.value = secondColumns;
+    } else {
+        currClientStatus.value = 3;
+        columns.value = defaultColumns;
+    }
+    await getClients();
+}
 
 const changePage = async (val: number) => {
     if (loading.value) return; // 如果正在加载，则不执行
@@ -332,13 +382,14 @@ const assignForm = ref({
     schoolId: '',
     appointerId: '',
     appointDate: '',
-    course: '',
+    courseIds: [],
     nextTalkDate: '',
     detailedInfo: ''
 });
 
 const branchOptions = ref([]);
 const appointerOptions = ref([]);
+const courseOptions = ref([]);
 
 // 在 methods 部分添加
 const handleReserve = async () => {
@@ -363,17 +414,15 @@ const handleReserve = async () => {
     }
 };
 
-// 在 data 部分添加课程选项列表
-const courseOptions = ref([]);
 
 // 修改 handleBranchChange 函数
 const handleBranchChange = async (schoolId) => {
     assignForm.value.appointerId = '';
-    assignForm.value.course = '';
+    assignForm.value.courseIds = [];
     assignForm.value.nextTalkDate = '';
     assignForm.value.detailedInfo = '';
     try {
-        // 获取该校区的用户列表
+        // 获取该校区的老师列表
         const userRes = await request.post('/dept/getSchoolUsers', {
             schoolId
         }, {
@@ -387,7 +436,6 @@ const handleBranchChange = async (schoolId) => {
                 value: item.id
             }));
         }
-
         // 获取该校区的课程列表
         const courseRes = await request.post('/dept/getSchoolCourses', {
             schoolId
@@ -412,8 +460,50 @@ const handleBranchChange = async (schoolId) => {
 };
 
 const submitReserve = async () => {
+    // 表单验证
+    if (!assignForm.value.schoolId || !assignForm.value.appointerId || !assignForm.value.appointDate || !assignForm.value.courseIds) {
+        ElMessage.warning('请填写必要信息');
+        return;
+    }
+    try {
+        const clientId = selectedRows.value.map(row => row.id)[0];
+        const res = await request.post('/extra/submitReserve', {
+            clientId,
+            ...assignForm.value
+        }, {
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
+        });
 
+        if (res.data.status === 200) {
+            ElMessage.success('预约成功');
+            assignDialogVisible.value = false;
+            // 重置表单
+            assignForm.value = {
+                schoolId: '',
+                appointerId: '',
+                appointDate: '',
+                courseIds: '',
+                nextTalkDate: '',
+                detailedInfo: ''
+            };
+            courseOptions.value = [];
+            appointerOptions.value = [];
+            // 刷新客户列表
+            await getClients();
+        } else {
+            ElMessage.error(res.data.message || '预约失败');
+        }
+    } catch (error) {
+        ElMessage.error('服务器繁忙，请稍后再试');
+        console.log(error);
+    }
 };
+
+const handleCancelReserve = async () => {
+
+}
 
 const tableRef = ref();
 

@@ -219,6 +219,14 @@ export const clientStatuses: Convention[] = [
     {
         id: 3,
         name: "转客户"
+    },
+    {
+        id: 4,
+        name: "已预约到店"
+    },
+    {
+        id: 5,
+        name: "已毕业"
     }
 ];
 

@@ -127,7 +127,7 @@ const columns = ref([
     { prop: 'shangwutong', label: '商务通', align: 'center' },
     { prop: 'address', label: '地区', width: 120, align: 'center' },
     { prop: 'clientStatus', label: '客户状态', align: 'center', formatter: (row) => conventions.getClientStatus(row.clientStatus) },
-    { prop: 'affiliatedUserName', label: '所属人', align: 'center' },
+    { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 150, align: 'center' },
     // { prop: 'createdUserId', label: '创建人', align: 'center' },
     { prop: 'createdTime', label: '创建时间', align: 'center' },
     { prop: 'info', label: '备注', width: 120, align: 'center' },
