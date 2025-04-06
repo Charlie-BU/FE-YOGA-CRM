@@ -11,8 +11,7 @@
                     <div class="info-desc">
                         <span>{{ user?.departmentName }}</span>
                         <el-divider direction="vertical" />
-                        <el-link href="https://lin-xin.gitee.io" target="_blank">{{ getVocation(user?.vocation)
-                            }}</el-link>
+                        <span>{{ getVocation(user?.vocation) }}</span>
                     </div>
                     <div class="info-desc">{{ user?.usertype > 1 ? "管理员" : "普通用户" }}</div>
                 </div>
@@ -60,10 +59,8 @@
 <script setup lang="ts" name="ucenter">
 import { reactive, ref, onMounted } from 'vue';
 import request from '@/utils/request';
-import { VueCropper } from 'vue-cropper';
 import 'vue-cropper/dist/index.css';
 import avatar from '@/assets/img/img.jpg';
-import TabsComp from '../element/tabs.vue';
 import { getVocation } from '@/utils/conventions';
 import { ElMessage } from 'element-plus';
 

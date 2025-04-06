@@ -72,14 +72,20 @@ const submitLogin = async () => {
         ElMessage.error('请输入完整');
         return;
     }
-    const res = await request.post('/user/login', form);
-    if (res.data.status < 0) {
-        ElMessage.error(res.data.message);
-        return
+    try {
+        const res = await request.post('/user/login', form);
+        if (res.data.status < 0) {
+            ElMessage.error(res.data.message);
+            return
+        }
+        ElMessage.success('登录成功');
+        localStorage.setItem('sessionid', res.data.sessionid);
+        router.push('/');
     }
-    ElMessage.success('登录成功');
-    localStorage.setItem('sessionid', res.data.sessionid);
-    router.push('/');
+    catch (err) {
+        ElMessage.error('服务器繁忙，请稍后再试');
+        console.log(err);
+    }
 }
 
 const tabs = useTabsStore();

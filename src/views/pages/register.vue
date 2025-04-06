@@ -138,17 +138,22 @@ const submitRegister = async () => {
         ElMessage.error('两次密码不一致');
         return;
     }
-    const res = await request.post('/user/register', { form: form }, {
-        headers: {
-            sessionid: localStorage.getItem("sessionid")
+    try {
+        const res = await request.post('/user/register', { form: form }, {
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
+        });
+        if (res.data.status < 0) {
+            ElMessage.error(res.data.message);
+            return
         }
-    });
-    if (res.data.status < 0) {
-        ElMessage.error(res.data.message);
-        return
+        ElMessage.success(res.data.message);
+        router.push('/');
+    } catch (err) {
+        ElMessage.error('服务器繁忙，请稍后再试');
+        console.log(err);
     }
-    ElMessage.success(res.data.message);
-    router.push('/');
 };
 
 </script>
