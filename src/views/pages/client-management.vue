@@ -93,7 +93,7 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="* 课程:">
-                    <el-select v-model="assignForm.course" placeholder="请选择课程" style="width: 100%" multiple>
+                    <el-select v-model="assignForm.courseIds" placeholder="请选择课程" style="width: 100%" multiple>
                         <el-option v-for="item in courseOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
@@ -484,7 +484,7 @@ const submitReserve = async () => {
                 schoolId: '',
                 appointerId: '',
                 appointDate: '',
-                courseIds: '',
+                courseIds: [],
                 nextTalkDate: '',
                 detailedInfo: ''
             };
