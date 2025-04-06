@@ -172,18 +172,17 @@ const secondColumns = [
     { prop: 'weixin', label: '微信', width: 150, align: 'center' },
     { prop: 'schoolName', label: '校区', width: 150, align: 'center' },
     { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 150, align: 'center' },
+    { prop: 'appointerName', label: '预约人', width: 150, align: 'center' },
     { prop: 'courseNames', label: '课程', width: 150, align: 'center' },
     { prop: 'address', label: '地区', width: 150, align: 'center' },
-    { prop: 'processStatus', label: '跟进状态', width: 150, align: 'center', formatter: (row) => row.processStatus === 1 ? "未成单" : row.processStatus === 2 ? "已成单" : "" },
     { prop: 'appointDate', label: '预约日期', width: 150, align: 'center' },
     { prop: 'nextTalkDate', label: '下次沟通日期', width: 150, align: 'center' },
+    { prop: 'processStatus', label: '跟进状态', width: 150, align: 'center', formatter: (row) => row.processStatus === 1 ? "未成单" : row.processStatus === 2 ? "已成单" : "" },
     { prop: 'cooperateTime', label: '成单时间', width: 150, align: 'center' },
-    { prop: 'appointerName', label: '预约人', width: 150, align: 'center' },
     { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
     { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
     { prop: 'gender', label: '性别', width: 150, align: 'center', formatter: (row) => conventions.getGender(row.gender) },
-    { prop: 'detailedInfo', label: '预约备注', width: 150, align: 'center' },
-    { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
+    { prop: 'detailedInfo', label: '预约备注', width: 150, align: 'center' }
 ]
 const columns = ref(defaultColumns)
 const page = reactive({
@@ -461,15 +460,22 @@ const handleBranchChange = async (schoolId) => {
 
 const submitReserve = async () => {
     // 表单验证
-    if (!assignForm.value.schoolId || !assignForm.value.appointerId || !assignForm.value.appointDate || !assignForm.value.courseIds) {
+    if (!assignForm.value.schoolId || !assignForm.value.appointerId || !assignForm.value.appointDate || !assignForm.value.courseIds || assignForm.value.courseIds.length === 0) {
         ElMessage.warning('请填写必要信息');
         return;
     }
     try {
         const clientId = selectedRows.value.map(row => row.id)[0];
+        // 处理日期时区问题
+        const formData = {
+            ...assignForm.value,
+            appointDate: assignForm.value.appointDate ? new Date(assignForm.value.appointDate).toLocaleDateString() : '',
+            nextTalkDate: assignForm.value.nextTalkDate ? new Date(assignForm.value.nextTalkDate).toLocaleDateString() : ''
+        };
+
         const res = await request.post('/extra/submitReserve', {
             clientId,
-            ...assignForm.value
+            ...formData
         }, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
@@ -502,9 +508,40 @@ const submitReserve = async () => {
 };
 
 const handleCancelReserve = async () => {
+    if (!selectedRows.value.length) return;
 
-}
+    ElMessageBox.confirm(
+        '确认取消该客户的预约吗？',
+        '警告',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(async () => {
+        try {
+            const res = await request.post('/extra/cancelReserve', {
+                clientId: selectedRows.value[0].id
+            }, {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            });
 
+            if (res.data.status === 200) {
+                ElMessage.success('取消预约成功');
+                await getClients();
+            } else {
+                ElMessage.error(res.data.message || '取消预约失败');
+            }
+        } catch (error) {
+            console.error('取消预约失败:', error);
+            ElMessage.error('取消预约失败');
+        }
+    }).catch(() => {
+        // 用户点击取消按钮，不做任何操作
+    });
+};
 const tableRef = ref();
 
 const handleRowClick = (row) => {
