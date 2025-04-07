@@ -599,7 +599,7 @@ const exportToExcel = async () => {
         {
             confirmButtonText: '确定',
             cancelButtonText: '取消',
-            type: 'info',
+            type: 'warning',
         }
     ).then(async () => {
         try {
