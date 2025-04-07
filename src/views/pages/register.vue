@@ -165,7 +165,7 @@ const submitRegister = async () => {
     justify-content: center;
     width: 100%;
     height: 100vh;
-    background: url(../../assets/img/login-bg.jpg) center/cover no-repeat;
+    background: url(../../assets/img/background.jpg) center/cover no-repeat;
 }
 
 .login-header {

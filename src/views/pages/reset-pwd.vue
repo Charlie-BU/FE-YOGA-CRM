@@ -13,9 +13,7 @@
                         </template>
                     </el-input>
                 </el-form-item>
-                <el-button class="login-btn" type="primary" size="large" @click="submitForm(register)"
-                    >发送邮件</el-button
-                >
+                <el-button class="login-btn" type="primary" size="large" @click="submitForm(register)">发送邮件</el-button>
                 <p class="login-text"><el-link type="primary" @click="$router.push('/login')">返回登录</el-link></p>
             </el-form>
         </div>
@@ -60,7 +58,7 @@ const submitForm = (formEl: FormInstance | undefined) => {
     justify-content: center;
     width: 100%;
     height: 100vh;
-    background: url(../../assets/img/login-bg.jpg) center/cover no-repeat;
+    background: url(../../assets/img/background.jpg) center/cover no-repeat;
 }
 
 .reset-title {
