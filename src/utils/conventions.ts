@@ -3,6 +3,7 @@ interface Convention {
     name: string;
 }
 
+// User：职位
 export const vocations: Convention[] = [
     {
         id: 1,
@@ -63,6 +64,7 @@ export const getGender = (id: number): string | undefined => {
     return gender ? gender.name : undefined;
 };
 
+// User：人员状态
 export const statuses: Convention[] = [
     {
         id: 1,
@@ -79,6 +81,7 @@ export const getStatus = (id: number): string | undefined => {
     return status ? status.name : undefined;
 };
 
+// Client：渠道来源
 export const fromSources: Convention[] = [
     {
         id: 1,
@@ -207,6 +210,7 @@ export const getFromSource = (id: number): string | undefined => {
     return source ? source.name : undefined;
 };
 
+// Client：客户状态
 export const clientStatuses: Convention[] = [
     {
         id: 1,
@@ -233,4 +237,58 @@ export const clientStatuses: Convention[] = [
 export const getClientStatus = (id: number): string | undefined => {
     const clientStatus = clientStatuses.find((v) => v.id === id);
     return clientStatus ? clientStatus.name : undefined;
+};
+
+// Payment：交易方式
+export const paymentMethods: Convention[] = [
+    {
+        id: 1,
+        name: "现金"
+    },
+    {
+        id: 2,
+        name: "微信"
+    },
+    {
+        id: 3,
+        name: "支付宝"
+    },
+    {
+        id: 4,
+        name: "POS"
+    },
+    {
+        id: 5,
+        name: "对公"
+    },
+    {
+        id: 6,
+        name: "其他"
+    }
+];
+
+export const getPaymentMethod = (id: number): string | undefined => {
+    const method = paymentMethods.find((v) => v.id === id);
+    return method ? method.name : undefined;
+};
+
+// Payment：交易类别
+export const paymentTypes: Convention[] = [
+    {
+        id: 1,
+        name: "定金"
+    },
+    {
+        id: 2,
+        name: "尾款"
+    },
+    {
+        id: 3,
+        name: "其他"
+    }
+];
+
+export const getPaymentType = (id: number): string | undefined => {
+    const type = paymentTypes.find((v) => v.id === id);
+    return type ? type.name : undefined;
 };

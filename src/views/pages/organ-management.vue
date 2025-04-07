@@ -2,8 +2,7 @@
     <div>
         <TableSearch :query="query" :options="searchOpt" :search="handleSearch" />
         <div class="container">
-            <el-button v-if="briefUserInfo?.usertype > 1" type="warning" :icon="CirclePlusFilled"
-                @click="router.push('/register')">添加用户</el-button>
+            <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true">新增</el-button>
 
             <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
                 @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
@@ -15,7 +14,7 @@
                         :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
                 </template>
 
-                <el-table-column v-if="briefUserInfo?.usertype > 1" label="操作" width="180" fixed="right" align="center">
+                <el-table-column label="操作" width="180" fixed="right" align="center">
                     <template #default="scope">
                         <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
                         <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
@@ -30,8 +29,6 @@
                 </el-pagination>
             </div>
         </div>
-
-        <!-- 编辑弹窗 -->
         <el-dialog :title="isEdit ? '编辑' : '新增'" v-model="editModelVisible" width="700px" destroy-on-close
             :close-on-click-modal="false" @close="closeDialog">
             <el-form ref="formRef" :model="formData" :rules="rules" :label-width="options.labelWidth">
@@ -70,16 +67,10 @@ import request from '@/utils/request';
 import TableSearch from '@/components/table-search.vue';
 import { FormOptionList } from '@/types/form-option';
 import * as conventions from '@/utils/conventions';
-import { loginCheck } from '@/utils/login-check';
-import { useRouter } from 'vue-router';
-
-const briefUserInfo = ref(null)
 
 onMounted(async () => {
-    briefUserInfo.value = await loginCheck();
-    await getUsers();
+    await getClients();
 })
-const router = useRouter();
 
 // 查询相关
 const query = reactive({
@@ -91,24 +82,30 @@ const searchOpt = ref<FormOptionList[]>([
 const handleSearch = async () => {
     if (loading.value) return; // 如果正在加载，则不执行
     page.index = 1;
-    await getUsers();
+    await getClients();
 };
 
 // 表格相关
 const columns = ref([
     { type: 'index', label: '序号', width: 55, align: 'center' },
-    { prop: 'username', label: '姓名', align: 'center' },
+    { prop: 'name', label: '姓名', align: 'center' },
+    { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
     { prop: 'gender', label: '性别', align: 'center', formatter: (row) => conventions.getGender(row.gender) },
+    { prop: 'age', label: '年龄', align: 'center' },
+    { prop: 'IDNumber', label: '身份证', align: 'center' },
     { prop: 'phone', label: '电话', align: 'center' },
-    { prop: 'address', label: '地址', align: 'center' },
-    { prop: 'usertype', label: '用户类型', align: 'center', formatter: (row) => row.usertype === 1 ? '普通用户' : '管理员' },
-    { prop: 'workNum', label: '工号', align: 'center' },
-    { prop: 'schoolName', label: '校区', align: 'center' },
-    { prop: 'departmentName', label: '部门', align: 'center' },
-    { prop: 'vocation', label: '职位', align: 'center', formatter: (row) => conventions.getVocation(row.vocation) },
-    { prop: 'status', label: '状态', align: 'center', formatter: (row) => row.status === 1 ? '在职' : '离职' }
+    { prop: 'weixin', label: '微信', align: 'center' },
+    { prop: 'QQ', label: 'QQ', align: 'center' },
+    { prop: 'douyin', label: '抖音', align: 'center' },
+    { prop: 'rednote', label: '小红书', align: 'center' },
+    { prop: 'shangwutong', label: '商务通', align: 'center' },
+    { prop: 'address', label: '地区', width: 120, align: 'center' },
+    { prop: 'clientStatus', label: '客户状态', align: 'center', formatter: (row) => conventions.getClientStatus(row.clientStatus) },
+    { prop: 'affiliatedUserName', label: '所属人', align: 'center' },
+    // { prop: 'createdUserId', label: '创建人', align: 'center' },
+    { prop: 'createdTime', label: '创建时间', align: 'center' },
+    { prop: 'info', label: '备注', width: 120, align: 'center' },
 ])
-
 const page = reactive({
     index: 1,
     size: 10,
@@ -119,13 +116,13 @@ const tableData = ref([]);
 // 添加 loading 状态
 const loading = ref(false);
 
-const getUsers = async () => {
+const getClients = async () => {
     loading.value = true;
     try {
-        const res = await request.post("/user/getAllUsers", {
+        const res = await request.post("/extra/getClueClients", {
             pageIndex: page.index,
             pageSize: page.size,
-            name: query.name
+            name: query.name  // 只传递姓名查询参数
         }, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
@@ -134,7 +131,7 @@ const getUsers = async () => {
         if (res.data.status != 200) {
             return;
         }
-        tableData.value = res.data.users;
+        tableData.value = res.data.clients;
         page.total = res.data.total;
     } catch (error) {
         console.error('获取数据失败:', error);
@@ -146,15 +143,25 @@ const getUsers = async () => {
 const changePage = async (val: number) => {
     if (loading.value) return; // 如果正在加载，则不执行
     page.index = val;
-    await getUsers();
+    await getClients();
 };
 
-// 编辑弹窗相关
+// 新增 / 编辑弹窗相关
 const options = ref<any>({
     labelWidth: '100px',
     span: 12,
     list: [
-        { type: 'input', label: '姓名', prop: 'username', required: true },
+        { type: 'input', label: '姓名', prop: 'name', required: true },
+        {
+            type: 'select',
+            label: '渠道来源',
+            prop: 'fromSource',
+            required: true,
+            options: conventions.fromSources.map(item => ({
+                label: item.name,
+                value: item.id
+            }))
+        },
         {
             type: 'select',
             label: '性别',
@@ -164,39 +171,21 @@ const options = ref<any>({
                 value: item.id
             }))
         },
-        { type: 'input', label: '电话', prop: 'phone', required: true },
-        { type: 'input', label: '地址', prop: 'address' },
-        { type: 'input', label: '工号', prop: 'workNum' },
         {
-            type: 'select',
-            label: '校区',
-            prop: 'schoolId',
-            options: []
+            type: 'input',
+            label: '年龄',
+            prop: 'age',
+            inputType: 'number',
         },
-        {
-            type: 'select',
-            label: '部门',
-            prop: 'departmentId',
-            options: []
-        },
-        {
-            type: 'select',
-            label: '职位',
-            prop: 'vocation',
-            options: conventions.vocations.map(item => ({
-                label: item.name,
-                value: item.id
-            }))
-        },
-        {
-            type: 'select',
-            label: '状态',
-            prop: 'status',
-            options: [
-                { label: '在职', value: 1 },
-                { label: '离职', value: 2 }
-            ]
-        }
+        { type: 'input', label: '身份证', prop: 'IDNumber' },
+        { type: 'input', label: '电话', prop: 'phone' },
+        { type: 'input', label: '微信', prop: 'weixin', required: true },
+        { type: 'input', label: 'QQ', prop: 'QQ' },
+        { type: 'input', label: '抖音', prop: 'douyin' },
+        { type: 'input', label: '小红书', prop: 'rednote' },
+        { type: 'input', label: '商务通', prop: 'shangwutong' },
+        { type: 'input', label: '地区', prop: 'address' },
+        { type: 'input', label: '备注', prop: 'info' }
     ]
 })
 
@@ -214,72 +203,47 @@ const closeDialog = () => {
     formRef.value?.resetFields();
 };
 
-const handleEdit = async (row) => {
-    try {
-        // 获取校区列表
-        const schoolRes = await request.post('/dept/getAllSchools', null, {
-            headers: { sessionid: localStorage.getItem("sessionid") }
-        });
-        if (schoolRes.data.status === 200) {
-            options.value.list.find(item => item.prop === 'schoolId').options =
-                schoolRes.data.schools.map(item => ({
-                    label: item.name,
-                    value: item.id
-                }));
-        }
-
-        // 获取部门列表
-        const deptRes = await request.post('/dept/getAllDepts', null, {
-            headers: { sessionid: localStorage.getItem("sessionid") }
-        });
-        if (deptRes.data.status === 200) {
-            options.value.list.find(item => item.prop === 'departmentId').options =
-                deptRes.data.depts.map(item => ({
-                    label: item.name,
-                    value: item.id
-                }));
-        }
-        console.log(options.value);
-        formData.value = JSON.parse(JSON.stringify(row));
-        isEdit.value = true;
-        editModelVisible.value = true;
-    } catch (error) {
-        console.error('获取数据失败:', error);
-        ElMessage.error('获取数据失败');
-    }
+// 修改 handleEdit 方法
+const handleEdit = (row) => {
+    const { clientStatus, affiliatedUserId, createdUserId, createdTime, affiliatedUserName, ...rest } = row;
+    formData.value = JSON.parse(JSON.stringify(rest));
+    isEdit.value = true;
+    editModelVisible.value = true;
 };
 
-// 修改表单提交方法
+// 添加表单提交方法
 const submitForm = async () => {
     if (!formRef.value) return;
     await formRef.value.validate(async (valid) => {
         if (valid) {
             try {
-                const res = await request.post('/user/updateUser', formData.value, {
+                const url = isEdit.value ? '/extra/updateClient' : '/extra/addClient';
+                const res = await request.post(url, formData.value, {
                     headers: {
                         sessionid: localStorage.getItem("sessionid")
                     }
                 });
 
                 if (res.data.status === 200) {
-                    ElMessage.success('编辑成功');
+                    ElMessage.success(isEdit.value ? '编辑成功' : '添加成功');
                     closeDialog();
-                    getUsers();
+                    getClients();
                 } else {
-                    ElMessage.error(res.data.message || '编辑失败');
+                    ElMessage.error(res.data.message || '操作失败');
                 }
             } catch (error) {
                 console.error('提交失败:', error);
-                ElMessage.error('编辑失败');
+                ElMessage.error('操作失败');
             }
         }
     });
 };
 
+
 // 删除相关 
 const handleDelete = (row: User) => {
     ElMessageBox.confirm(
-        '确认删除该用户吗？',
+        '确认删除该客户吗？',
         '警告',
         {
             confirmButtonText: '确定',
@@ -288,7 +252,7 @@ const handleDelete = (row: User) => {
         }
     ).then(async () => {
         try {
-            const res = await request.post('/user/deleteUser', {
+            const res = await request.post('/extra/deleteClient', {
                 id: row.id
             }, {
                 headers: {
@@ -297,7 +261,7 @@ const handleDelete = (row: User) => {
             });
             if (res.data.status === 200) {
                 ElMessage.success('删除成功');
-                getUsers();
+                getClients();
             } else {
                 ElMessage.error(res.data.message || '删除失败');
             }

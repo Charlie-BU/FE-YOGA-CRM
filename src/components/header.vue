@@ -44,8 +44,6 @@
                     <template #dropdown>
                         <el-dropdown-menu>
                             <el-dropdown-item command="user">个人中心</el-dropdown-item>
-                            <el-dropdown-item v-if="briefUserInfo?.usertype > 1"
-                                command="addUser">添加用户</el-dropdown-item>
                             <el-dropdown-item divided command="loginout">退出登录</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
@@ -61,11 +59,6 @@ import { useSidebarStore } from '../store/sidebar';
 import { useRouter } from 'vue-router';
 import imgurl from '../assets/img/img.jpg';
 import request from '@/utils/request';
-import { loginCheck } from '@/utils/login-check';
-
-onMounted(async () => {
-    await getUserInfo();
-})
 
 const user = ref(null);
 const getUserInfo = async () => {
@@ -89,12 +82,11 @@ const collapseChage = () => {
     sidebar.handleCollapse();
 };
 
-const briefUserInfo = ref(null)
 onMounted(async () => {
+    await getUserInfo();
     if (document.body.clientWidth < 1500) {
         collapseChage();
     }
-    briefUserInfo.value = await loginCheck();
 });
 
 // 用户名下拉菜单选择事件
@@ -105,8 +97,6 @@ const handleCommand = (command: string) => {
         router.push('/login');
     } else if (command == 'user') {
         router.push('/ucenter');
-    } else if (command == 'addUser') {
-        router.push('/register');
     }
 };
 

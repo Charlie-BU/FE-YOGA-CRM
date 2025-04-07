@@ -15,7 +15,7 @@
             <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 1" type="danger"
                 :disabled="selectedRows.length !== 1" @click="handleCancelCooperation">取消成单</el-button>
             <el-button v-if="currClientStatus === 4" type="primary" :disabled="selectedRows.length !== 1"
-                @click="">交定金</el-button>
+                @click="handlePayment">交定金</el-button>
 
             <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
                 @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
@@ -151,6 +151,37 @@
                     <el-button @click="contractDialogVisible = false">取消</el-button>
                     <el-button type="primary" @click="exportContract">导出合同</el-button>
                     <el-button type="primary" @click="submitContract">确认签署</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <!-- 交定金弹窗 -->
+        <el-dialog title="交定金" v-model="paymentDialogVisible" width="500px" destroy-on-close>
+            <el-form :model="paymentForm" label-width="120px">
+                <el-form-item label="* 金额（元）:">
+                    <el-input-number v-model="paymentForm.amount" :min="1" :max="999999" style="width: 100%" />
+                </el-form-item>
+                <el-form-item label="* 交易方式:">
+                    <el-select v-model="paymentForm.paymentMethod" placeholder="请选择交易方式" style="width: 100%">
+                        <el-option v-for="item in conventions.paymentMethods" :key="item.id" :label="item.name"
+                            :value="item.id" />
+                    </el-select>
+                </el-form-item>
+
+                <el-form-item label="负责老师:">
+                    <el-select v-model="paymentForm.teacherId" placeholder="请选择负责老师" style="width: 100%">
+                        <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
+                            :value="item.value" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="备注:">
+                    <el-input v-model="paymentForm.info" type="textarea" :rows="3" placeholder="请输入备注信息"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="paymentDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="submitPayment">确定</el-button>
                 </span>
             </template>
         </el-dialog>
@@ -797,6 +828,77 @@ const handleCancelCooperation = () => {
     }).catch(() => {
         // 用户点击取消按钮，不做任何操作
     });
+};
+
+// 交定金
+const paymentDialogVisible = ref(false);
+const teacherOptions = ref([]);
+const paymentForm = ref({
+    teacherId: '',
+    amount: null,
+    paymentMethod: 1,
+    info: ''
+});
+
+const handlePayment = async () => {
+    if (!selectedRows.value.length) return;
+    try {
+        // 获取校区的老师列表
+        const userRes = await request.post('/user/getAllUsers', {}, {
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
+        });
+        if (userRes.data.status === 200) {
+            teacherOptions.value = userRes.data.users.map(item => ({
+                label: item.username,
+                value: item.id
+            }));
+            paymentDialogVisible.value = true;
+        } else {
+            ElMessage.error('获取老师列表失败');
+            console.log(userRes.data);
+        }
+    } catch (error) {
+        console.error('获取老师列表失败:', error);
+        ElMessage.error('获取老师列表失败');
+    }
+};
+
+const submitPayment = async () => {
+    if (!paymentForm.value.amount || paymentForm.value.amount <= 0 || !paymentForm.value.paymentMethod) {
+        ElMessage.warning('请填写必要信息');
+        return;
+    }
+    try {
+        const res = await request.post('/extra/submitPayment', {
+            clientId: selectedRows.value[0].id,
+            ...paymentForm.value,
+            category: 1 // 1表示定金
+        }, {
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
+        });
+
+        if (res.data.status === 200) {
+            ElMessage.success('交定金成功');
+            paymentDialogVisible.value = false;
+            // 重置表单
+            paymentForm.value = {
+                teacherId: '',
+                amount: 1000,
+                paymentMethod: 1,
+                info: ''
+            };
+            await getClients();
+        } else {
+            ElMessage.error(res.data.message || '交定金失败');
+        }
+    } catch (error) {
+        console.error('交定金失败:', error);
+        ElMessage.error('交定金失败');
+    }
 };
 </script>
 
