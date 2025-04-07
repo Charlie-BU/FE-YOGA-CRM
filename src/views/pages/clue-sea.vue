@@ -2,9 +2,12 @@
     <div>
         <TableSearch :query="query" :options="searchOpt" :search="handleSearch" />
         <div class="container">
+            <el-button type="warning" :icon="Download" @click="exportToExcel">导出</el-button>
             <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true">新增</el-button>
             <el-button type="primary" :disabled="!selectedRows.length" @click="handleAssign">分配</el-button>
             <el-button type="danger" :disabled="!selectedRows.length" @click="handleUnassign">取消分配</el-button>
+            <el-button type="success" :disabled="!selectedRows.length" @click="handleToClient">转客户</el-button>
+
 
             <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
                 @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
@@ -87,12 +90,13 @@
 <script setup lang="ts" name="system-user">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { CirclePlusFilled } from '@element-plus/icons-vue';
+import { CirclePlusFilled, Download } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
 import request from '@/utils/request';
 import TableSearch from '@/components/table-search.vue';
 import { FormOptionList } from '@/types/form-option';
 import * as conventions from '@/utils/conventions';
+import * as XLSX from 'xlsx';
 
 onMounted(async () => {
     await getClients();
@@ -429,10 +433,110 @@ const handleUnassign = async () => {
         // 取消操作
     });
 };
+
+const handleToClient = async () => {
+    if (!selectedRows.value.length) return;
+
+    ElMessageBox.confirm(
+        '确认将选中的线索转为正式客户吗？',
+        '提示',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(async () => {
+        try {
+            const ids = selectedRows.value.map(row => row.id);
+            const res = await request.post('/extra/convertToClients', {
+                ids: ids
+            }, {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            });
+
+            if (res.data.status === 200) {
+                ElMessage.success('转客户成功');
+                await getClients(); // 刷新列表
+            } else {
+                ElMessage.error(res.data.message || '转客户失败');
+            }
+        } catch (error) {
+            console.error('转客户失败:', error);
+            ElMessage.error('转客户失败');
+        }
+    }).catch(() => {
+        // 取消操作
+    });
+};
 const tableRef = ref();
 
 const handleRowClick = (row) => {
     tableRef.value?.toggleRowSelection(row);
+};
+
+const exportToExcel = async () => {
+    ElMessageBox.confirm(
+        '确认导出线索公海数据？',
+        '提示',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'info',
+        }
+    ).then(async () => {
+        try {
+            loading.value = true;
+            const res = await request.post("/extra/getClueClients", {
+                pageIndex: 1,
+                pageSize: 99999,
+                name: query.name
+            }, {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            });
+
+            if (res.data.status === 200 && res.data.clients) {
+                const exportData = res.data.clients.map(item => ({
+                    '姓名': item.name,
+                    '渠道来源': conventions.getFromSource(item.fromSource),
+                    '性别': conventions.getGender(item.gender),
+                    '年龄': item.age,
+                    '身份证': item.IDNumber,
+                    '电话': item.phone,
+                    '微信': item.weixin,
+                    'QQ': item.QQ,
+                    '抖音': item.douyin,
+                    '小红书': item.rednote,
+                    '商务通': item.shangwutong,
+                    '地区': item.address,
+                    '客户状态': conventions.getClientStatus(item.clientStatus),
+                    '所属人/合作老师': item.affiliatedUserName,
+                    '创建时间': item.createdTime,
+                    '备注': item.info
+                }));
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                XLSX.utils.book_append_sheet(wb, ws, '线索公海数据');
+
+                const fileName = `线索公海数据_${new Date().toLocaleDateString()}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                ElMessage.success('导出成功');
+            } else {
+                ElMessage.error('导出失败：没有数据');
+            }
+        } catch (error) {
+            console.error('导出失败:', error);
+            ElMessage.error('导出失败');
+        } finally {
+            loading.value = false;
+        }
+    }).catch(() => {
+        // 用户取消导出操作
+    });
 };
 </script>
 

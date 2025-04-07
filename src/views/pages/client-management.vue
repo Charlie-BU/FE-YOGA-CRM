@@ -3,16 +3,17 @@
         <TableSearch :query="query" :options="searchOpt" :search="handleSearch" />
 
         <div class="container">
-            <!-- <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true"></el-button> -->
+            <el-button type="warning" :icon="Download" @click="exportToExcel">导出</el-button>
             <el-button v-if="currClientStatus === 3" type="primary" :disabled="selectedRows.length !== 1"
                 @click="handleReserve">预约到店</el-button>
             <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1"
                 @click="handleCancelReserve">取消预约</el-button>
-            <el-button v-if="currClientStatus === 4" type="success" :disabled="selectedRows.length !== 1" @click="">确认成单
+            <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 2" type="success"
+                :disabled="selectedRows.length !== 1" @click="confirmCooperation">确认成单
                 -
                 签署合同</el-button>
-            <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1"
-                @click="">取消成单</el-button>
+            <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 1" type="danger"
+                :disabled="selectedRows.length !== 1" @click="handleCancelCooperation">取消成单</el-button>
             <el-button v-if="currClientStatus === 4" type="primary" :disabled="selectedRows.length !== 1"
                 @click="">交定金</el-button>
 
@@ -46,6 +47,7 @@
                 }}</el-button>
             </div>
         </div>
+        <!-- 编辑弹窗 -->
         <el-dialog :title="isEdit ? '编辑' : '新增'" v-model="editModelVisible" width="700px" destroy-on-close
             :close-on-click-modal="false" @close="closeDialog">
             <el-form ref="formRef" :model="formData" :rules="rules" :label-width="options.labelWidth">
@@ -72,7 +74,7 @@
             </template>
         </el-dialog>
 
-
+        <!-- 预约到店弹窗 -->
         <el-dialog title="预约到店" v-model="assignDialogVisible" width="700px" destroy-on-close>
             <el-form :model="assignForm" label-width="120px">
                 <el-form-item label="* 校区:">
@@ -114,18 +116,60 @@
                 </span>
             </template>
         </el-dialog>
+
+        <!-- 签署合同弹窗 -->
+        <el-dialog title="签署合同" v-model="contractDialogVisible" width="800px" destroy-on-close>
+            <div class="contract-content">
+                <h2 style="text-align: center">亚太瑜伽课程服务合同</h2>
+                <p>合同编号：{{ contractForm.contractNo }}</p>
+                <p>甲方（学员）：{{ selectedRows[0]?.name }}</p>
+                <p>身份证号：{{ selectedRows[0]?.IDNumber }}</p>
+                <p>联系电话：{{ selectedRows[0]?.phone }}</p>
+                <p>乙方（机构）：亚太瑜伽</p>
+                <p>校区：{{ selectedRows[0]?.schoolName }}</p>
+                <p>课程：{{ selectedRows[0]?.courseNames }}</p>
+                <p>签约日期：{{ contractForm.cooperateTime }}</p>
+
+                <div class="contract-terms">
+                    <h3>合同条款：</h3>
+                    <p>1. 课程内容：乙方根据甲方选择的课程提供专业的瑜伽培训服务。</p>
+                    <p>2. 课程期限：自签约日起12个月内有效。</p>
+                    <p>3. 双方权利义务：</p>
+                    <p>&nbsp;&nbsp;&nbsp;&nbsp;3.1 乙方应提供专业的教学服务和必要的场地设施。</p>
+                    <p>&nbsp;&nbsp;&nbsp;&nbsp;3.2 甲方应遵守场馆规章制度，按时参加课程。</p>
+                    <p>4. 其他未尽事宜，双方友好协商解决。</p>
+                </div>
+
+                <div class="signature" style="margin-top: 50px">
+                    <p>甲方签字：____________</p>
+                    <p>乙方签字：___上海烁伽健身服务有限公司___</p>
+                    <p>日期：{{ contractForm.cooperateTime }}</p>
+                </div>
+            </div>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="contractDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="exportContract">导出合同</el-button>
+                    <el-button type="primary" @click="submitContract">确认签署</el-button>
+                </span>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts" name="system-user">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { CirclePlusFilled } from '@element-plus/icons-vue';
+import { Download } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
 import request from '@/utils/request';
 import TableSearch from '@/components/table-search.vue';
 import { FormOptionList } from '@/types/form-option';
 import * as conventions from '@/utils/conventions';
+import * as XLSX from 'xlsx';
+// 导出合同需要
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 onMounted(async () => {
     await getClients();
@@ -179,9 +223,9 @@ const secondColumns = [
     { prop: 'nextTalkDate', label: '下次沟通日期', width: 150, align: 'center' },
     { prop: 'processStatus', label: '跟进状态', width: 150, align: 'center', formatter: (row) => row.processStatus === 1 ? "未成单" : row.processStatus === 2 ? "已成单" : "" },
     { prop: 'cooperateTime', label: '成单时间', width: 150, align: 'center' },
+    { prop: 'contractNo', label: '合同编号', width: 150, align: 'center' },
     { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
     { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
-    { prop: 'gender', label: '性别', width: 150, align: 'center', formatter: (row) => conventions.getGender(row.gender) },
     { prop: 'detailedInfo', label: '预约备注', width: 150, align: 'center' }
 ]
 const columns = ref(defaultColumns)
@@ -547,10 +591,226 @@ const tableRef = ref();
 const handleRowClick = (row) => {
     tableRef.value?.toggleRowSelection(row);
 };
+
+const exportToExcel = async () => {
+    ElMessageBox.confirm(
+        '确认导出客户数据？',
+        '提示',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'info',
+        }
+    ).then(async () => {
+        try {
+            loading.value = true;
+            const res = await request.post("/extra/getClients", {
+                clientStatus: currClientStatus.value,
+                pageIndex: 1,
+                pageSize: 99999,
+                name: query.name
+            }, {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            });
+
+            if (res.data.status === 200 && res.data.clients) {
+                const exportData = res.data.clients.map(item => {
+                    const baseData = {
+                        '姓名': item.name,
+                        '渠道来源': conventions.getFromSource(item.fromSource),
+                        '性别': conventions.getGender(item.gender),
+                        '年龄': item.age,
+                        '身份证': item.IDNumber,
+                        '电话': item.phone,
+                        '微信': item.weixin,
+                        'QQ': item.QQ,
+                        '抖音': item.douyin,
+                        '小红书': item.rednote,
+                        '商务通': item.shangwutong,
+                        '地区': item.address,
+                        '客户状态': conventions.getClientStatus(item.clientStatus),
+                        '所属人/合作老师': item.affiliatedUserName,
+                        '创建时间': item.createdTime,
+                        '备注': item.info
+                    };
+
+                    // 如果是已预约客户，添加额外字段
+                    if (currClientStatus.value === 4) {
+                        return {
+                            ...baseData,
+                            '校区': item.schoolName,
+                            '预约人': item.appointerName,
+                            '课程': item.courseNames,
+                            '预约日期': item.appointDate,
+                            '下次沟通日期': item.nextTalkDate,
+                            '跟进状态': item.processStatus === 1 ? "未成单" : item.processStatus === 2 ? "已成单" : "",
+                            '成单时间': item.cooperateTime,
+                            '预约备注': item.detailedInfo
+                        };
+                    }
+                    return baseData;
+                });
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                XLSX.utils.book_append_sheet(wb, ws, currClientStatus.value === 3 ? '未预约客户数据' : '已预约客户数据');
+
+                const fileName = `客户数据_${currClientStatus.value === 3 ? '未预约' : '已预约'}_${new Date().toLocaleDateString()}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                ElMessage.success('导出成功');
+            } else {
+                ElMessage.error('导出失败：没有数据');
+            }
+        } catch (error) {
+            console.error('导出失败:', error);
+            ElMessage.error('导出失败');
+        } finally {
+            loading.value = false;
+        }
+    }).catch(() => {
+        // 用户取消导出操作
+    });
+};
+
+
+// 确认成单 / 签署合同逻辑
+const contractDialogVisible = ref(false);
+const contractForm = ref({
+    contractNo: '',
+    cooperateTime: ''
+});
+
+const confirmCooperation = () => {
+    if (!selectedRows.value.length) return;
+    // 生成合同编号
+    contractForm.value.contractNo = `HT${new Date().getTime()}`;
+    // 设置签约时间
+    contractForm.value.cooperateTime = new Date().toLocaleDateString();
+    contractDialogVisible.value = true;
+};
+
+// 导出合同
+const exportContract = async () => {
+    try {
+        const contractElement = document.querySelector('.contract-content');
+        if (!contractElement) {
+            ElMessage.error('获取合同内容失败');
+            return;
+        }
+
+        const canvas = await html2canvas(contractElement as HTMLElement, {
+            scale: 2, // 提高清晰度
+            useCORS: true,
+            logging: false,
+        });
+
+        const contentWidth = canvas.width;
+        const contentHeight = canvas.height;
+
+        // A4纸的尺寸[595.28,841.89]
+        const pageHeight = contentWidth / 592.28 * 841.89;
+        let leftHeight = contentHeight;
+        let position = 0;
+        const imgWidth = 595.28;
+        const imgHeight = 592.28 / contentWidth * contentHeight;
+
+        const pdf = new jsPDF('p', 'pt', 'a4');
+
+        if (leftHeight < pageHeight) {
+            pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, imgWidth, imgHeight);
+        } else {
+            while (leftHeight > 0) {
+                pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, position, imgWidth, imgHeight);
+                leftHeight -= pageHeight;
+                position -= 841.89;
+                if (leftHeight > 0) {
+                    pdf.addPage();
+                }
+            }
+        }
+
+        const fileName = `瑜伽课程服务合同_${selectedRows.value[0]?.name}_${contractForm.value.contractNo}.pdf`;
+        pdf.save(fileName);
+        ElMessage.success('合同导出成功');
+    } catch (error) {
+        console.error('合同导出失败:', error);
+        ElMessage.error('合同导出失败');
+    }
+};
+
+const submitContract = async () => {
+    try {
+        const res = await request.post('/extra/confirmCooperation', {
+            clientId: selectedRows.value[0].id,
+            contractNo: contractForm.value.contractNo,
+            cooperateTime: contractForm.value.cooperateTime
+        }, {
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
+        });
+
+        if (res.data.status === 200) {
+            ElMessage.success('签约成功');
+            contractDialogVisible.value = false;
+            getClients();
+        } else {
+            ElMessage.error(res.data.message || '签约失败');
+        }
+    } catch (error) {
+        console.error('签约失败:', error);
+        ElMessage.error('签约失败');
+    }
+};
+
+const handleCancelCooperation = () => {
+    ElMessageBox.confirm(
+        '确认取消该客户的成单状态吗？',
+        '警告',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(async () => {
+        try {
+            const res = await request.post('/extra/cancelCooperation', {
+                clientId: selectedRows.value[0].id
+            }, {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            });
+
+            if (res.data.status === 200) {
+                ElMessage.success('取消成单成功');
+                await getClients();
+            } else {
+                ElMessage.error(res.data.message || '取消成单失败');
+            }
+        } catch (error) {
+            console.error('取消成单失败:', error);
+            ElMessage.error('取消成单失败');
+        }
+    }).catch(() => {
+        // 用户点击取消按钮，不做任何操作
+    });
+};
 </script>
 
 <style scoped>
 .el-table :deep(.cell) {
     white-space: nowrap;
+}
+
+.contract-content {
+    padding: 20px;
+    line-height: 1.8;
+}
+
+.contract-terms {
+    margin: 20px 0;
 }
 </style>
