@@ -23,10 +23,17 @@
                 <template v-for="item in columns" :key="item.prop">
                     <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"
                         :width="item.width" :align="item.align" show-overflow-tooltip />
+                    <el-table-column v-else-if="item.prop === 'name'" :prop="item.prop" :label="item.label"
+                        :width="item.width" :align="item.align" show-overflow-tooltip>
+                        <template #default="scope">
+                            <span class="clickable-name" @click.stop="showClientInfo(scope.row)">
+                                {{ scope.row.name }}
+                            </span>
+                        </template>
+                    </el-table-column>
                     <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width"
                         :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
                 </template>
-
                 <el-table-column label="操作" width="180" fixed="right" align="center">
                     <template #default="scope">
                         <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
@@ -47,6 +54,7 @@
                 }}</el-button>
             </div>
         </div>
+
         <!-- 编辑弹窗 -->
         <el-dialog :title="isEdit ? '编辑' : '新增'" v-model="editModelVisible" width="700px" destroy-on-close
             :close-on-click-modal="false" @close="closeDialog">
@@ -168,10 +176,17 @@
                     </el-select>
                 </el-form-item>
 
-                <el-form-item label="负责老师:">
+                <!-- <el-form-item label="负责老师:">
                     <el-select v-model="paymentForm.teacherId" placeholder="请选择负责老师" style="width: 100%">
                         <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
+                    </el-select>
+                </el-form-item> -->
+                <el-form-item label="负责老师:">
+                    <!-- 默认当前用户 -->
+                    <el-select v-model="paymentForm.teacherId" :placeholder=briefUserInfo?.username disabled
+                        style="width: 100%">
+                        <el-option :label="briefUserInfo?.username" :value="briefUserInfo?.id" />
                     </el-select>
                 </el-form-item>
                 <el-form-item label="备注:">
@@ -185,6 +200,10 @@
                 </span>
             </template>
         </el-dialog>
+
+
+        <!-- 客户信息卡弹窗 -->
+        <ClientInfoCard v-model="clientInfoDialogVisible" :client="currentClient" />
     </div>
 </template>
 
@@ -198,11 +217,15 @@ import TableSearch from '@/components/table-search.vue';
 import { FormOptionList } from '@/types/form-option';
 import * as conventions from '@/utils/conventions';
 import * as XLSX from 'xlsx';
+import ClientInfoCard from '@/components/client-info-card.vue'
 // 导出合同需要
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { loginCheck } from '@/utils/login-check';
 
+const briefUserInfo = ref(null)
 onMounted(async () => {
+    briefUserInfo.value = await loginCheck();
     await getClients();
 })
 
@@ -222,7 +245,26 @@ const handleSearch = async () => {
 // 表格相关
 const defaultColumns = [
     { type: 'index', label: '序号', width: 55, align: 'center' },
-    { prop: 'name', label: '姓名', width: 150, align: 'center' },
+    {
+        prop: 'name',
+        label: '姓名',
+        width: 150,
+        align: 'center',
+        // 添加自定义渲染函数
+        renderCell: (h, { row }) => {
+            return h(
+                'span',
+                {
+                    style: 'color: #409EFF; cursor: pointer;',
+                    onClick: (event) => {
+                        event.stopPropagation();
+                        showClientInfo(row);
+                    }
+                },
+                row.name
+            );
+        }
+    },
     { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
     { prop: 'gender', label: '性别', width: 150, align: 'center', formatter: (row) => conventions.getGender(row.gender) },
     { prop: 'age', label: '年龄', width: 150, align: 'center' },
@@ -242,7 +284,26 @@ const defaultColumns = [
 
 const secondColumns = [
     { type: 'index', label: '序号', width: 55, align: 'center' },
-    { prop: 'name', label: '姓名', width: 150, align: 'center' },
+    {
+        prop: 'name',
+        label: '姓名',
+        width: 150,
+        align: 'center',
+        // 添加自定义渲染函数
+        renderCell: (h, { row }) => {
+            return h(
+                'span',
+                {
+                    style: 'color: #409EFF; cursor: pointer;',
+                    onClick: (event) => {
+                        event.stopPropagation();
+                        showClientInfo(row);
+                    }
+                },
+                row.name
+            );
+        }
+    },
     { prop: 'phone', label: '电话', width: 150, align: 'center' },
     { prop: 'weixin', label: '微信', width: 150, align: 'center' },
     { prop: 'schoolName', label: '校区', width: 150, align: 'center' },
@@ -843,26 +904,34 @@ const paymentForm = ref({
 const handlePayment = async () => {
     if (!selectedRows.value.length) return;
     try {
-        // 获取校区的老师列表
-        const userRes = await request.post('/user/getAllUsers', {}, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
-            }
-        });
-        if (userRes.data.status === 200) {
-            teacherOptions.value = userRes.data.users.map(item => ({
-                label: item.username,
-                value: item.id
-            }));
-            paymentDialogVisible.value = true;
-        } else {
-            ElMessage.error('获取老师列表失败');
-            console.log(userRes.data);
-        }
+        // 设置当前用户为负责老师
+        paymentForm.value.teacherId = briefUserInfo.value.id;
+        paymentDialogVisible.value = true;
     } catch (error) {
-        console.error('获取老师列表失败:', error);
-        ElMessage.error('获取老师列表失败');
+        console.error('操作失败:', error);
+        ElMessage.error('操作失败');
     }
+    // try {
+    //     // 获取全部老师列表
+    //     const userRes = await request.post('/user/getAllUsers', {}, {
+    //         headers: {
+    //             sessionid: localStorage.getItem("sessionid")
+    //         }
+    //     });
+    //     if (userRes.data.status === 200) {
+    //         teacherOptions.value = userRes.data.users.map(item => ({
+    //             label: item.username,
+    //             value: item.id
+    //         }));
+    //         paymentDialogVisible.value = true;
+    //     } else {
+    //         ElMessage.error('获取老师列表失败');
+    //         console.log(userRes.data);
+    //     }
+    // } catch (error) {
+    //     console.error('获取老师列表失败:', error);
+    //     ElMessage.error('获取老师列表失败');
+    // }
 };
 
 const submitPayment = async () => {
@@ -900,6 +969,17 @@ const submitPayment = async () => {
         ElMessage.error('交定金失败');
     }
 };
+
+
+// 客户信息卡相关
+const clientInfoDialogVisible = ref(false)
+const currentClient = ref({})
+
+// 显示客户信息卡
+const showClientInfo = (client) => {
+    currentClient.value = { ...client }
+    clientInfoDialogVisible.value = true
+}
 </script>
 
 <style scoped>
@@ -914,5 +994,14 @@ const submitPayment = async () => {
 
 .contract-terms {
     margin: 20px 0;
+}
+
+.clickable-name {
+    color: #409EFF;
+    cursor: pointer;
+}
+
+.clickable-name:hover {
+    text-decoration: underline;
 }
 </style>
