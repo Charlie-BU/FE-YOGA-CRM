@@ -21,9 +21,15 @@ export const menuData: Menus[] = [
         icon: "Odometer"
     },
     {
-        id: "02",
+        id: "03",
         title: "人员管理",
         index: "/user-management",
+        icon: "Odometer"
+    },
+    {
+        id: "04",
+        title: "组织管理",
+        index: "/organ-management",
         icon: "Odometer"
     },
     {

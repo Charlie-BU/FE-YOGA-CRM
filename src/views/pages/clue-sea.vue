@@ -2,6 +2,7 @@
     <div>
         <TableSearch :query="query" :options="searchOpt" :search="handleSearch" />
         <div class="container">
+            <el-button type="warning" :icon="Upload" @click="handleBatchImport">批量导入</el-button>
             <el-button type="warning" :icon="Download" @click="exportToExcel">导出</el-button>
             <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true">新增</el-button>
             <el-button type="primary" :disabled="!selectedRows.length" @click="handleAssign">分配</el-button>
@@ -60,7 +61,7 @@
             </template>
         </el-dialog>
 
-
+        <!-- 分配客户弹窗 -->
         <el-dialog title="分配客户" v-model="assignDialogVisible" width="500px" destroy-on-close>
             <el-form :model="assignForm" label-width="80px">
                 <el-form-item label="选择分店">
@@ -84,13 +85,45 @@
                 </span>
             </template>
         </el-dialog>
+
+        <!-- 添加批量导入弹窗 -->
+        <el-dialog title="批量导入" v-model="importDialogVisible" width="500px" destroy-on-close>
+            <div class="import-container">
+                <div class="download-template">
+                    <p>第一步：下载导入模板</p>
+                    <el-button type="primary" @click="downloadTemplate">下载模板</el-button>
+                </div>
+                <div class="upload-file" style="margin-top: 20px;">
+                    <p>第二步：上传填写好的Excel文件</p>
+                    <el-upload class="upload-demo" action="#" :auto-upload="false" :on-change="handleFileChange"
+                        :limit="1" accept=".xlsx,.xls">
+                        <template #trigger>
+                            <el-button type="primary">选择文件</el-button>
+                        </template>
+                        <template #tip>
+                            <div class="el-upload__tip">
+                                只能上传 xlsx/xls 文件
+                            </div>
+                        </template>
+                    </el-upload>
+                </div>
+            </div>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="importDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="handleUpload" :loading="uploading">
+                        {{ uploading ? '导入中...' : '开始导入' }}
+                    </el-button>
+                </span>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts" name="system-user">
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { CirclePlusFilled, Download } from '@element-plus/icons-vue';
+import { CirclePlusFilled, Download, Upload } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
 import request from '@/utils/request';
 import TableSearch from '@/components/table-search.vue';
@@ -118,7 +151,7 @@ const handleSearch = async () => {
 // 表格相关
 const columns = ref([
     { type: 'index', label: '序号', width: 55, align: 'center' },
-    { prop: 'name', label: '姓名', align: 'center' },
+    { prop: 'name', label: '姓名', width: 120, align: 'center' },
     { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
     { prop: 'gender', label: '性别', align: 'center', formatter: (row) => conventions.getGender(row.gender) },
     { prop: 'age', label: '年龄', align: 'center' },
@@ -132,9 +165,9 @@ const columns = ref([
     { prop: 'address', label: '地区', width: 120, align: 'center' },
     { prop: 'clientStatus', label: '客户状态', align: 'center', formatter: (row) => conventions.getClientStatus(row.clientStatus) },
     { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 150, align: 'center' },
-    // { prop: 'createdUserId', label: '创建人', align: 'center' },
-    { prop: 'createdTime', label: '创建时间', align: 'center' },
-    { prop: 'info', label: '备注', width: 120, align: 'center' },
+    { prop: 'creatorName', label: '创建人', align: 'center' },
+    { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
+    { prop: 'info', label: '备注', width: 150, align: 'center' },
 ])
 const page = reactive({
     index: 1,
@@ -538,10 +571,109 @@ const exportToExcel = async () => {
         // 用户取消导出操作
     });
 };
+
+// 批量导入相关
+const importDialogVisible = ref(false);
+const uploading = ref(false);
+const importFile = ref(null);
+
+const handleBatchImport = () => {
+    importDialogVisible.value = true;
+};
+
+const downloadTemplate = () => {
+    // 创建模板数据
+    const template = [
+        {
+            '* 姓名': '张三（测试）',
+            '性别': '男',
+            '年龄': '18',
+            '身份证': '150201199939483744',
+            '电话': '15928372748',
+            '* 微信': 'weixin123456',
+            'QQ': '2893749278',
+            '抖音': 'douyin123',
+            '小红书': 'rednote123',
+            '商务通': 'shangwutong123',
+            '地区': '上海市浦东新区',
+            '备注': '这是一条测试数据'
+        }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(template);
+    XLSX.utils.book_append_sheet(wb, ws, '线索导入模板');
+    XLSX.writeFile(wb, '线索导入模板.xlsx');
+};
+
+const handleFileChange = (file) => {
+    importFile.value = file.raw;
+};
+
+const handleUpload = async () => {
+    if (!importFile.value) {
+        ElMessage.warning('请选择要导入的文件');
+        return;
+    }
+
+    uploading.value = true;
+    try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = new Uint8Array(e.target.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                // 处理数据并上传
+                const res = await request.post('/extra/batchImportClues', {
+                    clues: jsonData
+                }, {
+                    headers: {
+                        sessionid: localStorage.getItem("sessionid")
+                    }
+                });
+
+                if (res.data.status === 200) {
+                    ElMessage.success('导入成功');
+                    importDialogVisible.value = false;
+                    getClients(); // 刷新列表
+                } else {
+                    ElMessage.error(res.data.message || '导入失败');
+                }
+            } catch (error) {
+                console.error('处理文件失败:', error);
+                ElMessage.error('处理文件失败');
+            }
+        };
+        reader.readAsArrayBuffer(importFile.value);
+    } catch (error) {
+        console.error('导入失败:', error);
+        ElMessage.error('导入失败');
+    } finally {
+        uploading.value = false;
+    }
+};
 </script>
 
 <style scoped>
 .el-table :deep(.cell) {
     white-space: nowrap;
+}
+
+.import-container {
+    padding: 20px;
+}
+
+.download-template,
+.upload-file {
+    margin-bottom: 20px;
+}
+
+.download-template p,
+.upload-file p {
+    margin-bottom: 10px;
+    font-weight: bold;
 }
 </style>
