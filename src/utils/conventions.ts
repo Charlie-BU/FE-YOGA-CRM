@@ -292,3 +292,20 @@ export const getPaymentType = (id: number): string | undefined => {
     const type = paymentTypes.find((v) => v.id === id);
     return type ? type.name : undefined;
 };
+
+// Course：课程分类
+export const courseCategories: Convention[] = [
+    {
+        id: 1,
+        name: "全日制"
+    },
+    {
+        id: 2,
+        name: "周末班"
+    }
+];
+
+export const getCourseCategory = (id: number): string | undefined => {
+    const category = courseCategories.find((v) => v.id === id);
+    return category ? category.name : undefined;
+};

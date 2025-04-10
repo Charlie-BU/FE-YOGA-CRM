@@ -56,6 +56,14 @@ const routes: RouteRecordRaw[] = [
                 },
                 component: () => import(/* webpackChunkName: "organ-management" */ "../views/pages/organ-management.vue")
             },
+            {
+                path: "/course-management",
+                name: "course-management",
+                meta: {
+                    title: "课程管理"
+                },
+                component: () => import(/* webpackChunkName: "course-management" */ "../views/pages/course-management.vue")
+            },
 
             {
                 path: "/system-user",
