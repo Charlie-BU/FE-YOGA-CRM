@@ -102,12 +102,35 @@
                             :value="item.value" />
                     </el-select>
                 </el-form-item>
-                <el-form-item label="* 课程:">
+
+                <el-form-item label="* 是否选择套餐:">
+                    <el-switch v-model="assignForm.useCombo" />
+                </el-form-item>
+
+                <el-form-item v-if="assignForm.useCombo" label="* 套餐:">
+                    <el-select v-model="assignForm.comboId" placeholder="请选择套餐" style="width: 100%"
+                        @change="handleComboChange">
+                        <el-option v-for="item in comboOptions" :key="item.value" :label="item.label"
+                            :value="item.value" />
+                    </el-select>
+                </el-form-item>
+
+                <el-form-item v-if="assignForm.useCombo" label="* 课程:">
+                    <el-select v-model="assignForm.courseIds" :placeholder="selectedCombo?.courseNames.join('、')"
+                        style="width: 100%" multiple disabled>
+                        <el-option v-for="item in courseOptions" :key="item.value" :label="item.label"
+                            :value="item.value" />
+                    </el-select>
+                </el-form-item>
+
+
+                <el-form-item v-else label="* 课程:">
                     <el-select v-model="assignForm.courseIds" placeholder="请选择课程" style="width: 100%" multiple>
                         <el-option v-for="item in courseOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
                 </el-form-item>
+
                 <el-form-item label="下次沟通日期:">
                     <el-date-picker v-model="assignForm.nextTalkDate" type="date" placeholder="选择日期"
                         style="width: 100%" />
@@ -175,13 +198,6 @@
                             :value="item.id" />
                     </el-select>
                 </el-form-item>
-
-                <!-- <el-form-item label="负责老师:">
-                    <el-select v-model="paymentForm.teacherId" placeholder="请选择负责老师" style="width: 100%">
-                        <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
-                            :value="item.value" />
-                    </el-select>
-                </el-form-item> -->
                 <el-form-item label="负责老师:">
                     <!-- 默认当前用户 -->
                     <el-select v-model="paymentForm.teacherId" :placeholder=briefUserInfo?.username disabled
@@ -517,6 +533,8 @@ const assignForm = ref({
     schoolId: '',
     appointerId: '',
     appointDate: '',
+    useCombo: false,
+    comboId: null,
     courseIds: [],
     nextTalkDate: '',
     detailedInfo: ''
@@ -526,29 +544,62 @@ const branchOptions = ref([]);
 const appointerOptions = ref([]);
 const courseOptions = ref([]);
 
-// 在 methods 部分添加
-const handleReserve = async () => {
-    if (!selectedRows.value.length) return;
+const comboOptions = ref<any[]>([]);
+const allCombos = ref<any[]>([]);
+const selectedCombo = ref<any>(null);
+
+// 添加获取套餐选项的方法
+const getComboOptions = async () => {
     try {
-        // 获取校区列表
-        const branchRes = await request.post('/dept/getAllSchools', null, {
+        const res = await request.post('/course/getAllCombos', {}, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
             }
         });
-        if (branchRes.data.status === 200) {
-            branchOptions.value = branchRes.data.schools.map(item => ({
-                label: item.name,
+        if (res.data.status === 200) {
+            comboOptions.value = res.data.combos.map(item => ({
+                label: item.showName,
                 value: item.id
             }));
+            allCombos.value = res.data.combos;
         }
-        assignDialogVisible.value = true;
     } catch (error) {
-        console.error('获取校区列表失败:', error);
-        ElMessage.error('获取校区列表失败');
+        console.error('获取套餐列表失败:', error);
+        ElMessage.error('获取套餐列表失败');
     }
 };
 
+// 添加套餐选择处理方法
+const handleComboChange = async (comboId) => {
+    selectedCombo.value = allCombos.value.find(item => item.id === comboId);
+};
+
+
+const handleReserve = async () => {
+    if (!selectedRows.value.length) return;
+    try {
+        // 获取校区列表和套餐列表
+        await Promise.all([
+            request.post('/dept/getAllSchools', null, {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            }),
+            getComboOptions()
+        ]).then(([branchRes]) => {
+            if (branchRes.data.status === 200) {
+                branchOptions.value = branchRes.data.schools.map(item => ({
+                    label: item.name,
+                    value: item.id
+                }));
+            }
+        });
+        assignDialogVisible.value = true;
+    } catch (error) {
+        console.error('获取数据失败:', error);
+        ElMessage.error('获取数据失败');
+    }
+};
 
 // 修改 handleBranchChange 函数
 const handleBranchChange = async (schoolId) => {
@@ -596,7 +647,9 @@ const handleBranchChange = async (schoolId) => {
 
 const submitReserve = async () => {
     // 表单验证
-    if (!assignForm.value.schoolId || !assignForm.value.appointerId || !assignForm.value.appointDate || !assignForm.value.courseIds || assignForm.value.courseIds.length === 0) {
+    if (!assignForm.value.schoolId || !assignForm.value.appointerId || !assignForm.value.appointDate ||
+        (assignForm.value.useCombo && !assignForm.value.comboId) ||
+        (!assignForm.value.useCombo && (!assignForm.value.courseIds || assignForm.value.courseIds.length === 0))) {
         ElMessage.warning('请填写必要信息');
         return;
     }
@@ -608,6 +661,9 @@ const submitReserve = async () => {
             appointDate: assignForm.value.appointDate ? new Date(assignForm.value.appointDate).toLocaleDateString() : '',
             nextTalkDate: assignForm.value.nextTalkDate ? new Date(assignForm.value.nextTalkDate).toLocaleDateString() : ''
         };
+        if (assignForm.value.useCombo) {
+            formData.courseIds = selectedCombo.value.courseIds;
+        }
 
         const res = await request.post('/extra/submitReserve', {
             clientId,
@@ -626,6 +682,8 @@ const submitReserve = async () => {
                 schoolId: '',
                 appointerId: '',
                 appointDate: '',
+                useCombo: false,
+                comboId: null,
                 courseIds: [],
                 nextTalkDate: '',
                 detailedInfo: ''

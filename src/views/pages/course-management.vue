@@ -1,40 +1,85 @@
 <template>
     <div>
-        <div class="container">
-            <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true">新增课程</el-button>
+        <el-tabs v-model="activeTab">
+            <el-tab-pane label="课程管理" name="course">
+                <div class="container">
+                    <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true">新增课程</el-button>
+                    <!-- 原有的课程管理表格和弹窗 -->
+                    <el-table :data="tableData" style="width: 100%; margin-top: 20px;" v-loading="loading">
+                        <el-table-column type="index" label="序号" width="55" align="center">
+                            <template #filter-icon="slotProps"></template>
+                        </el-table-column>
+                        <el-table-column prop="name" label="课程名称" width="150" align="center" show-overflow-tooltip />
+                        <el-table-column prop="category" label="课程类别" width="100" align="center" show-overflow-tooltip>
+                            <template #default="scope">
+                                {{ conventions.getCourseCategory(scope.row.category) }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="schoolName" label="所属校区" width="120" align="center"
+                            show-overflow-tooltip />
+                        <el-table-column prop="duration" label="课时" width="100" align="center" show-overflow-tooltip />
+                        <el-table-column prop="price" label="价格" width="100" align="center" show-overflow-tooltip />
+                        <el-table-column prop="chiefTeacherName" label="主讲教师" width="100" align="center"
+                            show-overflow-tooltip />
+                        <el-table-column prop="classTeacherName" label="班主任" width="100" align="center"
+                            show-overflow-tooltip />
+                        <el-table-column prop="teachingAssistantName" label="助教" width="100" align="center"
+                            show-overflow-tooltip />
+                        <el-table-column prop="info" label="备注" width="150" align="center" show-overflow-tooltip />
+                        <el-table-column prop="creatorName" label="创建人" width="100" align="center"
+                            show-overflow-tooltip />
+                        <el-table-column prop="createdTime" label="创建时间" width="150" align="center"
+                            show-overflow-tooltip />
 
-            <el-table :data="tableData" style="width: 100%; margin-top: 20px;" v-loading="loading">
-                <el-table-column type="index" label="序号" width="55" align="center" />
-                <el-table-column prop="name" label="课程名称" width="150" align="center" />
+                        <el-table-column label="操作" width="180" fixed="right" align="center">
+                            <template #default="scope">
+                                <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
+                                <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
 
-                <el-table-column prop="category" label="课程类别" width="100" align="center">
-                    <template #default="scope">
-                        {{ conventions.getCourseCategory(scope.row.category) }}
-                    </template>
-                </el-table-column>
-                <el-table-column prop="schoolName" label="所属校区" width="120" align="center" />
-                <el-table-column prop="duration" label="课时" width="100" align="center" />
-                <el-table-column prop="price" label="价格" width="100" align="center" />
-                <el-table-column prop="chiefTeacherName" label="主讲教师" width="100" align="center" />
-                <el-table-column prop="classTeacherName" label="班主任" width="100" align="center" />
-                <el-table-column prop="teachingAssistantName" label="助教" width="100" align="center" />
-                <el-table-column prop="info" label="备注" width="150" align="center" />
-                <el-table-column prop="creatorName" label="创建人" width="100" align="center" />
-                <el-table-column prop="createdTime" label="创建时间" width="150" align="center" />
+                    <div class="pagination" style="margin-top: 20px; text-align: right;">
+                        <el-pagination v-model:current-page="page.index" v-model:page-size="page.size"
+                            :total="page.total" @current-change="changePage" layout="total, prev, pager, next" />
+                    </div>
+                </div>
+            </el-tab-pane>
 
-                <el-table-column label="操作" width="180" fixed="right" align="center">
-                    <template #default="scope">
-                        <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-                        <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
+            <el-tab-pane label="套餐管理" name="combo">
+                <div class="container">
+                    <el-button type="warning" :icon="CirclePlusFilled"
+                        @click="comboDialogVisible = true">新增套餐</el-button>
 
-            <div class="pagination" style="margin-top: 20px; text-align: right;">
-                <el-pagination v-model:current-page="page.index" v-model:page-size="page.size" :total="page.total"
-                    @current-change="changePage" layout="total, prev, pager, next" />
-            </div>
-        </div>
+                    <el-table :data="comboData" style="width: 100%; margin-top: 20px;" v-loading="comboLoading">
+                        <el-table-column type="index" label="序号" width="55" align="center">
+                            <template #filter-icon="slotProps"></template>
+                        </el-table-column>
+                        <el-table-column prop="name" label="套餐名称" width="150" align="center" show-overflow-tooltip />
+                        <el-table-column prop="courseNames" label="包含课程" width="300" align="center"
+                            show-overflow-tooltip />
+                        <el-table-column prop="price" label="价格（元）" width="100" align="center" show-overflow-tooltip />
+                        <el-table-column prop="info" label="备注" width="150" align="center" show-overflow-tooltip />
+                        <el-table-column label="操作" width="180" fixed="right" align="center">
+                            <template #default="scope">
+                                <el-button size="small" type="primary"
+                                    @click="handleEditCombo(scope.row)">编辑</el-button>
+                                <el-button size="small" type="danger"
+                                    @click="handleDeleteCombo(scope.row)">删除</el-button>
+                            </template>
+                            <template #header="slotProps"></template>
+                        </el-table-column>
+                    </el-table>
+
+                    <div class="pagination" style="margin-top: 20px; text-align: right;">
+                        <el-pagination v-model:current-page="comboPage.index" v-model:page-size="comboPage.size"
+                            :total="comboPage.total" @current-change="changeComboPage"
+                            layout="total, prev, pager, next" />
+                    </div>
+                </div>
+            </el-tab-pane>
+        </el-tabs>
+
 
         <el-dialog :title="isEdit ? '编辑课程' : '新增课程'" v-model="editModelVisible" width="700px" destroy-on-close
             :close-on-click-modal="false" @close="closeDialog">
@@ -113,6 +158,34 @@
                 </span>
             </template>
         </el-dialog>
+
+        <!-- 套餐编辑弹窗 -->
+        <el-dialog :title="isEditCombo ? '编辑套餐' : '新增套餐'" v-model="comboDialogVisible" width="700px" destroy-on-close
+            :close-on-click-modal="false" @close="closeComboDialog">
+            <el-form ref="comboFormRef" :model="comboFormData" :rules="comboRules" label-width="100px">
+                <el-form-item label="套餐名称" prop="name">
+                    <el-input v-model="comboFormData.name" placeholder="请输入套餐名称" />
+                </el-form-item>
+                <el-form-item label="包含课程" prop="courseIds">
+                    <el-select v-model="comboFormData.courseIds" multiple placeholder="请选择课程" style="width: 100%">
+                        <el-option v-for="item in courseOptions" :key="item.value" :label="item.label"
+                            :value="item.value" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="价格" prop="price">
+                    <el-input v-model="comboFormData.price" type="number" placeholder="请输入价格（元）" />
+                </el-form-item>
+                <el-form-item label="备注" prop="info">
+                    <el-input v-model="comboFormData.info" type="textarea" placeholder="请输入备注信息" />
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="closeComboDialog">取消</el-button>
+                    <el-button type="primary" @click="submitComboForm">确定</el-button>
+                </span>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
@@ -163,6 +236,8 @@ onMounted(async () => {
     await Promise.all([
         getCourses(),
         getSchools(),
+        getCombos(),
+        getCourseOptions(),
     ]);
 });
 
@@ -330,6 +405,164 @@ const submitForm = async () => {
                     ElMessage.success(isEdit.value ? '编辑成功' : '添加成功');
                     closeDialog();
                     getCourses();
+                } else {
+                    ElMessage.error(res.data.message || '操作失败');
+                }
+            } catch (error) {
+                console.error('提交失败:', error);
+                ElMessage.error('操作失败');
+            }
+        }
+    });
+};
+
+// 添加套餐管理相关的响应式数据
+const activeTab = ref('course');
+const comboLoading = ref(false);
+const comboDialogVisible = ref(false);
+const isEditCombo = ref(false);
+const comboFormRef = ref();
+const comboData = ref([]);
+const courseOptions = ref([]);
+
+const comboPage = reactive({
+    index: 1,
+    size: 10,
+    total: 0,
+});
+
+const comboFormData = ref({
+    name: '',
+    courseIds: [],
+    price: '',
+    info: '',
+});
+
+const comboRules = {
+    name: [{ required: true, message: '请输入套餐名称', trigger: 'blur' }],
+    courseIds: [{ required: true, message: '请选择课程', trigger: 'change' }],
+    price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
+};
+
+// 获取套餐列表
+const getCombos = async () => {
+    comboLoading.value = true;
+    try {
+        const res = await request.post("/course/getAllCombos", {
+            pageIndex: comboPage.index,
+            pageSize: comboPage.size,
+        }, {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        });
+        if (res.data.status === 200) {
+            comboData.value = res.data.combos;
+            comboPage.total = res.data.total;
+        }
+    } catch (error) {
+        console.error('获取套餐列表失败:', error);
+        ElMessage.error('获取套餐列表失败');
+    } finally {
+        comboLoading.value = false;
+    }
+};
+
+// 获取课程选项
+const getCourseOptions = async () => {
+    try {
+        const res = await request.post("/course/getCourses", {
+            pageIndex: 1,
+            pageSize: 999,
+        }, {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        });
+        if (res.data.status === 200) {
+            courseOptions.value = res.data.courses.map(item => ({
+                label: item.name,
+                value: item.id
+            }));
+        }
+    } catch (error) {
+        console.error('获取课程列表失败:', error);
+    }
+};
+
+// 修改 onMounted
+onMounted(async () => {
+    await Promise.all([
+        getCourses(),
+        getSchools(),
+        getCombos(),
+        getCourseOptions(),
+    ]);
+});
+
+// 套餐相关方法
+const changeComboPage = async (val: number) => {
+    comboPage.index = val;
+    await getCombos();
+};
+
+const closeComboDialog = () => {
+    comboDialogVisible.value = false;
+    isEditCombo.value = false;
+    comboFormData.value = {
+        name: '',
+        courseIds: [],
+        price: '',
+        info: '',
+    };
+    comboFormRef.value?.resetFields();
+};
+
+const handleEditCombo = (row) => {
+    comboFormData.value = JSON.parse(JSON.stringify(row));
+    isEditCombo.value = true;
+    comboDialogVisible.value = true;
+};
+
+const handleDeleteCombo = (row) => {
+    ElMessageBox.confirm(
+        '确认删除该套餐吗？',
+        '警告',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(async () => {
+        try {
+            const res = await request.post('/course/deleteCombo', {
+                id: row.id
+            }, {
+                headers: { sessionid: localStorage.getItem("sessionid") }
+            });
+            if (res.data.status === 200) {
+                ElMessage.success('删除成功');
+                getCombos();
+            } else {
+                ElMessage.error(res.data.message || '删除失败');
+            }
+        } catch (error) {
+            console.error('删除失败:', error);
+            ElMessage.error('删除失败');
+        }
+    });
+};
+
+const submitComboForm = async () => {
+    if (!comboFormRef.value) return;
+    await comboFormRef.value.validate(async (valid) => {
+        if (valid) {
+            try {
+                const url = isEditCombo.value ? '/course/updateCombo' : '/course/addCombo';
+                const res = await request.post(url, comboFormData.value, {
+                    headers: { sessionid: localStorage.getItem("sessionid") }
+                });
+
+                if (res.data.status === 200) {
+                    ElMessage.success(isEditCombo.value ? '编辑成功' : '添加成功');
+                    closeComboDialog();
+                    getCombos();
                 } else {
                     ElMessage.error(res.data.message || '操作失败');
                 }

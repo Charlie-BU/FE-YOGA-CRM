@@ -4,9 +4,9 @@
             <el-descriptions :column="2" border>
                 <el-descriptions-item label="姓名">{{ client.name }}</el-descriptions-item>
                 <el-descriptions-item label="渠道来源">{{ conventions.getFromSource(client.fromSource)
-                    }}</el-descriptions-item>
+                }}</el-descriptions-item>
                 <el-descriptions-item label="性别">{{ conventions.getGender(client.gender)
-                    }}</el-descriptions-item>
+                }}</el-descriptions-item>
                 <el-descriptions-item label="年龄">{{ client.age }}</el-descriptions-item>
                 <el-descriptions-item label="身份证">{{ client.IDNumber }}</el-descriptions-item>
                 <el-descriptions-item label="电话">{{ client.phone }}</el-descriptions-item>
@@ -17,7 +17,7 @@
                 <el-descriptions-item label="商务通">{{ client.shangwutong }}</el-descriptions-item>
                 <el-descriptions-item label="地区">{{ client.address }}</el-descriptions-item>
                 <el-descriptions-item label="客户状态">{{ conventions.getClientStatus(client.clientStatus)
-                    }}</el-descriptions-item>
+                }}</el-descriptions-item>
                 <el-descriptions-item label="所属人 / 合作老师">{{ client.affiliatedUserName }}</el-descriptions-item>
                 <el-descriptions-item label="创建时间">{{ client.createdTime }}</el-descriptions-item>
                 <el-descriptions-item label="备注" :span="2">{{ client.info }}</el-descriptions-item>
@@ -29,6 +29,7 @@
                 <el-descriptions :column="2" border>
                     <el-descriptions-item label="校区">{{ client.schoolName }}</el-descriptions-item>
                     <el-descriptions-item label="预约人">{{ client.appointerName }}</el-descriptions-item>
+                    <el-descriptions-item v-if="client.comboId" label="套餐">{{ client.comboName }}</el-descriptions-item>
                     <el-descriptions-item label="课程">{{ client.courseNames }}</el-descriptions-item>
                     <el-descriptions-item label="预约日期">{{ client.appointDate }}</el-descriptions-item>
                     <el-descriptions-item label="下次沟通日期">{{ client.nextTalkDate }}</el-descriptions-item>
@@ -37,7 +38,7 @@
                     <el-descriptions-item label="成单时间">{{ client.cooperateTime }}</el-descriptions-item>
                     <el-descriptions-item label="合同编号">{{ client.contractNo }}</el-descriptions-item>
                     <el-descriptions-item label="预约备注" :span="2">{{ client.detailedInfo
-                        }}</el-descriptions-item>
+                    }}</el-descriptions-item>
                 </el-descriptions>
             </div>
 
@@ -74,9 +75,12 @@
                 <el-descriptions :column="2" border>
                     <el-descriptions-item label="校区">{{ client.schoolName }}</el-descriptions-item>
                     <el-descriptions-item label="已学课时（周）">{{ client.learnedWeeks }}</el-descriptions-item>
+                    <el-descriptions-item v-if="client.comboId" label="学习套餐">{{ client.comboName
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="学习课程">{{ client.courseNames }}</el-descriptions-item>
                 </el-descriptions>
 
-                <h4 style="margin: 20px 0 15px;">课程信息</h4>
+                <h3 style="margin: 20px 0 15px;">课程信息</h3>
                 <el-table :data="courseRecords" style="width: 100%" class="course-table">
                     <el-table-column prop="name" label="课程名称" align="center" min-width="120" />
                     <el-table-column prop="category" label="课程类别" align="center" min-width="100">
