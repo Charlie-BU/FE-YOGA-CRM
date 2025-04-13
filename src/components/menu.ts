@@ -1,42 +1,55 @@
 // 侧边栏在这边改
 import { Menus } from "@/types/menu";
 
+// icon详见：https://element-plus.org/zh-CN/component/icon.html
 export const menuData: Menus[] = [
     {
         id: "0",
         title: "系统首页",
         index: "/dashboard",
-        icon: "Odometer"
+        icon: "HomeFilled"
     },
     {
         id: "01",
         title: "线索公海",
         index: "/clue-sea",
-        icon: "Odometer"
+        icon: "Share"
     },
     {
         id: "02",
         title: "客户管理",
         index: "/client-management",
-        icon: "Odometer"
+        icon: "User"
     },
     {
         id: "03",
-        title: "人员管理",
-        index: "/user-management",
-        icon: "Odometer"
+        title: "成单管理",
+        index: "/deal-management",
+        icon: "DocumentChecked"
     },
     {
         id: "04",
-        title: "组织管理",
-        index: "/organ-management",
-        icon: "Odometer"
+        title: "人员管理",
+        index: "/user-management",
+        icon: "UserFilled"
     },
     {
         id: "05",
+        title: "组织管理",
+        index: "/organ-management",
+        icon: "OfficeBuilding"
+    },
+    {
+        id: "06",
         title: "课程管理",
         index: "/course-management",
-        icon: "Odometer"
+        icon: "Reading"
+    },
+    {
+        id: "07",
+        title: "费用管理",
+        index: "/payment-management",
+        icon: "Money"
     },
     {
         id: "1",

@@ -41,6 +41,14 @@ const routes: RouteRecordRaw[] = [
                 component: () => import(/* webpackChunkName: "client-management" */ "../views/pages/client-management.vue")
             },
             {
+                path: "/deal-management",
+                name: "DealManagement",
+                component: () => import("@/views/pages/deal-management.vue"),
+                meta: {
+                    title: "成单管理"
+                }
+            },
+            {
                 path: "/user-management",
                 name: "user-management",
                 meta: {
@@ -62,7 +70,15 @@ const routes: RouteRecordRaw[] = [
                 meta: {
                     title: "课程管理"
                 },
-                component: () => import(/* webpackChunkName: "course-management" */ "../views/pages/course-management.vue")
+                component: () => import("../views/pages/course-management.vue")
+            },
+            {
+                path: "/payment-management",
+                name: "PaymentManagement",
+                component: () => import("@/views/pages/payment-management.vue"),
+                meta: {
+                    title: "费用管理"
+                }
             },
 
             {

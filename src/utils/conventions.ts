@@ -284,6 +284,14 @@ export const paymentTypes: Convention[] = [
     },
     {
         id: 3,
+        name: "住宿费"
+    },
+    {
+        id: 4,
+        name: "补差价"
+    },
+    {
+        id: 5,
         name: "其他"
     }
 ];
