@@ -14,21 +14,18 @@
                     <el-button v-if="briefUserInfo?.usertype > 1" type="warning" :icon="CirclePlusFilled"
                         @click="router.push('/register')">添加用户</el-button>
 
-                    <el-table ref="tableRef" :data="filteredTableData" style="width: 100%; margin-top: 20px;"
+                    <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
                         @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
-                        <el-table-column v-for="col in columns" :key="col.prop || col.type"
-                            :type="col.type" :label="col.label" :prop="col.prop"
-                            :width="col.width" :align="col.align" :formatter="col.formatter"
-                            show-overflow-tooltip>
+                        <el-table-column v-for="col in columns" :key="col.prop || col.type" :type="col.type"
+                            :label="col.label" :prop="col.prop" :width="col.width" :align="col.align"
+                            :formatter="col.formatter" show-overflow-tooltip>
                         </el-table-column>
                         <el-table-column label="操作" width="260" fixed="right" align="center">
                             <template #default="scope">
-                                <el-button size="small" type="primary"
-                                    @click="handleEdit(scope.row)">编辑</el-button>
+                                <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
                                 <el-button size="small" type="warning"
                                     @click="handleInitPwd(scope.row)">初始化密码</el-button>
-                                <el-button size="small" type="danger"
-                                    @click="handleDelete(scope.row)">删除</el-button>
+                                <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
                             </template>
                         </el-table-column>
                     </el-table>
@@ -87,8 +84,9 @@ const briefUserInfo = ref(null)
 
 onMounted(async () => {
     briefUserInfo.value = await loginCheck();
-    await getUsers();
-})
+    await getSchools(); // 先获取校区列表
+    await getUsers(); // 再获取用户列表
+});
 const router = useRouter();
 
 // 查询相关
@@ -129,14 +127,19 @@ const tableData = ref([]);
 // 添加 loading 状态
 const loading = ref(false);
 
-const getUsers = async () => {
+const getUsers = async (schoolId = null) => {
     loading.value = true;
     try {
-        const res = await request.post("/user/getAllUsers", {
+        const params = {
             pageIndex: page.index,
             pageSize: page.size,
             name: query.name
-        }, {
+        };
+        // 只有当 schoolId 不为 null 时才添加到请求参数
+        if (schoolId !== null) {
+            Object.assign(params, { schoolId });
+        }
+        const res = await request.post("/user/getAllUsers", params, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
             }
@@ -410,25 +413,11 @@ const treeData = computed(() => {
 });
 
 // 添加树节点点击处理函数
-const handleNodeClick = (node) => {
+const handleNodeClick = async (node) => {
     selectedSchoolId.value = node.id;
+    page.index = 1;  // 重置页码
+    await getUsers(node.id);
 };
-
-// 添加过滤后的用户数据计算属性
-const filteredTableData = computed(() => {
-    if (!selectedSchoolId.value) {
-        return tableData.value;
-    }
-    return tableData.value.filter(user => user.schoolId === selectedSchoolId.value);
-});
-
-// 修改 onMounted
-onMounted(async () => {
-    briefUserInfo.value = await loginCheck();
-    await getSchools(); // 先获取校区列表
-    await getUsers(); // 再获取用户列表
-});
-
 </script>
 
 <style scoped>
