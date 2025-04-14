@@ -2,33 +2,43 @@
     <div>
         <TableSearch :query="query" :options="searchOpt" :search="handleSearch" />
         <div class="container">
-            <el-button v-if="briefUserInfo?.usertype > 1" type="warning" :icon="CirclePlusFilled"
-                @click="router.push('/register')">添加用户</el-button>
+            <div class="user-layout">
+                <!-- 添加左侧树状结构 -->
+                <div class="tree-container">
+                    <el-tree :data="treeData" :props="{ label: 'name' }" @node-click="handleNodeClick"
+                        default-expand-all highlight-current />
+                </div>
 
-            <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
-                @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
-                <el-table-column type="selection" width="55" align="center" />
-                <template v-for="item in columns" :key="item.prop">
-                    <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"
-                        :width="item.width" :align="item.align" show-overflow-tooltip />
-                    <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width"
-                        :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
-                </template>
+                <!-- 右侧用户列表 -->
+                <div class="table-container">
+                    <el-button v-if="briefUserInfo?.usertype > 1" type="warning" :icon="CirclePlusFilled"
+                        @click="router.push('/register')">添加用户</el-button>
 
-                <el-table-column v-if="briefUserInfo?.usertype > 1" label="操作" width="300" fixed="right" align="center">
-                    <template #default="scope">
-                        <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-                        <el-button size="small" type="warning" @click="handleInitPwd(scope.row)">初始化密码</el-button>
-                        <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
+                    <el-table ref="tableRef" :data="filteredTableData" style="width: 100%; margin-top: 20px;"
+                        @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
+                        <el-table-column v-for="col in columns" :key="col.prop || col.type"
+                            :type="col.type" :label="col.label" :prop="col.prop"
+                            :width="col.width" :align="col.align" :formatter="col.formatter"
+                            show-overflow-tooltip>
+                        </el-table-column>
+                        <el-table-column label="操作" width="260" fixed="right" align="center">
+                            <template #default="scope">
+                                <el-button size="small" type="primary"
+                                    @click="handleEdit(scope.row)">编辑</el-button>
+                                <el-button size="small" type="warning"
+                                    @click="handleInitPwd(scope.row)">初始化密码</el-button>
+                                <el-button size="small" type="danger"
+                                    @click="handleDelete(scope.row)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
 
-            <div class="pagination" style="margin-top: 20px; text-align: right;">
-                <el-pagination v-model:current-page="page.index" v-model:page-size="page.size" :total="page.total"
-                    @current-change="changePage" layout="total, prev, pager, next">
-                    <template #default></template>
-                </el-pagination>
+                    <div class="pagination" style="margin-top: 20px; text-align: right;">
+                        <el-pagination v-model:current-page="page.index" v-model:page-size="page.size"
+                            :total="page.total" @current-change="changePage" layout="total, prev, pager, next">
+                        </el-pagination>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -58,12 +68,11 @@
                 </span>
             </template>
         </el-dialog>
-
     </div>
 </template>
 
 <script setup lang="ts" name="system-user">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
 import { CirclePlusFilled } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
@@ -366,9 +375,84 @@ const tableRef = ref();
 const handleRowClick = (row) => {
     tableRef.value?.toggleRowSelection(row);
 };
+
+// 添加树状结构相关数据
+const selectedSchoolId = ref('');
+const schoolData = ref([]);
+
+// 获取校区列表
+const getSchools = async () => {
+    try {
+        const res = await request.post("/dept/getAllSchools", {}, {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        });
+        if (res.data.status === 200) {
+            schoolData.value = res.data.schools;
+        }
+    } catch (error) {
+        console.error('获取校区列表失败:', error);
+        ElMessage.error('获取校区列表失败');
+    }
+};
+
+// 添加树形数据计算属性
+const treeData = computed(() => {
+    return [
+        {
+            id: '',
+            name: '全部校区',
+            children: schoolData.value.map(school => ({
+                id: school.id,
+                name: school.name
+            }))
+        }
+    ];
+});
+
+// 添加树节点点击处理函数
+const handleNodeClick = (node) => {
+    selectedSchoolId.value = node.id;
+};
+
+// 添加过滤后的用户数据计算属性
+const filteredTableData = computed(() => {
+    if (!selectedSchoolId.value) {
+        return tableData.value;
+    }
+    return tableData.value.filter(user => user.schoolId === selectedSchoolId.value);
+});
+
+// 修改 onMounted
+onMounted(async () => {
+    briefUserInfo.value = await loginCheck();
+    await getSchools(); // 先获取校区列表
+    await getUsers(); // 再获取用户列表
+});
+
 </script>
 
 <style scoped>
+.container {
+    padding: 20px;
+}
+
+.user-layout {
+    display: flex;
+    gap: 20px;
+}
+
+.tree-container {
+    width: 200px;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.table-container {
+    flex: 1;
+}
+
 .el-table :deep(.cell) {
     white-space: nowrap;
 }

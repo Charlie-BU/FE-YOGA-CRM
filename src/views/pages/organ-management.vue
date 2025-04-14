@@ -23,32 +23,48 @@
             </el-tab-pane>
             <el-tab-pane label="部门管理" name="department">
                 <div class="container">
-                    <el-button type="warning" :icon="CirclePlusFilled" @click="handleAdd('department')">新增部门</el-button>
-                    <el-table :data="departmentData" style="width: 100%; margin-top: 20px;"
-                        v-loading="loading.department">
-                        <el-table-column type="index" label="序号" width="55" align="center" />
-                        <el-table-column prop="name" label="部门名称" align="center" />
-                        <el-table-column prop="info" label="备注" align="center" />
-                        <el-table-column label="操作" width="180" fixed="right" align="center">
-                            <template #default="scope">
-                                <el-button size="small" type="primary"
-                                    @click="handleEdit('department', scope.row)">编辑</el-button>
-                                <el-button size="small" type="danger"
-                                    @click="handleDelete('department', scope.row)">删除</el-button>
-                            </template>
-                            <template #filter-icon="slotProps"></template>
-                        </el-table-column>
-                    </el-table>
+                    <div class="department-layout">
+                        <!-- 添加左侧树状结构 -->
+                        <div class="tree-container">
+                            <el-tree :data="treeData" :props="{ label: 'name' }" @node-click="handleNodeClick"
+                                default-expand-all highlight-current />
+                        </div>
+                        <!-- 右侧部门列表 -->
+                        <div class="table-container">
+                            <el-button type="warning" :icon="CirclePlusFilled"
+                                @click="handleAdd('department')">新增部门</el-button>
+                            <el-table :data="filteredDepartmentData" style="width: 100%; margin-top: 20px;"
+                                v-loading="loading.department">
+                                <el-table-column type="index" label="序号" width="55" align="center" />
+                                <el-table-column prop="name" label="部门名称" align="center" />
+                                <el-table-column prop="schoolName" label="所属校区" align="center" />
+                                <el-table-column prop="info" label="备注" align="center" />
+                                <el-table-column label="操作" width="180" fixed="right" align="center">
+                                    <template #default="scope">
+                                        <el-button size="small" type="primary"
+                                            @click="handleEdit('department', scope.row)">编辑</el-button>
+                                        <el-button size="small" type="danger"
+                                            @click="handleDelete('department', scope.row)">删除</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
                 </div>
             </el-tab-pane>
-
         </el-tabs>
 
+        <!-- 部门编辑弹窗 -->
         <!-- 部门编辑弹窗 -->
         <el-dialog :title="isEdit ? '编辑部门' : '新增部门'" v-model="departmentDialog" width="500px" destroy-on-close>
             <el-form ref="departmentFormRef" :model="departmentForm" :rules="departmentRules" label-width="100px">
                 <el-form-item label="部门名称" prop="name">
                     <el-input v-model="departmentForm.name" placeholder="请输入部门名称" />
+                </el-form-item>
+                <el-form-item label="所属校区" prop="schoolId">
+                    <el-select v-model="departmentForm.schoolId" placeholder="请选择所属校区" style="width: 100%">
+                        <el-option v-for="item in schoolData" :key="item.id" :label="item.name" :value="item.id" />
+                    </el-select>
                 </el-form-item>
                 <el-form-item label="备注">
                     <el-input v-model="departmentForm.info" type="textarea" placeholder="请输入备注信息" />
@@ -61,6 +77,7 @@
                 </span>
             </template>
         </el-dialog>
+
 
         <!-- 校区编辑弹窗 -->
         <el-dialog :title="isEdit ? '编辑校区' : '新增校区'" v-model="schoolDialog" width="500px" destroy-on-close>
@@ -86,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { CirclePlusFilled } from '@element-plus/icons-vue';
 import request from '@/utils/request';
@@ -102,10 +119,12 @@ const departmentData = ref([]);
 const departmentDialog = ref(false);
 const departmentForm = ref({
     name: '',
+    schoolId: '',
     info: ''
 });
 const departmentRules = {
-    name: [{ required: true, message: '请输入部门名称', trigger: 'blur' }]
+    name: [{ required: true, message: '请输入部门名称', trigger: 'blur' }],
+    schoolId: [{ required: true, message: '请选择所属校区', trigger: 'change' }]
 };
 const departmentFormRef = ref();
 
@@ -127,8 +146,8 @@ const schoolFormRef = ref();
 const isEdit = ref(false);
 
 onMounted(async () => {
-    await getDepartments();
-    await getSchools();
+    await getSchools(); // 先获取校区列表
+    await getDepartments(); // 再获取部门列表，以便关联校区名称
     console.log(departmentData.value);
     console.log(schoolData.value);
 });
@@ -142,6 +161,12 @@ const getDepartments = async () => {
         });
         if (res.data.status === 200) {
             departmentData.value = res.data.depts;
+
+            // 添加校区名称
+            departmentData.value.forEach(dept => {
+                const school = schoolData.value.find(s => s.id === dept.schoolId);
+                dept.schoolName = school ? school.name : '未知校区';
+            });
         }
     } catch (error) {
         console.error('获取部门列表失败:', error);
@@ -173,7 +198,7 @@ const getSchools = async () => {
 const handleAdd = (type: 'department' | 'school') => {
     isEdit.value = false;
     if (type === 'department') {
-        departmentForm.value = { name: '', info: '' };
+        departmentForm.value = { name: '', schoolId: '', info: '' };
         departmentDialog.value = true;
     } else {
         schoolForm.value = { name: '', address: '', info: '' };
@@ -265,11 +290,56 @@ const submitForm = async (type: 'department' | 'school') => {
         }
     });
 };
+
+// 添加树状结构相关数据
+const selectedSchoolId = ref('');
+const treeData = computed(() => {
+    return [
+        {
+            id: '',
+            name: '全部校区',
+            children: schoolData.value.map(school => ({
+                id: school.id,
+                name: school.name
+            }))
+        }
+    ];
+});
+
+// 添加树节点点击处理函数
+const handleNodeClick = (node) => {
+    selectedSchoolId.value = node.id;
+};
+
+// 添加过滤后的部门数据计算属性
+const filteredDepartmentData = computed(() => {
+    if (!selectedSchoolId.value) {
+        return departmentData.value;
+    }
+    return departmentData.value.filter(dept => dept.schoolId === selectedSchoolId.value);
+});
 </script>
 
 <style scoped>
 .container {
     padding: 20px;
+}
+
+.department-layout {
+    display: flex;
+    gap: 20px;
+}
+
+.tree-container {
+    width: 200px;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.table-container {
+    flex: 1;
 }
 
 .el-table :deep(.cell) {
