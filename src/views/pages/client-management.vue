@@ -17,14 +17,23 @@
             <el-button v-if="currClientStatus === 4" type="primary" :disabled="selectedRows.length !== 1"
                 @click="handlePayment">交定金</el-button>
 
+            <!-- 添加列设置按钮 -->
+            <!-- 列设置按钮 -->
+            <div class="table-toolbar" style="margin-top: 10px; text-align: right;">
+                <el-tooltip effect="dark" content="列设置" placement="top">
+                    <el-button type="primary" :icon="Setting" circle @click="columnSettingVisible = true"></el-button>
+                </el-tooltip>
+            </div>
+
             <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
                 @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
-                <el-table-column type="selection" width="55" align="center" />
-                <template v-for="item in columns" :key="item.prop">
+                <el-table-column type="selection" width="55" align="center" fixed="left" />
+                <!-- 修改为使用displayColumns，并固定序号和姓名列 -->
+                <template v-for="item in displayColumns" :key="item.prop">
                     <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"
-                        :width="item.width" :align="item.align" show-overflow-tooltip />
+                        :width="item.width" :align="item.align" show-overflow-tooltip fixed="left" />
                     <el-table-column v-else-if="item.prop === 'name'" :prop="item.prop" :label="item.label"
-                        :width="item.width" :align="item.align" show-overflow-tooltip>
+                        :width="item.width" :align="item.align" show-overflow-tooltip fixed="left">
                         <template #default="scope">
                             <span class="clickable-name" @click.stop="showClientInfo(scope.row)">
                                 {{ scope.row.name }}
@@ -54,6 +63,23 @@
                 }}</el-button>
             </div>
         </div>
+
+        <!-- 添加列设置弹窗 -->
+        <el-dialog title="列设置" v-model="columnSettingVisible" width="500px">
+            <el-checkbox v-model="checkAll" :indeterminate="isIndeterminate"
+                @change="handleCheckAllChange">全选</el-checkbox>
+            <el-divider></el-divider>
+            <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
+                <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
+                    }}</el-checkbox>
+            </el-checkbox-group>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="columnSettingVisible = false">取消</el-button>
+                    <el-button type="primary" @click="applyColumnSettings">确定</el-button>
+                </span>
+            </template>
+        </el-dialog>
 
         <!-- 编辑弹窗 -->
         <el-dialog :title="isEdit ? '编辑' : '新增'" v-model="editModelVisible" width="700px" destroy-on-close
@@ -224,9 +250,9 @@
 </template>
 
 <script setup lang="ts" name="system-user">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { Download } from '@element-plus/icons-vue';
+import { Download, Setting } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
 import request from '@/utils/request';
 import TableSearch from '@/components/table-search.vue';
@@ -243,6 +269,8 @@ const briefUserInfo = ref(null)
 onMounted(async () => {
     briefUserInfo.value = await loginCheck();
     await getClients();
+    // 初始化列设置
+    initColumnSettings();
 })
 
 // 查询相关
@@ -260,7 +288,7 @@ const handleSearch = async () => {
 
 // 表格相关
 const defaultColumns = [
-    { type: 'index', label: '序号', width: 55, align: 'center' },
+    { type: 'index', label: '序号', width: 55, align: 'center', prop: 'index' },
     {
         prop: 'name',
         label: '姓名',
@@ -299,7 +327,7 @@ const defaultColumns = [
 ]
 
 const secondColumns = [
-    { type: 'index', label: '序号', width: 55, align: 'center' },
+    { type: 'index', label: '序号', width: 55, align: 'center', prop: 'index' },
     {
         prop: 'name',
         label: '姓名',
@@ -337,6 +365,120 @@ const secondColumns = [
     { prop: 'detailedInfo', label: '预约备注', width: 150, align: 'center' }
 ]
 const columns = ref(defaultColumns)
+
+// 列设置相关
+const columnSettingVisible = ref(false);
+const checkedColumns = ref([]);
+const checkAll = ref(false);
+const isIndeterminate = ref(true);
+
+// 计算属性：列选项
+const columnOptions = computed(() => {
+    // 过滤掉序号和姓名列，这些列不允许隐藏
+    if (currClientStatus.value === 3) {
+        return defaultColumns.filter(col => col.prop !== 'operator' && col.prop !== 'index' && col.prop !== 'name');
+    } else {
+        return secondColumns.filter(col => col.prop !== 'operator' && col.prop !== 'index' && col.prop !== 'name');
+    }
+});
+
+// 计算属性：显示的列
+const displayColumns = computed(() => {
+    const currentColumns = currClientStatus.value === 3 ? defaultColumns : secondColumns;
+    // 始终显示序号和姓名列，加上用户选择的其他列
+    const fixedColumns = currentColumns.filter(col => col.prop === 'index' || col.prop === 'name');
+    const userSelectedColumns = currentColumns.filter(col =>
+        col.prop !== 'index' &&
+        col.prop !== 'name' &&
+        checkedColumns.value.includes(col.prop)
+    );
+    return [...fixedColumns, ...userSelectedColumns];
+});
+
+// 初始化列设置
+const initColumnSettings = () => {
+    updateColumnSettings();
+};
+
+// 更新列设置
+const updateColumnSettings = () => {
+    const currentColumns = currClientStatus.value === 3 ? defaultColumns : secondColumns;
+    // 默认显示所有列，但不包括固定列（序号和姓名）
+    const defaultColumnsToCheck = currentColumns
+        .filter(col => col.prop !== 'index' && col.prop !== 'name')
+        .map(col => col.prop);
+
+    checkedColumns.value = defaultColumnsToCheck;
+    updateCheckAllStatus();
+
+    // 尝试从本地存储加载用户保存的列设置
+    const storageKey = currClientStatus.value === 3 ? 'clientManagementColumns1' : 'clientManagementColumns2';
+    const savedColumns = localStorage.getItem(storageKey);
+    if (savedColumns) {
+        try {
+            checkedColumns.value = JSON.parse(savedColumns);
+            updateCheckAllStatus();
+        } catch (e) {
+            console.error('加载列设置失败:', e);
+        }
+    }
+};
+
+// 全选/取消全选
+const handleCheckAllChange = (val) => {
+    checkedColumns.value = val ? columnOptions.value.map(col => col.prop) : [];
+    isIndeterminate.value = false;
+};
+
+// 更新全选状态
+const handleCheckedColumnsChange = (value) => {
+    updateCheckAllStatus();
+};
+
+// 更新全选状态
+const updateCheckAllStatus = () => {
+    const checkedCount = checkedColumns.value.length;
+    checkAll.value = checkedCount === columnOptions.value.length;
+    isIndeterminate.value = checkedCount > 0 && checkedCount < columnOptions.value.length;
+};
+
+// 应用列设置
+const applyColumnSettings = () => {
+    // 确保至少选择了一列
+    if (checkedColumns.value.length === 0) {
+        ElMessage.warning('请至少选择一列');
+        return;
+    }
+
+    // 保存到本地存储
+    const storageKey = currClientStatus.value === 3 ? 'clientManagementColumns1' : 'clientManagementColumns2';
+    localStorage.setItem(storageKey, JSON.stringify(checkedColumns.value));
+    columnSettingVisible.value = false;
+    ElMessage.success('列设置已保存');
+};
+
+// 修改切换客户状态的方法，添加列设置更新
+const switchClientStatus = async () => {
+    if (currClientStatus.value === 3) {
+        currClientStatus.value = 4;
+        columns.value = secondColumns as {
+            type?: string;
+            prop: string;
+            label: string;
+            width: number;
+            align: string;
+            renderCell?: (h: any, { row }: { row: any }) => any;
+            formatter?: (row: any) => string;
+        }[];
+    } else {
+        currClientStatus.value = 3;
+        columns.value = defaultColumns;
+    }
+    // 更新列设置
+    updateColumnSettings();
+    await getClients();
+}
+
 const page = reactive({
     index: 1,
     size: 10,
@@ -372,17 +514,6 @@ const getClients = async () => {
         loading.value = false;
     }
 };
-
-const switchClientStatus = async () => {
-    if (currClientStatus.value === 3) {
-        currClientStatus.value = 4;
-        columns.value = secondColumns;
-    } else {
-        currClientStatus.value = 3;
-        columns.value = defaultColumns;
-    }
-    await getClients();
-}
 
 const changePage = async (val: number) => {
     if (loading.value) return; // 如果正在加载，则不执行
@@ -1045,6 +1176,35 @@ const showClientInfo = (client) => {
     white-space: nowrap;
 }
 
+.import-container {
+    padding: 20px;
+}
+
+.download-template,
+.upload-file {
+    margin-bottom: 20px;
+}
+
+.download-template p,
+.upload-file p {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+/* 添加列设置相关样式 */
+.table-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.el-checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+
 .contract-content {
     padding: 20px;
     line-height: 1.8;
@@ -1061,5 +1221,9 @@ const showClientInfo = (client) => {
 
 .clickable-name:hover {
     text-decoration: underline;
+}
+
+.el-table :deep(.el-table__fixed) {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 </style>

@@ -9,11 +9,17 @@
             <el-button type="danger" :disabled="!selectedRows.length" @click="handleUnassign">取消分配</el-button>
             <el-button type="success" :disabled="!selectedRows.length" @click="handleToClient">转客户</el-button>
 
+            <!-- 列设置 -->
+            <div class="table-toolbar" style="margin-top: 10px; text-align: right;">
+                <el-tooltip effect="dark" content="列设置" placement="top">
+                    <el-button type="primary" :icon="Setting" circle @click="columnSettingVisible = true"></el-button>
+                </el-tooltip>
+            </div>
 
-            <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
+            <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 10px;"
                 @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
                 <el-table-column type="selection" width="55" align="center" />
-                <template v-for="item in columns" :key="item.prop">
+                <template v-for="item in displayColumns" :key="item.prop">
                     <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"
                         :width="item.width" :align="item.align" show-overflow-tooltip />
                     <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width"
@@ -35,6 +41,24 @@
                 </el-pagination>
             </div>
         </div>
+
+        <!-- 添加列设置弹窗 -->
+        <el-dialog title="列设置" v-model="columnSettingVisible" width="500px">
+            <el-checkbox v-model="checkAll" :indeterminate="isIndeterminate"
+                @change="handleCheckAllChange">全选</el-checkbox>
+            <el-divider></el-divider>
+            <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
+                <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
+                    }}</el-checkbox>
+            </el-checkbox-group>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="columnSettingVisible = false">取消</el-button>
+                    <el-button type="primary" @click="applyColumnSettings">确定</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
         <el-dialog :title="isEdit ? '编辑' : '新增'" v-model="editModelVisible" width="700px" destroy-on-close
             :close-on-click-modal="false" @close="closeDialog">
             <el-form ref="formRef" :model="formData" :rules="rules" :label-width="options.labelWidth">
@@ -121,9 +145,9 @@
 </template>
 
 <script setup lang="ts" name="system-user">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { CirclePlusFilled, Download, Upload } from '@element-plus/icons-vue';
+import { CirclePlusFilled, Download, Upload, Setting } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
 import request from '@/utils/request';
 import TableSearch from '@/components/table-search.vue';
@@ -133,6 +157,7 @@ import * as XLSX from 'xlsx';
 
 onMounted(async () => {
     await getClients();
+    initColumnSettings();
 })
 
 // 查询相关
@@ -149,8 +174,8 @@ const handleSearch = async () => {
 };
 
 // 表格相关
-const columns = ref([
-    { type: 'index', label: '序号', width: 55, align: 'center' },
+const allColumns = ref([
+    { type: 'index', label: '序号', width: 55, align: 'center', prop: 'index' },
     { prop: 'name', label: '姓名', width: 120, align: 'center' },
     { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
     { prop: 'gender', label: '性别', align: 'center', formatter: (row) => conventions.getGender(row.gender) },
@@ -168,7 +193,87 @@ const columns = ref([
     { prop: 'creatorName', label: '创建人', align: 'center' },
     { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
     { prop: 'info', label: '备注', width: 150, align: 'center' },
-])
+]);
+
+// 列设置相关
+const columnSettingVisible = ref(false);
+const checkedColumns = ref([]);
+const checkAll = ref(false);
+const isIndeterminate = ref(true);
+
+// 计算属性：列选项
+const columnOptions = computed(() => {
+    // 过滤掉序号和姓名列，这些列不允许隐藏
+    return allColumns.value.filter(col => col.prop !== 'operator' && col.prop !== 'index' && col.prop !== 'name');
+});
+
+// 计算属性：显示的列
+const displayColumns = computed(() => {
+    // 始终显示序号和姓名列，加上用户选择的其他列
+    const fixedColumns = allColumns.value.filter(col => col.prop === 'index' || col.prop === 'name');
+    const userSelectedColumns = allColumns.value.filter(col => 
+        col.prop !== 'index' && 
+        col.prop !== 'name' && 
+        checkedColumns.value.includes(col.prop)
+    );
+    return [...fixedColumns, ...userSelectedColumns];
+});
+
+// 初始化列设置
+const initColumnSettings = () => {
+    // 默认显示所有列，但不包括固定列（序号和姓名）
+    const defaultColumns = allColumns.value
+        .filter(col => col.prop !== 'index' && col.prop !== 'name')
+        .map(col => col.prop);
+    
+    checkedColumns.value = defaultColumns;
+    updateCheckAllStatus();
+
+    // 尝试从本地存储加载用户保存的列设置
+    const savedColumns = localStorage.getItem('clueSeaColumns');
+    if (savedColumns) {
+        try {
+            checkedColumns.value = JSON.parse(savedColumns);
+            updateCheckAllStatus();
+        } catch (e) {
+            console.error('加载列设置失败:', e);
+        }
+    }
+};
+
+// 全选/取消全选
+const handleCheckAllChange = (val) => {
+    checkedColumns.value = val ? columnOptions.value.map(col => col.prop) : [];
+    isIndeterminate.value = false;
+};
+
+// 更新全选状态
+const handleCheckedColumnsChange = (value) => {
+    updateCheckAllStatus();
+};
+
+// 更新全选状态
+const updateCheckAllStatus = () => {
+    const checkedCount = checkedColumns.value.length;
+    checkAll.value = checkedCount === columnOptions.value.length;
+    isIndeterminate.value = checkedCount > 0 && checkedCount < columnOptions.value.length;
+};
+
+// 应用列设置
+const applyColumnSettings = () => {
+    // 确保至少选择了一列
+    if (checkedColumns.value.length === 0) {
+        ElMessage.warning('请至少选择一列');
+        return;
+    }
+
+    // 保存到本地存储
+    localStorage.setItem('clueSeaColumns', JSON.stringify(checkedColumns.value));
+    columnSettingVisible.value = false;
+    ElMessage.success('列设置已保存');
+};
+
+
 const page = reactive({
     index: 1,
     size: 10,
@@ -675,5 +780,17 @@ const handleUpload = async () => {
 .upload-file p {
     margin-bottom: 10px;
     font-weight: bold;
+}
+
+.table-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.el-checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
 }
 </style>

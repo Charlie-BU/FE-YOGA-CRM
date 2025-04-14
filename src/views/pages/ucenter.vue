@@ -9,6 +9,8 @@
                 <div class="user-info">
                     <div class="info-name">{{ user?.username || "未登录" }}</div>
                     <div class="info-desc">
+                        <span>{{ user?.schoolName }}</span>
+                        <el-divider direction="vertical" />
                         <span>{{ user?.departmentName }}</span>
                         <el-divider direction="vertical" />
                         <span>{{ getVocation(user?.vocation) }}</span>
