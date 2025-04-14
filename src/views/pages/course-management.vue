@@ -3,81 +3,113 @@
         <el-tabs v-model="activeTab">
             <el-tab-pane label="课程管理" name="course">
                 <div class="container">
-                    <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true">新增课程</el-button>
-                    <!-- 原有的课程管理表格和弹窗 -->
-                    <el-table :data="tableData" style="width: 100%; margin-top: 20px;" v-loading="loading">
-                        <el-table-column type="index" label="序号" width="55" align="center">
-                            <template #filter-icon="slotProps"></template>
-                        </el-table-column>
-                        <el-table-column prop="name" label="课程名称" width="150" align="center" show-overflow-tooltip />
-                        <el-table-column prop="category" label="课程类别" width="100" align="center" show-overflow-tooltip>
-                            <template #default="scope">
-                                {{ conventions.getCourseCategory(scope.row.category) }}
-                            </template>
-                        </el-table-column>
-                        <el-table-column prop="schoolName" label="所属校区" width="120" align="center"
-                            show-overflow-tooltip />
-                        <el-table-column prop="duration" label="课时" width="100" align="center" show-overflow-tooltip />
-                        <el-table-column prop="price" label="价格" width="100" align="center" show-overflow-tooltip />
-                        <el-table-column prop="chiefTeacherName" label="主讲教师" width="100" align="center"
-                            show-overflow-tooltip />
-                        <el-table-column prop="classTeacherName" label="班主任" width="100" align="center"
-                            show-overflow-tooltip />
-                        <el-table-column prop="teachingAssistantName" label="助教" width="100" align="center"
-                            show-overflow-tooltip />
-                        <el-table-column prop="info" label="备注" width="150" align="center" show-overflow-tooltip />
-                        <el-table-column prop="creatorName" label="创建人" width="100" align="center"
-                            show-overflow-tooltip />
-                        <el-table-column prop="createdTime" label="创建时间" width="150" align="center"
-                            show-overflow-tooltip />
+                    <div class="course-layout">
+                        <!-- 添加课程管理的树状结构 -->
+                        <div class="tree-container">
+                            <el-tree :data="treeData" :props="{ label: 'name' }" @node-click="handleNodeClick"
+                                default-expand-all highlight-current />
+                        </div>
 
-                        <el-table-column label="操作" width="180" fixed="right" align="center">
-                            <template #default="scope">
-                                <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-                                <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-                            </template>
-                        </el-table-column>
-                    </el-table>
+                        <div class="table-container">
+                            <el-button type="warning" :icon="CirclePlusFilled"
+                                @click="editModelVisible = true">新增课程</el-button>
+                            <!-- 原有的课程管理表格和弹窗 -->
+                            <el-table :data="tableData" style="width: 100%; margin-top: 20px;" v-loading="loading">
+                                <el-table-column type="index" label="序号" width="55" align="center">
+                                    <template #filter-icon="slotProps"></template>
+                                </el-table-column>
+                                <el-table-column prop="name" label="课程名称" width="150" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="category" label="课程类别" width="100" align="center"
+                                    show-overflow-tooltip>
+                                    <template #default="scope">
+                                        {{ conventions.getCourseCategory(scope.row.category) }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="schoolName" label="所属校区" width="120" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="duration" label="课时" width="100" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="price" label="价格" width="100" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="chiefTeacherName" label="主讲教师" width="100" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="classTeacherName" label="班主任" width="100" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="teachingAssistantName" label="助教" width="100" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="info" label="备注" width="150" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="creatorName" label="创建人" width="100" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="createdTime" label="创建时间" width="150" align="center"
+                                    show-overflow-tooltip />
 
-                    <div class="pagination" style="margin-top: 20px; text-align: right;">
-                        <el-pagination v-model:current-page="page.index" v-model:page-size="page.size"
-                            :total="page.total" @current-change="changePage" layout="total, prev, pager, next" />
+                                <el-table-column label="操作" width="180" fixed="right" align="center">
+                                    <template #default="scope">
+                                        <el-button size="small" type="primary"
+                                            @click="handleEdit(scope.row)">编辑</el-button>
+                                        <el-button size="small" type="danger"
+                                            @click="handleDelete(scope.row)">删除</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+
+                            <div class="pagination" style="margin-top: 20px; text-align: right;">
+                                <el-pagination v-model:current-page="page.index" v-model:page-size="page.size"
+                                    :total="page.total" @current-change="changePage"
+                                    layout="total, prev, pager, next" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </el-tab-pane>
 
             <el-tab-pane label="套餐管理" name="combo">
                 <div class="container">
-                    <el-button type="warning" :icon="CirclePlusFilled"
-                        @click="comboDialogVisible = true">新增套餐</el-button>
+                    <div class="course-layout">
+                        <!-- 添加套餐管理的树状结构 -->
+                        <div class="tree-container">
+                            <el-tree :data="treeData" :props="{ label: 'name' }" @node-click="handleComboNodeClick"
+                                default-expand-all highlight-current />
+                        </div>
 
-                    <el-table :data="comboData" style="width: 100%; margin-top: 20px;" v-loading="comboLoading">
-                        <el-table-column type="index" label="序号" width="55" align="center">
-                            <template #filter-icon="slotProps"></template>
-                        </el-table-column>
-                        <el-table-column prop="name" label="套餐名称" width="150" align="center" show-overflow-tooltip />
-                        <el-table-column prop="schoolName" label="所属校区" width="150" align="center"
-                            show-overflow-tooltip />
+                        <div class="table-container">
+                            <el-button type="warning" :icon="CirclePlusFilled"
+                                @click="comboDialogVisible = true">新增套餐</el-button>
 
-                        <el-table-column prop="courseNames" label="包含课程" width="300" align="center"
-                            show-overflow-tooltip />
-                        <el-table-column prop="price" label="价格（元）" width="100" align="center" show-overflow-tooltip />
-                        <el-table-column prop="info" label="备注" width="150" align="center" show-overflow-tooltip />
-                        <el-table-column label="操作" width="180" fixed="right" align="center">
-                            <template #default="scope">
-                                <el-button size="small" type="primary"
-                                    @click="handleEditCombo(scope.row)">编辑</el-button>
-                                <el-button size="small" type="danger"
-                                    @click="handleDeleteCombo(scope.row)">删除</el-button>
-                            </template>
-                            <template #header="slotProps"></template>
-                        </el-table-column>
-                    </el-table>
+                            <el-table :data="comboData" style="width: 100%; margin-top: 20px;" v-loading="comboLoading">
+                                <el-table-column type="index" label="序号" width="55" align="center">
+                                    <template #filter-icon="slotProps"></template>
+                                </el-table-column>
+                                <el-table-column prop="name" label="套餐名称" width="150" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="schoolName" label="所属校区" width="150" align="center"
+                                    show-overflow-tooltip />
 
-                    <div class="pagination" style="margin-top: 20px; text-align: right;">
-                        <el-pagination v-model:current-page="comboPage.index" v-model:page-size="comboPage.size"
-                            :total="comboPage.total" @current-change="changeComboPage"
-                            layout="total, prev, pager, next" />
+                                <el-table-column prop="courseNames" label="包含课程" width="300" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="price" label="价格（元）" width="100" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column prop="info" label="备注" width="150" align="center"
+                                    show-overflow-tooltip />
+                                <el-table-column label="操作" width="180" fixed="right" align="center">
+                                    <template #default="scope">
+                                        <el-button size="small" type="primary"
+                                            @click="handleEditCombo(scope.row)">编辑</el-button>
+                                        <el-button size="small" type="danger"
+                                            @click="handleDeleteCombo(scope.row)">删除</el-button>
+                                    </template>
+                                    <template #header="slotProps"></template>
+                                </el-table-column>
+                            </el-table>
+
+                            <div class="pagination" style="margin-top: 20px; text-align: right;">
+                                <el-pagination v-model:current-page="comboPage.index" v-model:page-size="comboPage.size"
+                                    :total="comboPage.total" @current-change="changeComboPage"
+                                    layout="total, prev, pager, next" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </el-tab-pane>
@@ -200,11 +232,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { CirclePlusFilled } from '@element-plus/icons-vue';
 import * as conventions from '@/utils/conventions';
 import request from '@/utils/request';
+
+onMounted(async () => {
+    try {
+        await Promise.all([
+            getSchools(),
+            getCourses(),
+            getCombos(),
+            getCourseOptions(),
+        ]);
+    } catch (error) {
+        console.error('初始化数据失败:', error);
+        ElMessage.error('初始化数据失败');
+    }
+});
+
+// 校区树
+const treeData = computed(() => {
+    return [{
+        id: '',
+        name: '全部校区',
+        children: schoolOptions.value.map(school => ({
+            id: school.value,
+            name: school.label
+        }))
+    }];
+});
+
+// 添加树节点点击处理函数
+const handleNodeClick = async (node) => {
+    page.index = 1;
+    await getCourses(node.id);
+};
+
+const handleComboNodeClick = async (node) => {
+    comboPage.index = 1;
+    await getCombos(node.id);
+};
+
 
 const loading = ref(false);
 const page = reactive({
@@ -242,23 +312,20 @@ const rules = {
 const schoolOptions = ref([]);
 const teacherOptions = ref([]);
 
-onMounted(async () => {
-    await Promise.all([
-        getCourses(),
-        getSchools(),
-        getCombos(),
-        getCourseOptions(),
-    ]);
-});
 
 // 获取课程列表
-const getCourses = async () => {
+const getCourses = async (schoolId = null) => {
     loading.value = true;
     try {
-        const res = await request.post("/course/getCourses", {
+        const params = {
             pageIndex: page.index,
             pageSize: page.size,
-        }, {
+        };
+        // 只有当 schoolId 有值时才添加到请求参数中
+        if (schoolId) {
+            Object.assign(params, { schoolId });
+        }
+        const res = await request.post("/course/getCourses", params, {
             headers: { sessionid: localStorage.getItem("sessionid") }
         });
         if (res.data.status === 200) {
@@ -345,7 +412,9 @@ const handleTeacherChange = (type: 'chief' | 'class' | 'assistant') => {
 
 const changePage = async (val: number) => {
     page.index = val;
-    await getCourses();
+    await getCourses(treeData.value[0].children.find(node =>
+        tableData.value.length > 0 && node.id === tableData.value[0].schoolId
+    )?.id || '');
 };
 
 // 修改清空表单的方法
@@ -457,13 +526,18 @@ const comboRules = {
 };
 
 // 获取套餐列表
-const getCombos = async () => {
+const getCombos = async (schoolId = '') => {
     comboLoading.value = true;
     try {
-        const res = await request.post("/course/getAllCombos", {
+        const params = {
             pageIndex: comboPage.index,
             pageSize: comboPage.size,
-        }, {
+        };
+        // 只有当 schoolId 有值时才添加到请求参数中
+        if (schoolId) {
+            Object.assign(params, { schoolId });
+        }
+        const res = await request.post("/course/getAllCombos", params, {
             headers: { sessionid: localStorage.getItem("sessionid") }
         });
         if (res.data.status === 200) {
@@ -529,7 +603,9 @@ const handleComboSchoolChange = async (schoolId) => {
 
 const changeComboPage = async (val: number) => {
     comboPage.index = val;
-    await getCombos();
+    await getCombos(treeData.value[0].children.find(node =>
+        comboData.value.length > 0 && node.id === comboData.value[0].schoolId
+    )?.id || '');
 };
 
 const closeComboDialog = () => {
@@ -607,6 +683,27 @@ const submitComboForm = async () => {
 </script>
 
 <style scoped>
+.container {
+    padding: 20px;
+}
+
+.course-layout {
+    display: flex;
+    gap: 20px;
+}
+
+.tree-container {
+    width: 200px;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.table-container {
+    flex: 1;
+}
+
 .el-table :deep(.cell) {
     white-space: nowrap;
 }
