@@ -56,6 +56,9 @@
                             <template #filter-icon="slotProps"></template>
                         </el-table-column>
                         <el-table-column prop="name" label="套餐名称" width="150" align="center" show-overflow-tooltip />
+                        <el-table-column prop="schoolName" label="所属校区" width="150" align="center"
+                            show-overflow-tooltip />
+
                         <el-table-column prop="courseNames" label="包含课程" width="300" align="center"
                             show-overflow-tooltip />
                         <el-table-column prop="price" label="价格（元）" width="100" align="center" show-overflow-tooltip />
@@ -165,6 +168,13 @@
             <el-form ref="comboFormRef" :model="comboFormData" :rules="comboRules" label-width="100px">
                 <el-form-item label="套餐名称" prop="name">
                     <el-input v-model="comboFormData.name" placeholder="请输入套餐名称" />
+                </el-form-item>
+                <el-form-item label="所属校区" prop="schoolId">
+                    <el-select v-model="comboFormData.schoolId" placeholder="请选择校区" style="width: 100%"
+                        @change="handleComboSchoolChange">
+                        <el-option v-for="item in schoolOptions" :key="item.value" :label="item.label"
+                            :value="item.value" />
+                    </el-select>
                 </el-form-item>
                 <el-form-item label="包含课程" prop="courseIds">
                     <el-select v-model="comboFormData.courseIds" multiple placeholder="请选择课程" style="width: 100%">
@@ -433,6 +443,7 @@ const comboPage = reactive({
 
 const comboFormData = ref({
     name: '',
+    schoolId: '',
     courseIds: [],
     price: '',
     info: '',
@@ -440,6 +451,7 @@ const comboFormData = ref({
 
 const comboRules = {
     name: [{ required: true, message: '请输入套餐名称', trigger: 'blur' }],
+    schoolId: [{ required: true, message: '请选择所属校区', trigger: 'change' }],  // 添加校区验证
     courseIds: [{ required: true, message: '请选择课程', trigger: 'change' }],
     price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
 };
@@ -486,17 +498,35 @@ const getCourseOptions = async () => {
     }
 };
 
-// 修改 onMounted
-onMounted(async () => {
-    await Promise.all([
-        getCourses(),
-        getSchools(),
-        getCombos(),
-        getCourseOptions(),
-    ]);
-});
-
 // 套餐相关方法
+
+// 添加处理套餐校区变化的方法
+const handleComboSchoolChange = async (schoolId) => {
+    try {
+        // 清空已选课程
+        comboFormData.value.courseIds = [];
+
+        // 获取该校区的课程列表
+        const res = await request.post("/course/getCourses", {
+            pageIndex: 1,
+            pageSize: 999,
+            schoolId: schoolId
+        }, {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        });
+
+        if (res.data.status === 200) {
+            courseOptions.value = res.data.courses.map(item => ({
+                label: item.name,
+                value: item.id
+            }));
+        }
+    } catch (error) {
+        console.error('获取课程列表失败:', error);
+        ElMessage.error('获取课程列表失败');
+    }
+};
+
 const changeComboPage = async (val: number) => {
     comboPage.index = val;
     await getCombos();
@@ -507,6 +537,7 @@ const closeComboDialog = () => {
     isEditCombo.value = false;
     comboFormData.value = {
         name: '',
+        schoolId: '',
         courseIds: [],
         price: '',
         info: '',
