@@ -273,7 +273,7 @@ export const getPaymentMethod = (id: number): string | undefined => {
 };
 
 // Payment：交易类别
-export const paymentTypes: Convention[] = [
+export const paymentCategories: Convention[] = [
     {
         id: 1,
         name: "定金"
@@ -296,8 +296,8 @@ export const paymentTypes: Convention[] = [
     }
 ];
 
-export const getPaymentType = (id: number): string | undefined => {
-    const type = paymentTypes.find((v) => v.id === id);
+export const getPaymentCategory = (id: number): string | undefined => {
+    const type = paymentCategories.find((v) => v.id === id);
     return type ? type.name : undefined;
 };
 

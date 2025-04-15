@@ -55,7 +55,6 @@
         </el-tabs>
 
         <!-- 部门编辑弹窗 -->
-        <!-- 部门编辑弹窗 -->
         <el-dialog :title="isEdit ? '编辑部门' : '新增部门'" v-model="departmentDialog" width="500px" destroy-on-close>
             <el-form ref="departmentFormRef" :model="departmentForm" :rules="departmentRules" label-width="100px">
                 <el-form-item label="部门名称" prop="name">
