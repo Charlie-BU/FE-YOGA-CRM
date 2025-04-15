@@ -77,7 +77,7 @@
                                 :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`"
                                 :disabled="item.disabled" />
                             <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]"
-                                :placeholder="`请选择${item.label}`" style="width: 100%">
+                                :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
                                 <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label"
                                     :value="opt.value" />
                             </el-select>
@@ -107,7 +107,7 @@
                                 :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`"
                                 :disabled="item.disabled" />
                             <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]"
-                                :placeholder="`请选择${item.label}`" style="width: 100%">
+                                :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
                                 <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label"
                                     :value="opt.value" />
                             </el-select>

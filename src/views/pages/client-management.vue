@@ -92,7 +92,7 @@
                             <el-input v-if="item.type === 'input'" v-model="formData[item.prop]"
                                 :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`" />
                             <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]"
-                                :placeholder="`请选择${item.label}`" style="width: 100%">
+                                :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
                                 <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label"
                                     :value="opt.value" />
                             </el-select>
@@ -113,7 +113,7 @@
             <el-form :model="assignForm" label-width="120px">
                 <el-form-item label="* 校区:">
                     <el-select v-model="assignForm.schoolId" placeholder="请选择校区" style="width: 100%"
-                        @change="handleBranchChange">
+                        @change="handleBranchChange" filterable>
                         <el-option v-for="item in branchOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
@@ -123,7 +123,7 @@
                         style="width: 100%" />
                 </el-form-item>
                 <el-form-item label="* 预约人:">
-                    <el-select v-model="assignForm.appointerId" placeholder="请选择预约人" style="width: 100%">
+                    <el-select v-model="assignForm.appointerId" placeholder="请选择预约人" style="width: 100%" filterable>
                         <el-option v-for="item in appointerOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
@@ -135,7 +135,7 @@
 
                 <el-form-item v-if="assignForm.useCombo" label="* 套餐:">
                     <el-select v-model="assignForm.comboId" placeholder="请选择套餐" style="width: 100%"
-                        @change="handleComboChange">
+                        @change="handleComboChange" filterable>
                         <el-option v-for="item in comboOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
@@ -151,7 +151,8 @@
 
 
                 <el-form-item v-else label="* 课程:">
-                    <el-select v-model="assignForm.courseIds" placeholder="请选择课程" style="width: 100%" multiple>
+                    <el-select v-model="assignForm.courseIds" placeholder="请选择课程" style="width: 100%" multiple
+                        filterable>
                         <el-option v-for="item in courseOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
@@ -219,7 +220,7 @@
                     <el-input-number v-model="paymentForm.amount" :min="1" :max="999999" style="width: 100%" />
                 </el-form-item>
                 <el-form-item label="* 交易方式:">
-                    <el-select v-model="paymentForm.paymentMethod" placeholder="请选择交易方式" style="width: 100%">
+                    <el-select v-model="paymentForm.paymentMethod" placeholder="请选择交易方式" style="width: 100%" filterable>
                         <el-option v-for="item in conventions.paymentMethods" :key="item.id" :label="item.name"
                             :value="item.id" />
                     </el-select>

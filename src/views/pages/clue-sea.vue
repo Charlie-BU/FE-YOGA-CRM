@@ -49,7 +49,7 @@
             <el-divider></el-divider>
             <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
                 <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
-                    }}</el-checkbox>
+                }}</el-checkbox>
             </el-checkbox-group>
             <template #footer>
                 <span class="dialog-footer">
@@ -69,7 +69,7 @@
                             <el-input v-if="item.type === 'input'" v-model="formData[item.prop]"
                                 :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`" />
                             <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]"
-                                :placeholder="`请选择${item.label}`" style="width: 100%">
+                                :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
                                 <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label"
                                     :value="opt.value" />
                             </el-select>
@@ -90,13 +90,13 @@
             <el-form :model="assignForm" label-width="80px">
                 <el-form-item label="选择分店">
                     <el-select v-model="assignForm.branchId" placeholder="请选择分店" style="width: 100%"
-                        @change="handleBranchChange">
+                        @change="handleBranchChange" filterable>
                         <el-option v-for="item in branchOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
                 </el-form-item>
                 <el-form-item label="所属人">
-                    <el-select v-model="assignForm.userId" placeholder="请选择所属人" style="width: 100%">
+                    <el-select v-model="assignForm.userId" placeholder="请选择所属人" style="width: 100%" filterable>
                         <el-option v-for="item in userOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
@@ -211,9 +211,9 @@ const columnOptions = computed(() => {
 const displayColumns = computed(() => {
     // 始终显示序号和姓名列，加上用户选择的其他列
     const fixedColumns = allColumns.value.filter(col => col.prop === 'index' || col.prop === 'name');
-    const userSelectedColumns = allColumns.value.filter(col => 
-        col.prop !== 'index' && 
-        col.prop !== 'name' && 
+    const userSelectedColumns = allColumns.value.filter(col =>
+        col.prop !== 'index' &&
+        col.prop !== 'name' &&
         checkedColumns.value.includes(col.prop)
     );
     return [...fixedColumns, ...userSelectedColumns];
@@ -225,7 +225,7 @@ const initColumnSettings = () => {
     const defaultColumns = allColumns.value
         .filter(col => col.prop !== 'index' && col.prop !== 'name')
         .map(col => col.prop);
-    
+
     checkedColumns.value = defaultColumns;
     updateCheckAllStatus();
 

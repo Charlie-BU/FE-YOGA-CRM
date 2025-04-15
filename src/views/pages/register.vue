@@ -26,28 +26,28 @@
                     </el-input>
                 </el-form-item>
                 <el-form-item prop="department">
-                    <el-select v-model="form.department" placeholder="部门 *" style="width: 100%">
+                    <el-select v-model="form.department" placeholder="部门 *" style="width: 100%" filterable>
                         <div v-for="(dept, index) in depts" :key="index">
                             <el-option :label=dept.name :value=dept.id />
                         </div>
                     </el-select>
                 </el-form-item>
                 <el-form-item prop="vocation">
-                    <el-select v-model="form.vocation" placeholder="职位 *" style="width: 100%">
+                    <el-select v-model="form.vocation" placeholder="职位 *" style="width: 100%" filterable>
                         <div v-for="(voc, index) in vocations" :key="index">
                             <el-option :label=voc.name :value=voc.id />
                         </div>
                     </el-select>
                 </el-form-item>
                 <el-form-item prop="status">
-                    <el-select v-model="form.status" placeholder="状态 *" style="width: 100%">
+                    <el-select v-model="form.status" placeholder="状态 *" style="width: 100%" filterable>
                         <div v-for="(sta, index) in statuses" :key="index">
                             <el-option :label=sta.name :value=sta.id />
                         </div>
                     </el-select>
                 </el-form-item>
                 <el-form-item prop="usertype">
-                    <el-select v-model="form.usertype" placeholder="用户权限 *" style="width: 100%">
+                    <el-select v-model="form.usertype" placeholder="用户权限 *" style="width: 100%" filterable>
                         <el-option label="普通用户" value=1 />
                         <el-option label="管理员" value=2 />
                     </el-select>

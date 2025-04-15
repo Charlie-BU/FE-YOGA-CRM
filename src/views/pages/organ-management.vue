@@ -61,7 +61,7 @@
                     <el-input v-model="departmentForm.name" placeholder="请输入部门名称" />
                 </el-form-item>
                 <el-form-item label="所属校区" prop="schoolId">
-                    <el-select v-model="departmentForm.schoolId" placeholder="请选择所属校区" style="width: 100%">
+                    <el-select v-model="departmentForm.schoolId" placeholder="请选择所属校区" style="width: 100%" filterable>
                         <el-option v-for="item in schoolData" :key="item.id" :label="item.name" :value="item.id" />
                     </el-select>
                 </el-form-item>

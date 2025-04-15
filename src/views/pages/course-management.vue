@@ -127,7 +127,7 @@
                     </el-col>
                     <el-col :span="12">
                         <el-form-item label="课程类别" prop="category">
-                            <el-select v-model="formData.category" placeholder="请选择课程类别" style="width: 100%">
+                            <el-select v-model="formData.category" placeholder="请选择课程类别" style="width: 100%" filterable>
                                 <el-option v-for="item in conventions.courseCategories" :key="item.id"
                                     :label="item.name" :value="item.id" />
                             </el-select>
@@ -136,7 +136,7 @@
                     <el-col :span="12">
                         <el-form-item label="所属校区" prop="schoolId">
                             <el-select v-model="formData.schoolId" placeholder="请选择校区" style="width: 100%"
-                                @change="handleBranchChange">
+                                @change="handleBranchChange" filterable>
                                 <el-option v-for="item in schoolOptions" :key="item.value" :label="item.label"
                                     :value="item.value" />
                             </el-select>
@@ -155,7 +155,7 @@
                     <el-col :span="12">
                         <el-form-item label="主讲教师" prop="chiefTeacherId">
                             <el-select v-model="formData.chiefTeacherId" placeholder="请选择主讲教师" style="width: 100%"
-                                @change="handleTeacherChange('chief')">
+                                @change="handleTeacherChange('chief')" filterable>
                                 <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
                                     :value="item.value" />
                             </el-select>
@@ -164,7 +164,7 @@
                     <el-col :span="12">
                         <el-form-item label="班主任" prop="classTeacherId">
                             <el-select v-model="formData.classTeacherId" placeholder="请选择班主任" style="width: 100%"
-                                @change="handleTeacherChange('class')">
+                                @change="handleTeacherChange('class')" filterable>
                                 <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
                                     :value="item.value" />
                             </el-select>
@@ -173,7 +173,7 @@
                     <el-col :span="12">
                         <el-form-item label="助教" prop="teachingAssistantId">
                             <el-select v-model="formData.teachingAssistantId" placeholder="请选择助教" style="width: 100%"
-                                @change="handleTeacherChange('assistant')">
+                                @change="handleTeacherChange('assistant')" filterable>
                                 <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
                                     :value="item.value" />
                             </el-select>
@@ -203,13 +203,14 @@
                 </el-form-item>
                 <el-form-item label="所属校区" prop="schoolId">
                     <el-select v-model="comboFormData.schoolId" placeholder="请选择校区" style="width: 100%"
-                        @change="handleComboSchoolChange">
+                        @change="handleComboSchoolChange" filterable>
                         <el-option v-for="item in schoolOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
                 </el-form-item>
                 <el-form-item label="包含课程" prop="courseIds">
-                    <el-select v-model="comboFormData.courseIds" multiple placeholder="请选择课程" style="width: 100%">
+                    <el-select v-model="comboFormData.courseIds" multiple placeholder="请选择课程" style="width: 100%"
+                        filterable>
                         <el-option v-for="item in courseOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
