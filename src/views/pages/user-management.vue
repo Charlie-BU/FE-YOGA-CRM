@@ -159,7 +159,7 @@ const getUsers = async (schoolId = null) => {
 const changePage = async (val: number) => {
     if (loading.value) return; // 如果正在加载，则不执行
     page.index = val;
-    await getUsers();
+    await getUsers(selectedSchoolId.value);
 };
 
 // 编辑弹窗相关
@@ -364,14 +364,6 @@ const handleSelectionChange = (rows: any[]) => {
     selectedRows.value = rows;
 };
 
-// 在 data 部分添加
-const assignDialogVisible = ref(false);
-const assignForm = ref({
-    branchId: '',
-    userId: ''
-});
-const branchOptions = ref([]);
-const userOptions = ref([]);
 
 const tableRef = ref();
 
@@ -380,7 +372,7 @@ const handleRowClick = (row) => {
 };
 
 // 添加树状结构相关数据
-const selectedSchoolId = ref('');
+const selectedSchoolId = ref(null);
 const schoolData = ref([]);
 
 // 获取校区列表
@@ -440,6 +432,7 @@ const handleNodeClick = async (node) => {
 
 .table-container {
     flex: 1;
+    overflow-x: auto;
 }
 
 .el-table :deep(.cell) {

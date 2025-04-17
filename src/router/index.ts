@@ -311,7 +311,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
     NProgress.start();
     const briefUserInfo = await loginCheck();
-    if (!briefUserInfo && to.meta.noAuth !== true) {
+    if (!briefUserInfo && !to.meta.noAuth) {
         next("/login");
     } else {
         next();

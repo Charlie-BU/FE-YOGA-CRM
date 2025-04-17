@@ -17,8 +17,6 @@
             <el-button v-if="currClientStatus === 4" type="primary" :disabled="selectedRows.length !== 1"
                 @click="handlePayment">交定金</el-button>
 
-            <!-- 添加列设置按钮 -->
-            <!-- 列设置按钮 -->
             <div class="table-toolbar" style="margin-top: 10px; text-align: right;">
                 <el-tooltip effect="dark" content="列设置" placement="top">
                     <el-button type="primary" :icon="Setting" circle @click="columnSettingVisible = true"></el-button>
@@ -71,7 +69,7 @@
             <el-divider></el-divider>
             <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
                 <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
-                    }}</el-checkbox>
+                }}</el-checkbox>
             </el-checkbox-group>
             <template #footer>
                 <span class="dialog-footer">

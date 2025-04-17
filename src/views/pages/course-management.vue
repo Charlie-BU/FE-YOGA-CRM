@@ -115,7 +115,7 @@
             </el-tab-pane>
         </el-tabs>
 
-
+        <!-- 课程编辑弹窗 -->
         <el-dialog :title="isEdit ? '编辑课程' : '新增课程'" v-model="editModelVisible" width="700px" destroy-on-close
             :close-on-click-modal="false" @close="closeDialog">
             <el-form ref="formRef" :model="formData" :rules="rules" label-width="100px">
@@ -265,14 +265,17 @@ const treeData = computed(() => {
     }];
 });
 
+const currentSelectedSchoolId = ref(null);
 // 添加树节点点击处理函数
 const handleNodeClick = async (node) => {
     page.index = 1;
+    currentSelectedSchoolId.value = node.id;
     await getCourses(node.id);
 };
 
 const handleComboNodeClick = async (node) => {
     comboPage.index = 1;
+    currentSelectedSchoolId.value = node.id;
     await getCombos(node.id);
 };
 
@@ -413,9 +416,7 @@ const handleTeacherChange = (type: 'chief' | 'class' | 'assistant') => {
 
 const changePage = async (val: number) => {
     page.index = val;
-    await getCourses(treeData.value[0].children.find(node =>
-        tableData.value.length > 0 && node.id === tableData.value[0].schoolId
-    )?.id || '');
+    await getCourses(currentSelectedSchoolId.value);
 };
 
 // 修改清空表单的方法
@@ -573,8 +574,8 @@ const getCourseOptions = async () => {
     }
 };
 
-// 套餐相关方法
 
+// 套餐相关方法
 // 添加处理套餐校区变化的方法
 const handleComboSchoolChange = async (schoolId) => {
     try {
@@ -604,9 +605,7 @@ const handleComboSchoolChange = async (schoolId) => {
 
 const changeComboPage = async (val: number) => {
     comboPage.index = val;
-    await getCombos(treeData.value[0].children.find(node =>
-        comboData.value.length > 0 && node.id === comboData.value[0].schoolId
-    )?.id || '');
+    await getCombos(currentSelectedSchoolId.value);
 };
 
 const closeComboDialog = () => {
@@ -703,6 +702,12 @@ const submitComboForm = async () => {
 
 .table-container {
     flex: 1;
+    overflow-x: auto;
+}
+
+/* 修改表格单元格样式 */
+.el-table :deep(.el-table__body-wrapper) {
+    overflow-x: auto !important;
 }
 
 .el-table :deep(.cell) {

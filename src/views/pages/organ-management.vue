@@ -339,6 +339,7 @@ const filteredDepartmentData = computed(() => {
 
 .table-container {
     flex: 1;
+    overflow-x: auto;
 }
 
 .el-table :deep(.cell) {
