@@ -28,7 +28,7 @@
                             show-overflow-tooltip />
                         <el-table-column prop="teachingAssistantName" label="助教" width="100" align="center"
                             show-overflow-tooltip />
-                        <el-table-column prop="studentCount" label="学员数量" width="100" align="center"
+                        <el-table-column prop="studentCount" label="学员人数" width="100" align="center"
                             show-overflow-tooltip>
                             <template #default="scope">
                                 <el-button link type="primary" @click="showStudents(scope.row)">
@@ -36,6 +36,17 @@
                                 </el-button>
                             </template>
                         </el-table-column>
+                        <el-table-column prop="graduatedStuNumber" label="毕业人数" width="100" align="center"
+                            show-overflow-tooltip>
+                            <template #default="scope">
+                                <el-button link type="primary" @click="editGraduateNum(scope.row)">
+                                    {{ scope.row.graduatedStuNumber || 0 }}
+                                </el-button>
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column prop="createdTime" label="创建时间" width="180" align="center"
+                            show-overflow-tooltip />
 
                         <!-- <el-table-column label="操作" width="180" fixed="right" align="center">
                             <template #default="scope">
@@ -53,103 +64,62 @@
             </div>
         </div>
 
-        <!-- 课程编辑弹窗 -->
-        <el-dialog :title="isEdit ? '编辑课程' : '新增课程'" v-model="editModelVisible" width="700px" destroy-on-close
-            :close-on-click-modal="false" @close="closeDialog">
-            <el-form ref="formRef" :model="formData" :rules="rules" label-width="100px">
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="课程名称" prop="name">
-                            <el-input v-model="formData.name" placeholder="请输入课程名称" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="课程类别" prop="category">
-                            <el-select v-model="formData.category" placeholder="请选择课程类别" style="width: 100%" filterable>
-                                <el-option v-for="item in conventions.courseCategories" :key="item.id"
-                                    :label="item.name" :value="item.id" />
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="所属校区" prop="schoolId">
-                            <el-select v-model="formData.schoolId" placeholder="请选择校区" style="width: 100%"
-                                @change="handleBranchChange" filterable>
-                                <el-option v-for="item in schoolOptions" :key="item.value" :label="item.label"
-                                    :value="item.value" />
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="课时" prop="duration">
-                            <el-input v-model="formData.duration" type="number" placeholder="请输入课时（周）" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="价格" prop="price">
-                            <el-input v-model="formData.price" type="number" placeholder="请输入价格（元）" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="主讲教师" prop="chiefTeacherId">
-                            <el-select v-model="formData.chiefTeacherId" placeholder="请选择主讲教师" style="width: 100%"
-                                @change="handleTeacherChange('chief')" filterable>
-                                <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
-                                    :value="item.value" />
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="班主任" prop="classTeacherId">
-                            <el-select v-model="formData.classTeacherId" placeholder="请选择班主任" style="width: 100%"
-                                @change="handleTeacherChange('class')" filterable>
-                                <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
-                                    :value="item.value" />
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="助教" prop="teachingAssistantId">
-                            <el-select v-model="formData.teachingAssistantId" placeholder="请选择助教" style="width: 100%"
-                                @change="handleTeacherChange('assistant')" filterable>
-                                <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
-                                    :value="item.value" />
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="24">
-                        <el-form-item label="备注" prop="info">
-                            <el-input v-model="formData.info" type="textarea" placeholder="请输入备注信息" />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
+        <!-- 课程学员列表弹窗 -->
+        <el-dialog title="课程学员列表" v-model="studentsDialogVisible" width="800px" @close="handleStudentsDialogClose">
+            <div style="margin-bottom: 10px; text-align: right;">
+                <el-button type="primary" @click="showAddStudentDialog">添加学员</el-button>
+            </div>
+            <el-table :data="currentStudents" style="width: 100%">
+                <el-table-column type="index" label="序号" width="55" align="center" />
+                <el-table-column prop="name" label="姓名" width="120" align="center" show-overflow-tooltip />
+                <el-table-column prop="gender" label="性别" align="center">
+                    <template #default="scope">
+                        {{ conventions.getGender(scope.row.gender) }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="phone" label="电话" align="center" show-overflow-tooltip />
+                <el-table-column prop="weixin" label="微信" align="center" show-overflow-tooltip />
+                <el-table-column prop="cooperateTime" label="成单时间" width="180" align="center" show-overflow-tooltip />
+                <el-table-column label="操作" width="100" fixed="right" align="center">
+                    <template #default="scope">
+                        <el-button size="small" type="danger" @click="handleRemoveStu(scope.row)">移除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-dialog>
+
+        <!-- 添加学员弹窗 -->
+        <el-dialog title="添加学员" v-model="addStudentDialogVisible" width="600px">
+            <el-form :model="addStudentForm" label-width="100px">
+                <el-form-item label="选择学员">
+                    <el-select v-model="addStudentForm.studentId" filterable placeholder="请选择学员" style="width: 100%">
+                        <el-option v-for="student in availableStudents" :key="student.id" :label="student.name"
+                            :value="student.id" />
+                    </el-select>
+                </el-form-item>
             </el-form>
             <template #footer>
                 <span class="dialog-footer">
-                    <el-button @click="closeDialog">取消</el-button>
-                    <el-button type="primary" @click="submitForm">确定</el-button>
+                    <el-button @click="addStudentDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="submitAddStudent">确定</el-button>
                 </span>
             </template>
         </el-dialog>
 
-        <!-- 课程学员列表弹窗 -->
-        <!-- TODO：字段用什么 -->
-        <el-dialog title="课程学员列表" v-model="studentsDialogVisible" width="800px">
-            <el-table :data="currentStudents" style="width: 100%">
-                <el-table-column type="index" label="序号" width="55" align="center" />
-                <el-table-column prop="name" label="姓名" width="120" align="center" />
-                <el-table-column prop="phone" label="电话" width="150" align="center" />
-                <el-table-column prop="weixin" label="微信" width="150" align="center" />
-                <!-- <el-table-column prop="schoolName" label="所属校区" width="150" align="center" />
-                <el-table-column prop="clientStatus" label="状态" align="center">
-                    <template #default="scope">
-                        {{ conventions.getClientStatus(scope.row.clientStatus) }}
-                    </template>
-                </el-table-column> -->
-            </el-table>
+        <!-- 编辑毕业人数弹窗 -->
+        <el-dialog title="编辑毕业人数" v-model="graduateNumDialogVisible" width="400px">
+            <el-form :model="graduateForm" label-width="100px">
+                <el-form-item label="毕业人数">
+                    <el-input-number v-model="graduateForm.graduatedStuNumber" :min="0" />
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="graduateNumDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="submitGraduateNum">确定</el-button>
+                </span>
+            </template>
         </el-dialog>
-
-
     </div>
 </template>
 
@@ -245,7 +215,7 @@ const getCourses = async (schoolId = null) => {
             headers: { sessionid: localStorage.getItem("sessionid") }
         });
         if (res.data.status === 200) {
-            // 获取每个课程的学员数量
+            // 获取每个课程的学员人数
             const coursesWithStudents = await Promise.all(
                 res.data.courses.map(async (course) => {
                     try {
@@ -260,7 +230,7 @@ const getCourses = async (schoolId = null) => {
                             students: studentRes.data.clients || []
                         };
                     } catch (error) {
-                        console.error(`获取课程${course.id}的学员数量失败:`, error);
+                        console.error(`获取课程${course.id}的学员人数失败:`, error);
                         return {
                             ...course,
                             studentCount: 0,
@@ -379,34 +349,6 @@ const handleEdit = (row) => {
     editModelVisible.value = true;
 };
 
-const handleDelete = (row) => {
-    ElMessageBox.confirm(
-        '确认删除该课程吗？',
-        '警告',
-        {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning',
-        }
-    ).then(async () => {
-        try {
-            const res = await request.post('/course/deleteCourse', {
-                id: row.id
-            }, {
-                headers: { sessionid: localStorage.getItem("sessionid") }
-            });
-            if (res.data.status === 200) {
-                ElMessage.success('删除成功');
-                getCourses();
-            } else {
-                ElMessage.error(res.data.message || '删除失败');
-            }
-        } catch (error) {
-            console.error('删除失败:', error);
-            ElMessage.error('删除失败');
-        }
-    });
-};
 
 const submitForm = async () => {
     if (!formRef.value) return;
@@ -421,7 +363,7 @@ const submitForm = async () => {
                 if (res.data.status === 200) {
                     ElMessage.success(isEdit.value ? '编辑成功' : '添加成功');
                     closeDialog();
-                    getCourses();
+                    getCourses(currentSelectedSchoolId.value);
                 } else {
                     ElMessage.error(res.data.message || '操作失败');
                 }
@@ -433,8 +375,104 @@ const submitForm = async () => {
     });
 };
 
+// 添加学员
+const addStudentDialogVisible = ref(false);
+const addStudentForm = ref({
+    studentId: ''
+});
+const availableStudents = ref([]);
+
+// 显示添加学员弹窗
+const showAddStudentDialog = async () => {
+    try {
+        // 获取可选学员列表
+        const res = await request.post("/extra/getDealedClients", {}, {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        });
+        if (res.data.status === 200) {
+            availableStudents.value = res.data.clients;
+            addStudentDialogVisible.value = true;
+        }
+    } catch (error) {
+        console.error('获取可选学员失败:', error);
+        ElMessage.error('获取可选学员失败');
+    }
+};
+
+// 提交添加学员
+const submitAddStudent = async () => {
+    if (!addStudentForm.value.studentId) {
+        ElMessage.warning('请选择学员');
+        return;
+    }
+
+    try {
+        const res = await request.post('/course/addStudent', {
+            courseId: currentCourseId.value,
+            studentId: addStudentForm.value.studentId
+        }, {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        });
+
+        if (res.data.status === 200) {
+            ElMessage.success('添加成功');
+            // 关闭所有弹窗
+            addStudentDialogVisible.value = false;
+            studentsDialogVisible.value = false;
+            // 重置表单
+            addStudentForm.value.studentId = '';
+            // 刷新课程列表
+            getCourses(currentSelectedSchoolId.value);
+        } else {
+            ElMessage.error(res.data.message || '添加失败');
+        }
+    } catch (error) {
+        console.error('添加失败:', error);
+        ElMessage.error('添加失败');
+    }
+};
+
+// 移除学员
+const handleRemoveStu = (row) => {
+    ElMessageBox.confirm(
+        '确认将该学员移除该课程吗？',
+        '警告',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(async () => {
+        try {
+            const res = await request.post('/course/removeStudent', {
+                stuId: row.id,
+                courseId: currentCourseId.value
+            }, {
+                headers: { sessionid: localStorage.getItem("sessionid") }
+            });
+            if (res.data.status === 200) {
+                ElMessage.success('移除成功');
+                // 关闭学员列表弹窗
+                studentsDialogVisible.value = false;
+                getCourses(currentSelectedSchoolId.value);
+            } else {
+                ElMessage.error(res.data.message || '移除失败');
+            }
+        } catch (error) {
+            console.error('移除失败:', error);
+            ElMessage.error('移除失败');
+        }
+    });
+};
+
+const handleStudentsDialogClose = () => {
+    currentCourseId.value = null;
+};
+
+
 const studentsDialogVisible = ref(false);
 const currentStudents = ref([]);
+const currentCourseId = ref(null);
 
 const showStudents = async (row) => {
     try {
@@ -449,10 +487,44 @@ const showStudents = async (row) => {
         }));
 
         currentStudents.value = students;
+        currentCourseId.value = row.id;
         studentsDialogVisible.value = true;
     } catch (error) {
         console.error('获取学员详情失败:', error);
         ElMessage.error('获取学员详情失败');
+    }
+};
+
+
+const graduateNumDialogVisible = ref(false);
+const graduateForm = ref({
+    id: null,
+    graduatedStuNumber: 0
+});
+
+const editGraduateNum = (row) => {
+    graduateForm.value = {
+        id: row.id,
+        graduatedStuNumber: row.graduatedStuNumber || 0
+    };
+    graduateNumDialogVisible.value = true;
+};
+
+const submitGraduateNum = async () => {
+    try {
+        const res = await request.post('/course/updateGraduateNum', graduateForm.value, {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        });
+        if (res.data.status === 200) {
+            ElMessage.success('更新成功');
+            graduateNumDialogVisible.value = false;
+            getCourses(currentSelectedSchoolId.value);
+        } else {
+            ElMessage.error(res.data.message || '更新失败');
+        }
+    } catch (error) {
+        console.error('更新失败:', error);
+        ElMessage.error('更新失败');
     }
 };
 </script>
