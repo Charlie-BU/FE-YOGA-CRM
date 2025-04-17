@@ -80,6 +80,14 @@ const routes: RouteRecordRaw[] = [
                     title: "费用管理"
                 }
             },
+            {
+                path: "/class-arrangement",
+                name: "class-arrangement",
+                meta: {
+                    title: "分班管理"
+                },
+                component: () => import("../views/pages/class-arrangement.vue")
+            },
 
             {
                 path: "/system-user",

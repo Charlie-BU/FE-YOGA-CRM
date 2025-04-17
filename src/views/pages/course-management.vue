@@ -370,8 +370,8 @@ const handleBranchChange = async (branchId) => {
         formData.value.teachingAssistantId = '';
 
         // 获取该分店的用户列表
-        const userRes = await request.post('/dept/getDeptUsers', {
-            branchId
+        const userRes = await request.post('/dept/getSchoolUsers', {
+            schoolId: branchId
         }, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")

@@ -52,6 +52,13 @@ export const menuData: Menus[] = [
         icon: "Money"
     },
     {
+        id: "08",
+        title: "分班管理",
+        index: "/class-arrangement",
+        icon: "Reading"
+    },
+
+    {
         id: "1",
         title: "系统管理",
         index: "1",

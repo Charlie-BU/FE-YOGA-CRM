@@ -49,7 +49,7 @@
             <el-divider></el-divider>
             <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
                 <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
-                }}</el-checkbox>
+                    }}</el-checkbox>
             </el-checkbox-group>
             <template #footer>
                 <span class="dialog-footer">
@@ -464,13 +464,13 @@ const handleAssign = async () => {
 
     try {
         // 获取分店列表
-        const branchRes = await request.post('/dept/getAllDepts', null, {
+        const branchRes = await request.post('/dept/getAllSchools', {}, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
             }
         });
         if (branchRes.data.status === 200) {
-            branchOptions.value = branchRes.data.depts.map(item => ({
+            branchOptions.value = branchRes.data.schools.map(item => ({
                 label: item.name,
                 value: item.id
             }));
@@ -485,8 +485,8 @@ const handleAssign = async () => {
 const handleBranchChange = async (branchId) => {
     try {
         // 获取该分店的用户列表
-        const userRes = await request.post('/dept/getDeptUsers', {
-            branchId
+        const userRes = await request.post('/dept/getSchoolUsers', {
+            schoolId: branchId
         }, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")

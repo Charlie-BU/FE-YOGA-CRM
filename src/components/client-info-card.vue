@@ -16,8 +16,9 @@
                 <el-descriptions-item label="小红书">{{ client.rednote }}</el-descriptions-item>
                 <el-descriptions-item label="商务通">{{ client.shangwutong }}</el-descriptions-item>
                 <el-descriptions-item label="地区">{{ client.address }}</el-descriptions-item>
-                <el-descriptions-item label="客户状态">{{ conventions.getClientStatus(client.clientStatus)
-                    }}</el-descriptions-item>
+                <el-descriptions-item label="客户状态">
+                    <span class="status-highlight">{{ conventions.getClientStatus(client.clientStatus) }}</span>
+                </el-descriptions-item>
                 <el-descriptions-item label="所属人 / 合作老师">{{ client.affiliatedUserName }}</el-descriptions-item>
                 <el-descriptions-item label="创建时间">{{ client.createdTime }}</el-descriptions-item>
                 <el-descriptions-item label="备注" :span="2">{{ client.info }}</el-descriptions-item>
@@ -33,8 +34,10 @@
                     <el-descriptions-item label="课程">{{ client.courseNames }}</el-descriptions-item>
                     <el-descriptions-item label="预约日期">{{ client.appointDate }}</el-descriptions-item>
                     <el-descriptions-item label="下次沟通日期">{{ client.nextTalkDate }}</el-descriptions-item>
-                    <el-descriptions-item label="跟进状态">{{ client.processStatus === 1 ? "未成单" :
-                        client.processStatus === 2 ? "已成单" : "" }}</el-descriptions-item>
+                    <el-descriptions-item label="跟进状态">
+                        <span class="status-highlight">{{ client.processStatus === 1 ? "未成单" :
+                            client.processStatus === 2 ? "已成单" : "" }}</span>
+                    </el-descriptions-item>
                     <el-descriptions-item label="成单时间">{{ client.cooperateTime }}</el-descriptions-item>
                     <el-descriptions-item label="合同编号">{{ client.contractNo }}</el-descriptions-item>
                     <el-descriptions-item label="预约备注" :span="2">{{ client.detailedInfo
@@ -236,5 +239,10 @@ const getCourseRecords = async () => {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.status-highlight {
+    font-weight: bold;
+    color: #93ff40;
 }
 </style>

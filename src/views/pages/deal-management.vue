@@ -19,6 +19,13 @@
                     <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width"
                         :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
                 </template>
+                <el-table-column label="操作" width="120" fixed="right" align="center">
+                    <template #default="scope">
+                        <el-button v-if="scope.row.clientStatus === 5" size="small" type="danger"
+                            @click="cancelGraduate(scope.row)">取消毕业</el-button>
+                        <el-button v-else size="small" type="success" @click="clientGraduate(scope.row)">毕业</el-button>
+                    </template>
+                </el-table-column>
             </el-table>
 
             <div class="pagination" style="margin-top: 20px; text-align: right;">
@@ -84,21 +91,15 @@ const columns = ref([
             );
         }
     },
-    { prop: 'phone', label: '电话', width: 150, align: 'center' },
-    { prop: 'weixin', label: '微信', width: 150, align: 'center' },
-    { prop: 'schoolName', label: '校区', width: 150, align: 'center' },
-    { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 150, align: 'center' },
-    { prop: 'appointerName', label: '预约人', width: 150, align: 'center' },
-    { prop: 'courseNames', label: '课程', width: 150, align: 'center' },
-    { prop: 'address', label: '地区', width: 150, align: 'center' },
-    { prop: 'appointDate', label: '预约日期', width: 150, align: 'center' },
-    { prop: 'nextTalkDate', label: '下次沟通日期', width: 150, align: 'center' },
-    { prop: 'processStatus', label: '跟进状态', width: 150, align: 'center', formatter: (row) => row.processStatus === 1 ? "未成单" : row.processStatus === 2 ? "已成单" : "" },
-    { prop: 'cooperateTime', label: '成单时间', width: 150, align: 'center' },
-    { prop: 'contractNo', label: '合同编号', width: 150, align: 'center' },
-    { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
-    { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
-    { prop: 'detailedInfo', label: '预约备注', width: 150, align: 'center' }
+    { prop: 'schoolName', label: '校区', width: 120, align: 'center' },
+    { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 120, align: 'center' },
+    { prop: 'courseNames', label: '课程', width: 120, align: 'center' },
+    { prop: 'address', label: '地区', width: 120, align: 'center' },
+    { prop: 'processStatus', label: '客户状态', width: 120, align: 'center', formatter: (row) => conventions.getClientStatus(row.clientStatus) },
+    { prop: 'cooperateTime', label: '成单时间', width: 120, align: 'center' },
+    { prop: 'contractNo', label: '合同编号', width: 120, align: 'center' },
+    { prop: 'fromSource', label: '渠道来源', width: 120, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
+    { prop: 'detailedInfo', label: '预约备注', width: 120, align: 'center' }
 ])
 const page = reactive({
     index: 1,
@@ -140,48 +141,6 @@ const changePage = async (val: number) => {
     await getClients();
 };
 
-// 新增 / 编辑弹窗相关
-const options = ref<any>({
-    labelWidth: '100px',
-    span: 12,
-    list: [
-        { type: 'input', label: '姓名', prop: 'name', required: true },
-        {
-            type: 'select',
-            label: '渠道来源',
-            prop: 'fromSource',
-            required: true,
-            options: conventions.fromSources.map(item => ({
-                label: item.name,
-                value: item.id
-            }))
-        },
-        {
-            type: 'select',
-            label: '性别',
-            prop: 'gender',
-            options: conventions.genders.map(item => ({
-                label: item.name,
-                value: item.id
-            }))
-        },
-        {
-            type: 'input',
-            label: '年龄',
-            prop: 'age',
-            inputType: 'number',
-        },
-        { type: 'input', label: '身份证', prop: 'IDNumber' },
-        { type: 'input', label: '电话', prop: 'phone' },
-        { type: 'input', label: '微信', prop: 'weixin', required: true },
-        { type: 'input', label: 'QQ', prop: 'QQ' },
-        { type: 'input', label: '抖音', prop: 'douyin' },
-        { type: 'input', label: '小红书', prop: 'rednote' },
-        { type: 'input', label: '商务通', prop: 'shangwutong' },
-        { type: 'input', label: '地区', prop: 'address' },
-        { type: 'input', label: '备注', prop: 'info' }
-    ]
-})
 
 // 选择相关
 const selectedRows = ref<any[]>([]);
@@ -205,6 +164,68 @@ const showClientInfo = (client) => {
     currentClient.value = { ...client }
     clientInfoDialogVisible.value = true
 }
+
+const clientGraduate = (row) => {
+    ElMessageBox.confirm(
+        '确认将该学员毕业吗？',
+        '提示',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(async () => {
+        try {
+            const res = await request.post('/extra/graduateClient', {
+                id: row.id
+            }, {
+                headers: { sessionid: localStorage.getItem("sessionid") }
+            });
+            if (res.data.status === 200) {
+                ElMessage.success('操作成功');
+                await getClients();
+            } else {
+                ElMessage.error(res.data.message || '操作失败');
+            }
+        } catch (error) {
+            console.error('操作失败:', error);
+            ElMessage.error('操作失败');
+        }
+    }).catch(() => {
+        // 取消操作，不做任何处理
+    });
+};
+
+const cancelGraduate = (row) => {
+    ElMessageBox.confirm(
+        '确认取消该学员的毕业状态吗？',
+        '提示',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(async () => {
+        try {
+            const res = await request.post('/extra/cancelGraduate', {
+                id: row.id
+            }, {
+                headers: { sessionid: localStorage.getItem("sessionid") }
+            });
+            if (res.data.status === 200) {
+                ElMessage.success('操作成功');
+                await getClients();
+            } else {
+                ElMessage.error(res.data.message || '操作失败');
+            }
+        } catch (error) {
+            console.error('操作失败:', error);
+            ElMessage.error('操作失败');
+        }
+    }).catch(() => {
+        // 取消操作，不做任何处理
+    });
+};
 </script>
 
 <style scoped>
