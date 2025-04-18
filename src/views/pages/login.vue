@@ -122,7 +122,7 @@ tabs.clearTabs();
 .login-container {
     width: 450px;
     border-radius: 5px;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.5);
     padding: 40px 50px 50px;
     box-sizing: border-box;
 }

@@ -147,8 +147,6 @@ const isEdit = ref(false);
 onMounted(async () => {
     await getSchools(); // 先获取校区列表
     await getDepartments(); // 再获取部门列表，以便关联校区名称
-    console.log(departmentData.value);
-    console.log(schoolData.value);
 });
 
 // 获取部门列表

@@ -146,16 +146,16 @@ const resetSidebar = () => {
 }
 const system = [
     {
-        name: '默认',
+        name: '优雅',
+        color: '#722ed1'
+    },
+    {
+        name: '传统',
         color: '#242f42'
     },
     {
         name: '健康',
         color: '#1ABC9C'
-    },
-    {
-        name: '优雅',
-        color: '#722ed1'
     },
     {
         name: '热情',
@@ -167,8 +167,12 @@ const system = [
     }
 ]
 const setSystemTheme = (data: any) => {
-    if (data.name === '默认') {
-        resetSystemTheme()
+    if (data.name === '传统') {
+        themeStore.setHeaderBgColor(data.color)
+        themeStore.setHeaderTextColor('#fff')
+        sidebar.setBgColor(data.color)
+        sidebar.setTextColor('#bfcbd9')
+        themeStore.setPropertyColor(data.color, 'primary')
     } else {
         themeStore.setHeaderBgColor(data.color)
         themeStore.setHeaderTextColor('#fff')

@@ -197,7 +197,11 @@ const submitRegister = async () => {
 
 .login-container {
     width: 500px;
-    /* 稍微加宽一点以适应新增的表单项 */
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 40px 50px 50px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .button-container {

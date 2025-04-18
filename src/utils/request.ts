@@ -2,7 +2,9 @@ import axios, { AxiosInstance, AxiosError, AxiosResponse, InternalAxiosRequestCo
 import { ElMessage } from "element-plus";
 
 const DEVELOP_URL = "http://localhost:8052";
-const PRODUCTION_URL = "http://8.153.204.238:8052";
+// 使用接口反向代理
+const PRODUCTION_URL = "http://8.153.204.238:81";
+// const PRODUCTION_URL = "http://8.153.204.238:8052";
 
 const service: AxiosInstance = axios.create({
     baseURL: DEVELOP_URL
