@@ -88,6 +88,14 @@ const routes: RouteRecordRaw[] = [
                 },
                 component: () => import("../views/pages/class-arrangement.vue")
             },
+            {
+                path: "/dorm-management",
+                name: "dorm-management",
+                meta: {
+                    title: "宿舍管理"
+                },
+                component: () => import("../views/pages/dorm-management.vue")
+            },
 
             {
                 path: "/system-user",
