@@ -24,7 +24,7 @@
                             show-overflow-tooltip />
                         <el-table-column prop="roomCount" label="房间数" width="100" align="center" />
 
-                        <el-table-column label="操作" fixed="right" align="center">
+                        <el-table-column label="操作" width="300" fixed="right" align="center">
                             <template #default="scope">
                                 <el-button size="small" type="primary"
                                     @click="handleEditDormitory(scope.row)">编辑</el-button>
