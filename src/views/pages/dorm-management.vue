@@ -17,7 +17,7 @@
                         <el-table-column prop="name" label="公寓名称" width="150" align="center" show-overflow-tooltip />
                         <el-table-column prop="category" label="类别" width="100" align="center">
                             <template #default="scope">
-                                {{ scope.row.category === 1 ? '公寓' : '民房' }}
+                                {{ conventions.getDormitoryCategory(scope.row.category) }}
                             </template>
                         </el-table-column>
                         <el-table-column prop="schoolName" label="所属校区" width="120" align="center"
@@ -104,7 +104,7 @@
                 <el-form-item label="房间号" prop="roomNumber">
                     <el-input v-model="roomForm.roomNumber" placeholder="请输入房间号" />
                 </el-form-item>
-                <el-form-item label="楼栋" prop="building" v-if="currentDormitory && currentDormitory.category === 2">
+                <el-form-item label="楼栋" prop="building">
                     <el-input v-model="roomForm.building" placeholder="请输入楼栋" />
                 </el-form-item>
                 <el-form-item label="最大床位数" prop="maxBeds">
@@ -120,32 +120,51 @@
         </el-dialog>
 
         <!-- 床位列表弹窗 -->
-        <el-dialog title="床位列表" v-model="bedsDialogVisible" width="800px">
+        <el-dialog title="床位列表" v-model="bedsDialogVisible" width="1000px">
             <div style="margin-bottom: 20px; text-align: right;">
                 <el-button type="primary" @click="showAddBedDialog">添加床位</el-button>
             </div>
             <el-table :data="bedsData" style="width: 100%">
-                <el-table-column type="index" label="序号" width="55" align="center" />
+                <!-- <el-table-column type="index" label="序号" width="55" align="center" /> -->
                 <el-table-column prop="bedNumber" label="床号" width="100" align="center" />
                 <el-table-column prop="category" label="类型" width="120" align="center">
                     <template #default="scope">
-                        {{ getBedCategory(scope.row.category) }}
+                        {{ conventions.getBedCategory(scope.row.category) }}
                     </template>
                 </el-table-column>
-                <el-table-column prop="duration" label="时间期限(周)" width="120" align="center" />
+                <el-table-column prop="duration" label="时限（周）" width="120" align="center" />
                 <el-table-column prop="status" label="状态" width="100" align="center">
                     <template #default="scope">
-                        {{ scope.row.studentId ? '已住' : '空闲' }}
+                        {{ scope.row.isVacant ? '空闲' : '已住' }}
                     </template>
                 </el-table-column>
                 <el-table-column prop="studentName" label="住宿学员" width="120" align="center">
                     <template #default="scope">
-                        {{ scope.row.studentName || '-' }}
+                        <el-tooltip v-if="isOverdue(scope.row)" effect="dark" content="该学员已超过住宿时限" placement="top">
+                            <span :style="{ color: isOverdue(scope.row) ? '#ff4949' : '' }">
+                                {{ scope.row.studentName || '-' }}
+                            </span>
+                        </el-tooltip>
+                        <span v-else>{{ scope.row.studentName || '-' }}</span>
                     </template>
                 </el-table-column>
-                <el-table-column label="操作" fixed="right" align="center">
+                <el-table-column prop="bedCheckInDate" label="入住时间" width="120" align="center">
+                    <template #default="scope">
+                        <el-tooltip v-if="isOverdue(scope.row)" effect="dark"
+                            :content="`已超期${getOverdueDays(scope.row)}天`" placement="top">
+                            <span :style="{ color: isOverdue(scope.row) ? '#ff4949' : '' }">
+                                {{ scope.row.bedCheckInDate || '-' }}
+                            </span>
+                        </el-tooltip>
+                        <span v-else>{{ scope.row.bedCheckInDate || '-' }}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作" width="250" fixed="right" align="center">
                     <template #default="scope">
                         <el-button size="small" type="primary" @click="handleEditBed(scope.row)">编辑</el-button>
+                        <el-button v-if="scope.row.studentId" size="small" type="danger"
+                            @click="handleCheckOut(scope.row)">学员离住</el-button>
+                        <el-button v-else size="small" type="success" @click="handleCheckIn(scope.row)">学员入住</el-button>
                         <el-button size="small" type="danger" @click="handleDeleteBed(scope.row)">删除</el-button>
                     </template>
                 </el-table-column>
@@ -166,7 +185,7 @@
                         <el-option :label="'下铺'" :value="3" />
                     </el-select>
                 </el-form-item>
-                <el-form-item label="时间期限(周)" prop="duration">
+                <el-form-item label="时限（周）" prop="duration">
                     <el-input-number v-model="bedForm.duration" :min="1" />
                 </el-form-item>
             </el-form>
@@ -177,6 +196,24 @@
                 </span>
             </template>
         </el-dialog>
+
+        <!-- 学员入住弹窗 -->
+        <el-dialog title="学员入住" v-model="checkInDialogVisible" width="500px">
+            <el-form ref="checkInFormRef" :model="checkInForm" :rules="checkInRules" label-width="100px">
+                <el-form-item label="选择学员" prop="studentId">
+                    <el-select v-model="checkInForm.studentId" placeholder="请选择学员" style="width: 100%" filterable>
+                        <el-option v-for="item in studentOptions" :key="item.value" :label="item.label"
+                            :value="item.value" />
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="checkInDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="submitCheckIn">确定</el-button>
+                </span>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
@@ -184,6 +221,7 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { CirclePlusFilled } from '@element-plus/icons-vue';
+import * as conventions from '@/utils/conventions';
 import request from '@/utils/request';
 
 onMounted(async () => {
@@ -499,7 +537,7 @@ const currentRoom = ref(null);
 const showBeds = async (room) => {
     currentRoom.value = room;
     try {
-        const res = await request.post("/bed/getBeds", {
+        const res = await request.post("/dorm/getBeds", {
             roomId: room.id
         }, {
             headers: { sessionid: localStorage.getItem("sessionid") }
@@ -511,16 +549,6 @@ const showBeds = async (room) => {
     } catch (error) {
         console.error('获取床位列表失败:', error);
         ElMessage.error('获取床位列表失败');
-    }
-};
-
-// 床位类型转换
-const getBedCategory = (category) => {
-    switch (category) {
-        case 1: return '单人床';
-        case 2: return '上铺';
-        case 3: return '下铺';
-        default: return '未知';
     }
 };
 
@@ -574,7 +602,7 @@ const submitBedForm = async () => {
     await bedFormRef.value.validate(async (valid) => {
         if (valid) {
             try {
-                const url = isEditBed.value ? '/bed/updateBed' : '/bed/addBed';
+                const url = isEditBed.value ? '/dorm/updateBed' : '/dorm/addBed';
                 const res = await request.post(url, bedForm.value, {
                     headers: { sessionid: localStorage.getItem("sessionid") }
                 });
@@ -610,7 +638,7 @@ const handleDeleteBed = (row) => {
         }
     ).then(async () => {
         try {
-            const res = await request.post('/bed/deleteBed', {
+            const res = await request.post('/dorm/deleteBed', {
                 id: row.id
             }, {
                 headers: { sessionid: localStorage.getItem("sessionid") }
@@ -631,6 +659,140 @@ const handleDeleteBed = (row) => {
             ElMessage.error('删除失败');
         }
     });
+};
+
+// 学员入住相关
+const checkInDialogVisible = ref(false);
+const checkInFormRef = ref();
+const checkInForm = ref({
+    studentId: '',
+    bedId: '',
+});
+const studentOptions = ref([]);
+const currentBed = ref(null);
+
+const checkInRules = {
+    studentId: [{ required: true, message: '请选择学员', trigger: 'change' }],
+};
+
+// 获取学员列表
+const getStudents = async () => {
+    try {
+        const res = await request.post("/dorm/getUncheckedDealedClients", {
+            pageSize: 10000
+        }, {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        });
+        if (res.data.status === 200) {
+            studentOptions.value = res.data.clients.map(item => ({
+                label: `${item.name} (${item.phone})`,
+                value: item.id
+            }));
+        }
+    } catch (error) {
+        console.error('获取学员列表失败:', error);
+        ElMessage.error('获取学员列表失败');
+    }
+};
+
+const handleCheckIn = async (row) => {
+    currentBed.value = row;
+    checkInForm.value = {
+        studentId: '',
+        bedId: row.id
+    };
+    await getStudents();
+    checkInDialogVisible.value = true;
+};
+
+const submitCheckIn = async () => {
+    if (!checkInFormRef.value) return;
+    await checkInFormRef.value.validate(async (valid) => {
+        if (valid) {
+            try {
+                const res = await request.post('/dorm/assignBed', {
+                    bedId: currentBed.value.id,
+                    studentId: checkInForm.value.studentId
+                }, {
+                    headers: { sessionid: localStorage.getItem("sessionid") }
+                });
+
+                if (res.data.status === 200) {
+                    ElMessage.success('入住成功');
+                    checkInDialogVisible.value = false;
+                    // 刷新床位列表
+                    showBeds(currentRoom.value);
+                    // 刷新房间列表
+                    showRooms(currentDormitory.value);
+                    // 刷新公寓列表
+                    getDormitories(currentSelectedSchoolId.value);
+                } else {
+                    ElMessage.error(res.data.message || '入住失败');
+                }
+            } catch (error) {
+                console.error('入住失败:', error);
+                ElMessage.error('入住失败');
+            }
+        }
+    });
+};
+
+const handleCheckOut = (row) => {
+    ElMessageBox.confirm(
+        '确认办理学员离住吗？',
+        '警告',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(async () => {
+        try {
+            const res = await request.post('/dorm/checkOut', {
+                bedId: row.id,
+                studentId: null
+            }, {
+                headers: { sessionid: localStorage.getItem("sessionid") }
+            });
+            if (res.data.status === 200) {
+                ElMessage.success('离住成功');
+                // 刷新床位列表
+                showBeds(currentRoom.value);
+                // 刷新房间列表
+                showRooms(currentDormitory.value);
+                // 刷新公寓列表
+                getDormitories(currentSelectedSchoolId.value);
+            } else {
+                ElMessage.error(res.data.message || '离住失败');
+            }
+        } catch (error) {
+            console.error('离住失败:', error);
+            ElMessage.error('离住失败');
+        }
+    });
+};
+// 在 script setup 中添加以下函数
+const isOverdue = (row) => {
+    if (!row.bedCheckInDate || !row.duration) return false;
+
+    const checkInDate = new Date(row.bedCheckInDate);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - checkInDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // 将周数转换为天数进行比较
+    return diffDays > (row.duration * 7);
+};
+const getOverdueDays = (row) => {
+    if (!row.bedCheckInDate || !row.duration) return 0;
+
+    const checkInDate = new Date(row.bedCheckInDate);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - checkInDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const overdueDays = diffDays - (row.duration * 7);
+
+    return overdueDays > 0 ? overdueDays : 0;
 };
 </script>
 

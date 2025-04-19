@@ -317,3 +317,42 @@ export const getCourseCategory = (id: number): string | undefined => {
     const category = courseCategories.find((v) => v.id === id);
     return category ? category.name : undefined;
 };
+
+
+// Dormitory：宿舍类别
+export const dormitoryCategories: Convention[] = [
+    {
+        id: 1,
+        name: "公寓"
+    },
+    {
+        id: 2,
+        name: "民房"
+    }
+];
+
+export const getDormitoryCategory = (id: number): string | undefined => {
+    const category = dormitoryCategories.find((v) => v.id === id);
+    return category ? category.name : undefined;
+};
+
+// Bed：床位类型
+export const bedCategories: Convention[] = [
+    {
+        id: 1,
+        name: "单人床"
+    },
+    {
+        id: 2,
+        name: "上铺"
+    },
+    {
+        id: 3,
+        name: "下铺"
+    }
+];
+
+export const getBedCategory = (id: number): string | undefined => {
+    const category = bedCategories.find((v) => v.id === id);
+    return category ? category.name : undefined;
+};

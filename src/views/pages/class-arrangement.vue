@@ -93,8 +93,8 @@
             <el-form :model="addStudentForm" label-width="100px">
                 <el-form-item label="选择学员">
                     <el-select v-model="addStudentForm.studentId" filterable placeholder="请选择学员" style="width: 100%">
-                        <el-option v-for="student in availableStudents" :key="student.id" :label="student.name"
-                            :value="student.id" />
+                        <el-option v-for="student in availableStudents" :key="student.id"
+                            :label="student.name + '（' + student.phone + '）'" :value="student.id" />
                     </el-select>
                 </el-form-item>
             </el-form>

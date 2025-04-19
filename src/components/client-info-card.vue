@@ -1,6 +1,18 @@
 <template>
-    <el-dialog title="客户信息卡" v-model="visible" width="800px" destroy-on-close>
+    <el-dialog title="客户信息卡" v-model="visible" width="1200px" destroy-on-close>
         <div class="client-info-card">
+            <!-- 添加进度条 -->
+            <div class="progress-container">
+                <el-steps :active="getStatusStep" finish-status="success" align-center>
+                    <el-step title="未分配" />
+                    <el-step title="已分配" />
+                    <el-step title="已转客户" />
+                    <el-step title="已预约到店" />
+                    <el-step title="已成单" />
+                    <el-step title="已毕业" />
+                </el-steps>
+            </div>
+
             <el-descriptions :column="2" border>
                 <el-descriptions-item label="姓名">{{ client.name }}</el-descriptions-item>
                 <el-descriptions-item label="渠道来源">{{ conventions.getFromSource(client.fromSource)
@@ -100,12 +112,33 @@
                     <el-table-column prop="info" label="课程备注" align="center" min-width="150" show-overflow-tooltip />
                 </el-table>
             </div>
+
+            <!-- 如果有住宿信息，显示宿舍信息 -->
+            <div v-if="client.bedId" class="dorm-info">
+                <h3>住宿信息</h3>
+                <el-descriptions :column="2" border>
+                    <el-descriptions-item label="公寓名">{{ dormInfo.name }}</el-descriptions-item>
+                    <el-descriptions-item label="类型">{{ conventions.getDormitoryCategory(dormInfo.category)
+                        }}</el-descriptions-item>
+                    <el-descriptions-item label="房间号 / 户号">{{ roomInfo.roomNumber }}</el-descriptions-item>
+                    <el-descriptions-item label="楼栋">{{ roomInfo.building }}</el-descriptions-item>
+                    <el-descriptions-item label="床位号">{{ bedInfo.bedNumber }}</el-descriptions-item>
+                    <el-descriptions-item label="床位类型">{{ conventions.getBedCategory(bedInfo.category)
+                    }}</el-descriptions-item>
+                    <el-descriptions-item label="入住时间">{{ client.bedCheckInDate }}</el-descriptions-item>
+                    <el-descriptions-item label="状态" :span="2">
+                        <span :style="{ color: isOverdue ? '#ff4949' : '#93ff40' }">
+                            {{ isOverdue ? '已超期' + overdueDays + '天' : '正常' }}
+                        </span>
+                    </el-descriptions-item>
+                </el-descriptions>
+            </div>
         </div>
     </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import * as conventions from '@/utils/conventions'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
@@ -132,7 +165,8 @@ watch(() => props.modelValue, async (newVal) => {
     if (newVal && props.client.id) {
         await Promise.all([
             getPaymentRecords(),
-            getCourseRecords()
+            getCourseRecords(),
+            getDormInfo()
         ])
     }
 })
@@ -184,6 +218,77 @@ const getCourseRecords = async () => {
         ElMessage.error('获取课程记录失败')
     }
 }
+
+const dormInfo = <any>ref({});
+const roomInfo = <any>ref({});
+const bedInfo = <any>ref({});
+
+
+const isOverdue = ref(false);
+const overdueDays = ref(0);
+
+// 获取住宿信息
+const getDormInfo = async () => {
+    if (!props.client.bedId) return;
+
+    try {
+        const res = await request.post('/dorm/getDormInfoByBedId', {
+            bedId: props.client.bedId
+        }, {
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
+        });
+
+        if (res.data.status === 200) {
+            dormInfo.value = res.data.dorm;
+            roomInfo.value = res.data.room;
+            bedInfo.value = res.data.bed;
+
+            // 计算是否超期
+            if (props.client.bedCheckInDate && bedInfo.value.duration) {
+                const checkInDate = new Date(props.client.bedCheckInDate);
+                const today = new Date();
+                const diffTime = Math.abs(today.getTime() - checkInDate.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const durationDays = bedInfo.value.duration * 7;
+
+                isOverdue.value = diffDays > durationDays;
+                if (isOverdue.value) {
+                    overdueDays.value = diffDays - durationDays;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('获取住宿信息失败:', error);
+        ElMessage.error('获取住宿信息失败');
+    }
+};
+
+// 添加状态步骤计算属性
+const getStatusStep = computed(() => {
+    const statusMap = {
+        1: 1, // 未分配
+        2: 2, // 已分配
+        3: 3, // 已转客户
+        4: 4, // 已预约到店
+        5: 5, // 已成单
+        6: 6  // 已毕业
+    };
+    const clientStatus = props.client.clientStatus;
+    const processStatus = props.client.processStatus;
+    if (processStatus === 1) {
+        return statusMap[clientStatus];
+    } else if (processStatus === 2) {
+        // 毕业
+        if (clientStatus === 5) {
+            return statusMap[6];
+        }
+        // 未毕业，返回已成单
+        return statusMap[5];
+    }
+    return 0;
+});
 </script>
 
 <style scoped>
@@ -203,10 +308,12 @@ const getCourseRecords = async () => {
     color: #303133;
 }
 
+.dorm-info,
 .study-records {
     margin-top: 20px;
 }
 
+.dorm-info h3,
 .study-records h3,
 .study-records h4 {
     margin-bottom: 15px;
@@ -244,5 +351,34 @@ const getCourseRecords = async () => {
 .status-highlight {
     font-weight: bold;
     color: #93ff40;
+}
+
+.progress-container {
+    margin-bottom: 30px;
+    padding: 20px 40px;
+    background-color: #f5f7fa;
+    border-radius: 8px;
+}
+
+:deep(.el-step__title) {
+    font-size: 14px !important;
+}
+
+:deep(.el-step__head.is-success) {
+    color: #67c23a;
+    border-color: #67c23a;
+}
+
+:deep(.el-step__title.is-success) {
+    color: #67c23a;
+}
+
+:deep(.el-step__head.is-process) {
+    color: #409eff;
+    border-color: #409eff;
+}
+
+:deep(.el-step__title.is-process) {
+    color: #409eff;
 }
 </style>
