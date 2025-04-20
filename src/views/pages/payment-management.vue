@@ -144,7 +144,7 @@ const baseColumns = [
     { type: 'index', label: '序号', width: 55, align: 'center' },
     { prop: 'teacherName', label: '负责教师', align: 'center' },
     { prop: 'amount', label: '金额（元）', align: 'center', formatter: (row) => Math.abs(row.amount) },
-    { prop: 'category', label: '费用类别', align: 'center', formatter: (row) => conventions.getPaymentCategory(row.category) },
+    { prop: 'category', label: '费用项目', align: 'center', formatter: (row) => conventions.getPaymentCategory(row.category) },
     { prop: 'paymentMethod', label: '支付方式', align: 'center', formatter: (row) => conventions.getPaymentMethod(row.paymentMethod) },
     { prop: 'paymentTime', label: '支付时间', align: 'center' },
     { prop: 'info', label: '备注', width: 120, align: 'center' },
@@ -186,7 +186,7 @@ const getPayments = async (isIncome = true) => {
         const res = await request.post("/extra/getPayments", {
             pageIndex: page.index,
             pageSize: page.size,
-            isIncome: isIncome,
+            paymentType: isIncome ? "income" : "expense",
         }, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
@@ -246,7 +246,7 @@ const options = ref<any>({
         },
         {
             type: 'select',
-            label: '费用类别',
+            label: '费用项目',
             prop: 'category',
             required: true,
             options: conventions.paymentCategories.map(item => ({
@@ -409,7 +409,7 @@ const expenseOptions = ref<any>({
         },
         {
             type: 'select',
-            label: '费用类别',
+            label: '费用项目',
             prop: 'category',
             required: true,
             options: conventions.paymentCategories.map(item => ({
