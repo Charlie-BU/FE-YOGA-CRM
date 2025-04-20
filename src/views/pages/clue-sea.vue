@@ -12,9 +12,7 @@
             <el-button type="primary" :disabled="!selectedRows.length" @click="handleAssign">分配</el-button>
             <el-button type="danger" :disabled="!selectedRows.length" @click="handleUnassign">取消分配</el-button>
             <el-button type="success" :disabled="!selectedRows.length" @click="handleToClient">转客户</el-button>
-
-            <!-- 列设置 -->
-            <div class="table-toolbar" style="margin-top: 10px; text-align: right;">
+            <div style="float: right;">
                 <el-tooltip effect="dark" content="列设置" placement="top">
                     <el-button type="primary" :icon="Setting" circle @click="columnSettingVisible = true"></el-button>
                 </el-tooltip>
@@ -53,7 +51,7 @@
             <el-divider></el-divider>
             <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
                 <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
-                }}</el-checkbox>
+                    }}</el-checkbox>
             </el-checkbox-group>
             <template #footer>
                 <span class="dialog-footer">

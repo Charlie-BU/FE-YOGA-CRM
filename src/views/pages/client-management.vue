@@ -1,8 +1,15 @@
 <template>
     <div>
-        <TableSearch :query="query" :options="searchOpt" :search="handleSearch" />
-
+        <!-- <TableSearch :query="query" :options="searchOpt" :search="handleSearch" /> -->
+        <el-tabs v-model="activeTab" @tab-click="handleTabClick">
+            <el-tab-pane label="未预约到店客户" name="unReserved"></el-tab-pane>
+            <el-tab-pane label="已预约到店客户" name="reserved"></el-tab-pane>
+        </el-tabs>
         <div class="container">
+            <el-button type="primary" :icon="Search" @click="showFilterDialog">
+                筛选查询
+            </el-button>
+            <el-button type="warning" :icon="Download" @click="exportToExcel">导出</el-button>
             <el-button type="warning" :icon="Download" @click="exportToExcel">导出</el-button>
             <el-button v-if="currClientStatus === 3" type="primary" :disabled="selectedRows.length !== 1"
                 @click="handleReserve">预约到店</el-button>
@@ -16,12 +23,12 @@
                 :disabled="selectedRows.length !== 1" @click="handleCancelCooperation">取消成单</el-button>
             <el-button v-if="currClientStatus === 4" type="primary" :disabled="selectedRows.length !== 1"
                 @click="handlePayment">交定金</el-button>
-
-            <div class="table-toolbar" style="margin-top: 10px; text-align: right;">
+            <div style="float: right;">
                 <el-tooltip effect="dark" content="列设置" placement="top">
                     <el-button type="primary" :icon="Setting" circle @click="columnSettingVisible = true"></el-button>
                 </el-tooltip>
             </div>
+
 
             <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
                 @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
@@ -54,15 +61,39 @@
                     @current-change="changePage" layout="total, prev, pager, next">
                     <template #default></template>
                 </el-pagination>
-                <el-button :type="currClientStatus === 3 ? 'success' : 'primary'" @click="switchClientStatus">{{
-                    currClientStatus
-                        === 3 ? "查看已预约到店客户" :
-                        "查看未预约到店客户"
-                }}</el-button>
             </div>
         </div>
 
-        <!-- 添加列设置弹窗 -->
+        <!-- 筛选弹窗 -->
+        <el-dialog title="筛选条件" v-model="filterDialogVisible" width="800px">
+            <el-form :model="query" label-width="100px">
+                <el-row :gutter="20">
+                    <el-col :span="12" v-for="(item, index) in currentSearchOpt" :key="index">
+                        <el-form-item :label="item.label">
+                            <el-input v-if="item.type === 'input'" v-model="query[item.prop]"
+                                :placeholder="`请输入${item.label.replace('：', '')}`" clearable />
+                            <el-select v-else-if="item.type === 'select'" v-model="query[item.prop]"
+                                :placeholder="`请选择${item.label.replace('：', '')}`" style="width: 100%" clearable>
+                                <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label"
+                                    :value="opt.value" />
+                            </el-select>
+                            <el-date-picker v-else-if="item.type === 'daterange'" v-model="query[item.prop]"
+                                type="daterange" range-separator="至" :start-placeholder="item.startPlaceholder"
+                                :end-placeholder="item.endPlaceholder" style="width: 100%" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-form>
+            <template #footer>
+                <div class="dialog-footer">
+                    <el-button @click="resetQuery">重置</el-button>
+                    <el-button type="primary" @click="handleSearch">查询</el-button>
+                </div>
+            </template>
+        </el-dialog>
+
+
+        <!-- 列设置弹窗 -->
         <el-dialog title="列设置" v-model="columnSettingVisible" width="500px">
             <el-checkbox v-model="checkAll" :indeterminate="isIndeterminate"
                 @change="handleCheckAllChange">全选</el-checkbox>
@@ -251,7 +282,7 @@
 <script setup lang="ts" name="system-user">
 import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { Download, Setting } from '@element-plus/icons-vue';
+import { Download, Setting, Search } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
 import request from '@/utils/request';
 import TableSearch from '@/components/table-search.vue';
@@ -265,22 +296,150 @@ import jsPDF from 'jspdf';
 import { loginCheck } from '@/utils/login-check';
 
 const briefUserInfo = ref(null)
+
 onMounted(async () => {
     briefUserInfo.value = await loginCheck();
+    await getSchools(); // 添加获取校区列表
     await getClients();
-    // 初始化列设置
     initColumnSettings();
-})
+});
 
-// 查询相关
+const activeTab = ref('unReserved');
+
+// 筛选相关
+// 筛选相关
+const filterDialogVisible = ref(false);
+
+const showFilterDialog = () => {
+    filterDialogVisible.value = true;
+};
+
+// 修改查询对象，增加更多字段
 const query = reactive({
     name: '',
+    fromSource: '',
+    gender: '',
+    age: '',
+    IDNumber: '',
+    phone: '',
+    weixin: '',
+    QQ: '',
+    douyin: '',
+    rednote: '',
+    shangwutong: '',
+    address: '',
+    timeRange: [], // 创建时间范围
+    // 已预约客户特有字段
+    schoolId: '',
+    appointerId: '',
+    appointDateRange: [], // 预约日期范围
+    nextTalkDateRange: [], // 下次沟通日期范围
+    processStatus: '', // 跟进状态
 });
-const searchOpt = ref<FormOptionList[]>([
-    { type: 'input', label: '姓名：', prop: 'name' }
-])
+
+// 未预约客户的搜索选项
+const unReservedSearchOpt = ref([
+    { type: 'input', label: '姓名：', prop: 'name' },
+    {
+        type: 'select',
+        label: '渠道来源：',
+        prop: 'fromSource',
+        options: <any>conventions.fromSources.map(item => ({
+            label: item.name,
+            value: item.id
+        }))
+    },
+    {
+        type: 'select',
+        label: '性别：',
+        prop: 'gender',
+        options: conventions.genders.map(item => ({
+            label: item.name,
+            value: item.id
+        }))
+    },
+    { type: 'input', label: '年龄：', prop: 'age' },
+    { type: 'input', label: '身份证：', prop: 'IDNumber' },
+    { type: 'input', label: '电话：', prop: 'phone' },
+    { type: 'input', label: '微信：', prop: 'weixin' },
+    { type: 'input', label: 'QQ：', prop: 'QQ' },
+    { type: 'input', label: '抖音：', prop: 'douyin' },
+    { type: 'input', label: '小红书：', prop: 'rednote' },
+    { type: 'input', label: '商务通：', prop: 'shangwutong' },
+    { type: 'input', label: '地区：', prop: 'address' },
+    {
+        type: 'daterange',
+        label: '创建时间：',
+        prop: 'timeRange',
+        startPlaceholder: '开始日期',
+        endPlaceholder: '结束日期'
+    }
+]);
+
+// 已预约客户的搜索选项
+const reservedSearchOpt = ref([
+    { type: 'input', label: '姓名：', prop: 'name' },
+    { type: 'input', label: '电话：', prop: 'phone' },
+    { type: 'input', label: '微信：', prop: 'weixin' },
+    {
+        type: 'select',
+        label: '校区：',
+        prop: 'schoolId',
+        options: [] // 需要动态获取
+    },
+    { type: 'input', label: '所属人：', prop: 'affiliatedUserName' },
+    { type: 'input', label: '预约人：', prop: 'appointerName' },
+    { type: 'input', label: '地区：', prop: 'address' },
+    {
+        type: 'daterange',
+        label: '预约日期：',
+        prop: 'appointDateRange',
+        startPlaceholder: '开始日期',
+        endPlaceholder: '结束日期'
+    },
+    {
+        type: 'daterange',
+        label: '下次沟通日期：',
+        prop: 'nextTalkDateRange',
+        startPlaceholder: '开始日期',
+        endPlaceholder: '结束日期'
+    },
+    {
+        type: 'select',
+        label: '跟进状态：',
+        prop: 'processStatus',
+        options: [
+            { label: '未成单', value: 1 },
+            { label: '已成单', value: 2 }
+        ]
+    },
+    {
+        type: 'daterange',
+        label: '创建时间：',
+        prop: 'timeRange',
+        startPlaceholder: '开始日期',
+        endPlaceholder: '结束日期'
+    }
+]);
+
+// 计算当前应该显示的搜索选项
+const currentSearchOpt = computed(() => {
+    return currClientStatus.value === 3 ? unReservedSearchOpt.value : reservedSearchOpt.value;
+});
+
+// 重置查询条件
+const resetQuery = () => {
+    Object.keys(query).forEach(key => {
+        if (Array.isArray(query[key])) {
+            query[key] = [];
+        } else {
+            query[key] = '';
+        }
+    });
+};
 const handleSearch = async () => {
-    if (loading.value) return; // 如果正在加载，则不执行
+    if (loading.value) return;
+    filterDialogVisible.value = false;
     page.index = 1;
     await getClients();
 };
@@ -457,26 +616,25 @@ const applyColumnSettings = () => {
 };
 
 // 修改切换客户状态的方法，添加列设置更新
-const switchClientStatus = async () => {
-    if (currClientStatus.value === 3) {
-        currClientStatus.value = 4;
-        columns.value = secondColumns as {
-            type?: string;
-            prop: string;
-            label: string;
-            width: number;
-            align: string;
-            renderCell?: (h: any, { row }: { row: any }) => any;
-            formatter?: (row: any) => string;
-        }[];
-    } else {
-        currClientStatus.value = 3;
-        columns.value = defaultColumns;
-    }
-    // 更新列设置
+const handleTabClick = async (tab) => {
+    const statusMap = {
+        unReserved: 3,
+        reserved: 4,
+    };
+    // 如果点击的是当前已选中的标签页，则不执行任何操作
+    if (currClientStatus.value === statusMap[tab.props.name]) return;
+
+    selectedRows.value = []; // 清空选中行
+    const newStatus = activeTab.value === 'unReserved' ? 4 : 3;
+
+    // 更新状态和列
+    currClientStatus.value = newStatus;
+    columns.value = newStatus === 3 ? defaultColumns : secondColumns;
+
+    // 更新列设置并重新获取数据
     updateColumnSettings();
     await getClients();
-}
+};
 
 const page = reactive({
     index: 1,
@@ -489,6 +647,26 @@ const tableData = ref([]);
 // 添加 loading 状态
 const loading = ref(false);
 
+const getSchools = async () => {
+    try {
+        const res = await request.post("/dept/getAllSchools", {}, {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        });
+        if (res.data.status === 200) {
+            // 更新已预约客户搜索选项中的校区选项
+            const schoolIndex = reservedSearchOpt.value.findIndex(opt => opt.prop === 'schoolId');
+            if (schoolIndex !== -1) {
+                reservedSearchOpt.value[schoolIndex].options = res.data.schools.map(item => ({
+                    label: item.name,
+                    value: item.id
+                }));
+            }
+        }
+    } catch (error) {
+        console.error('获取校区列表失败:', error);
+    }
+};
+
 const getClients = async () => {
     loading.value = true;
     try {
@@ -496,7 +674,13 @@ const getClients = async () => {
             clientStatus: currClientStatus.value,
             pageIndex: page.index,
             pageSize: page.size,
-            name: query.name  // 只传递姓名查询参数
+            ...query,
+            startTime: query.timeRange?.[0] || '',
+            endTime: query.timeRange?.[1] || '',
+            appointStartDate: query.appointDateRange?.[0] || '',
+            appointEndDate: query.appointDateRange?.[1] || '',
+            nextTalkStartDate: query.nextTalkDateRange?.[0] || '',
+            nextTalkEndDate: query.nextTalkDateRange?.[1] || '',
         }, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
@@ -513,6 +697,7 @@ const getClients = async () => {
         loading.value = false;
     }
 };
+
 
 const changePage = async (val: number) => {
     if (loading.value) return; // 如果正在加载，则不执行
@@ -1203,5 +1388,9 @@ const showClientInfo = (client) => {
 
 .el-table :deep(.el-table__fixed) {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.dialog-footer {
+    text-align: right;
 }
 </style>
