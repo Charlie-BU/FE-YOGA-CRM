@@ -81,24 +81,24 @@ export const menuData: Menus[] = [
                 index: "/transaction-summary",
                 title: "收入支出汇总表"
             },
-            {
-                id: "010-3",
-                pid: "1",
-                index: "/inventory-in-out",
-                title: "物资出入库明细表"
-            },
-            {
-                id: "010-4",
-                pid: "1",
-                index: "/inventory-sales",
-                title: "物资进销存表"
-            },
-            {
-                id: "010-5",
-                pid: "1",
-                index: "/inventory-balance",
-                title: "物资库存余额查询"
-            },
+            // {
+            //     id: "010-3",
+            //     pid: "1",
+            //     index: "/inventory-in-out",
+            //     title: "物资出入库明细表"
+            // },
+            // {
+            //     id: "010-4",
+            //     pid: "1",
+            //     index: "/inventory-sales",
+            //     title: "物资进销存表"
+            // },
+            // {
+            //     id: "010-5",
+            //     pid: "1",
+            //     index: "/inventory-balance",
+            //     title: "物资库存余额查询"
+            // },
             {
                 id: "010-6",
                 pid: "1",

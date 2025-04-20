@@ -1,7 +1,11 @@
 <template>
     <div>
-        <TableSearch :query="query" :options="searchOpt" :search="handleSearch" />
+        <!-- <TableSearch :query="query" :options="searchOpt" :search="handleSearch" /> -->
+
         <div class="container">
+            <el-button type="primary" :icon="Search" @click="showFilterDialog">
+                筛选查询
+            </el-button>
             <el-button type="warning" :icon="Upload" @click="handleBatchImport">批量导入</el-button>
             <el-button type="warning" :icon="Download" @click="exportToExcel">导出</el-button>
             <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true">新增</el-button>
@@ -49,7 +53,7 @@
             <el-divider></el-divider>
             <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
                 <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
-                    }}</el-checkbox>
+                }}</el-checkbox>
             </el-checkbox-group>
             <template #footer>
                 <span class="dialog-footer">
@@ -141,13 +145,41 @@
                 </span>
             </template>
         </el-dialog>
+
+        <!-- 添加筛选弹窗 -->
+        <el-dialog title="筛选条件" v-model="filterDialogVisible" width="800px">
+            <el-form :model="query" label-width="100px">
+                <el-row :gutter="20">
+                    <el-col :span="12" v-for="(item, index) in searchOpt" :key="index">
+                        <el-form-item :label="item.label">
+                            <el-input v-if="item.type === 'input'" v-model="query[item.prop]"
+                                :placeholder="`请输入${item.label.replace('：', '')}`" clearable />
+                            <el-select v-else-if="item.type === 'select'" v-model="query[item.prop]"
+                                :placeholder="`请选择${item.label.replace('：', '')}`" style="width: 100%" clearable>
+                                <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label"
+                                    :value="opt.value" />
+                            </el-select>
+                            <el-date-picker v-else-if="item.type === 'daterange'" v-model="query[item.prop]"
+                                type="daterange" range-separator="至" :start-placeholder="item.startPlaceholder"
+                                :end-placeholder="item.endPlaceholder" style="width: 100%" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-form>
+            <template #footer>
+                <div class="dialog-footer">
+                    <el-button @click="resetQuery">重置</el-button>
+                    <el-button type="primary" @click="handleSearch">查询</el-button>
+                </div>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts" name="system-user">
 import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { CirclePlusFilled, Download, Upload, Setting } from '@element-plus/icons-vue';
+import { CirclePlusFilled, Download, Upload, Setting, Search } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
 import request from '@/utils/request';
 import TableSearch from '@/components/table-search.vue';
@@ -160,15 +192,86 @@ onMounted(async () => {
     initColumnSettings();
 })
 
-// 查询相关
+// 筛选相关
+// 添加筛选弹窗控制变量
+const filterDialogVisible = ref(false);
+
+// 添加显示筛选弹窗方法
+const showFilterDialog = () => {
+    filterDialogVisible.value = true;
+};
+
+const resetQuery = () => {
+    // 重置所有查询条件
+    Object.keys(query).forEach(key => {
+        query[key] = key === 'timeRange' ? [] : '';
+    });
+};
 const query = reactive({
     name: '',
+    fromSource: '',
+    gender: '',
+    age: '',
+    IDNumber: '',
+    phone: '',
+    weixin: '',
+    QQ: '',
+    douyin: '',
+    rednote: '',
+    shangwutong: '',
+    address: '',
+    clientStatus: '',
+    timeRange: [],
 });
-const searchOpt = ref<FormOptionList[]>([
-    { type: 'input', label: '姓名：', prop: 'name' }
-])
+const searchOpt = ref<any[]>([
+    { type: 'input', label: '姓名：', prop: 'name' },
+    {
+        type: 'select',
+        label: '渠道来源：',
+        prop: 'fromSource',
+        options: conventions.fromSources.map(item => ({
+            label: item.name,
+            value: item.id
+        }))
+    },
+    {
+        type: 'select',
+        label: '性别：',
+        prop: 'gender',
+        options: conventions.genders.map(item => ({
+            label: item.name,
+            value: item.id
+        }))
+    },
+    { type: 'input', label: '年龄：', prop: 'age' },
+    { type: 'input', label: '身份证：', prop: 'IDNumber' },
+    { type: 'input', label: '电话：', prop: 'phone' },
+    { type: 'input', label: '微信：', prop: 'weixin' },
+    { type: 'input', label: 'QQ：', prop: 'QQ' },
+    { type: 'input', label: '抖音：', prop: 'douyin' },
+    { type: 'input', label: '小红书：', prop: 'rednote' },
+    { type: 'input', label: '商务通：', prop: 'shangwutong' },
+    { type: 'input', label: '地区：', prop: 'address' },
+    {
+        type: 'select',
+        label: '客户状态：',
+        prop: 'clientStatus',
+        options: conventions.clientStatuses.map(item => ({
+            label: item.name,
+            value: item.id
+        }))
+    },
+    {
+        type: 'daterange',
+        label: '创建时间：',
+        prop: 'timeRange',
+        startPlaceholder: '开始日期',
+        endPlaceholder: '结束日期'
+    }
+]);
 const handleSearch = async () => {
-    if (loading.value) return; // 如果正在加载，则不执行
+    if (loading.value) return;
+    filterDialogVisible.value = false;
     page.index = 1;
     await getClients();
 };
@@ -290,7 +393,9 @@ const getClients = async () => {
         const res = await request.post("/extra/getClueClients", {
             pageIndex: page.index,
             pageSize: page.size,
-            name: query.name  // 只传递姓名查询参数
+            ...query,
+            startTime: query.timeRange?.[0] || '',
+            endTime: query.timeRange?.[1] || '',
         }, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
@@ -792,5 +897,15 @@ const handleUpload = async () => {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
+}
+
+.toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.dialog-footer {
+    text-align: right;
 }
 </style>

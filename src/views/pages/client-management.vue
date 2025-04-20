@@ -69,7 +69,7 @@
             <el-divider></el-divider>
             <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
                 <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
-                }}</el-checkbox>
+                    }}</el-checkbox>
             </el-checkbox-group>
             <template #footer>
                 <span class="dialog-footer">
@@ -1099,27 +1099,6 @@ const handlePayment = async () => {
         console.error('操作失败:', error);
         ElMessage.error('操作失败');
     }
-    // try {
-    //     // 获取全部老师列表
-    //     const userRes = await request.post('/user/getAllUsers', {}, {
-    //         headers: {
-    //             sessionid: localStorage.getItem("sessionid")
-    //         }
-    //     });
-    //     if (userRes.data.status === 200) {
-    //         teacherOptions.value = userRes.data.users.map(item => ({
-    //             label: item.username,
-    //             value: item.id
-    //         }));
-    //         paymentDialogVisible.value = true;
-    //     } else {
-    //         ElMessage.error('获取老师列表失败');
-    //         console.log(userRes.data);
-    //     }
-    // } catch (error) {
-    //     console.error('获取老师列表失败:', error);
-    //     ElMessage.error('获取老师列表失败');
-    // }
 };
 
 const submitPayment = async () => {
