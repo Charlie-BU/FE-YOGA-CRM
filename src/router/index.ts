@@ -232,6 +232,14 @@ const routes: RouteRecordRaw[] = [
                 },
                 component: () => import("../views/pages/reports/date-summary.vue")
             },
+            {
+                path: "/logs",
+                name: "logs",
+                meta: {
+                    title: "用户操作日志"
+                },
+                component: () => import("../views/pages/logs.vue")
+            },
 
             {
                 path: "/system-user",

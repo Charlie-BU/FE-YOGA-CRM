@@ -20,46 +20,8 @@
                                 </el-select>
                             </el-form-item>
                         </el-col>
-                        <el-col :span="12">
-                            <el-form-item label="收支类型">
-                                <el-select v-model="queryParams.paymentType" placeholder="请选择" clearable
-                                    default-first-option style="width: 100%">
-                                    <el-option label="全部" value="all" />
-                                    <el-option label="收入" value="income" />
-                                    <el-option label="支出" value="expense" />
-                                </el-select>
-                            </el-form-item>
-                        </el-col>
-                        <el-col :span="12">
-                            <el-form-item label="费用项目">
-                                <el-select v-model="queryParams.category" placeholder="请选择" clearable
-                                    style="width: 100%">
-                                    <el-option v-for="item in conventions.paymentCategories" :key="item.id"
-                                        :label="item.name" :value="item.id" />
-                                </el-select>
-                            </el-form-item>
-                        </el-col>
-                        <el-col :span="12">
-                            <el-form-item label="支付方式">
-                                <el-select v-model="queryParams.paymentMethod" placeholder="请选择" clearable
-                                    style="width: 100%">
-                                    <el-option v-for="item in conventions.paymentMethods" :key="item.id"
-                                        :label="item.name" :value="item.id" />
-                                </el-select>
-                            </el-form-item>
-                        </el-col>
-                        <el-col :span="12">
-                            <el-form-item label="交易对象">
-                                <el-input v-model="queryParams.clientName" placeholder="请输入交易对象" clearable />
-                            </el-form-item>
-                        </el-col>
-                        <el-col :span="12">
-                            <el-form-item label="联系电话">
-                                <el-input v-model="queryParams.clientPhone" placeholder="请输入联系电话" clearable />
-                            </el-form-item>
-                        </el-col>
                         <el-col :span="24">
-                            <el-form-item label="制单时间">
+                            <el-form-item label="汇总时间">
                                 <el-date-picker v-model="queryParams.timeRange" type="daterange" range-separator="至"
                                     start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD"
                                     style="width: 100%" />
@@ -114,6 +76,12 @@ import * as conventions from '@/utils/conventions';
 import { getUserInfo } from '@/utils/login-check';
 
 const userInfo = ref(null);
+onMounted(async () => {
+    userInfo.value = await getUserInfo();
+    await getSchools();
+    await initData();
+});
+
 // 添加校区选项
 const schoolOptions = ref([]);
 
@@ -134,40 +102,87 @@ const getSchools = async () => {
     }
 };
 
-// 修改 onMounted
-onMounted(async () => {
-    userInfo.value = await getUserInfo();
-    await getSchools();  // 添加获取校区列表
-    await getPayments();
-})
+// 添加初始化数据获取方法
+const initData = async () => {
+    loading.value = true;
+    try {
+        if (queryParams.timeRange.length === 0) {
+            // 获取当前日期
+            const now = new Date();
+            // 获取当月第一天（修复时区问题）
+            const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+                .toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+                .replace(/\//g, '-');
+            // 获取当月最后一天（修复时区问题）
+            const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+                .toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+                .replace(/\//g, '-');
+
+            // 设置默认查询参数
+            queryParams.timeRange = [startDate, endDate];
+        }
+        // 清空表格数据
+        tableData.value = [];
+        // 计算所有校区的数据
+        for (const school of schoolOptions.value) {
+            const res = await request.post("/dept/calcSchoolBudget", {
+                schoolId: school.value,
+                startDate: queryParams.timeRange[0],
+                endDate: queryParams.timeRange[1]
+            }, {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            });
+
+            if (res.data.status === 200) {
+                tableData.value.push({
+                    ...res.data.data,
+                    timeRange: `${queryParams.timeRange[0]} 至 ${queryParams.timeRange[1]}`
+                });
+            }
+        }
+
+        page.total = tableData.value.length;
+    } catch (error) {
+        console.error('初始化数据失败:', error);
+        ElMessage.error('初始化数据失败');
+    } finally {
+        loading.value = false;
+    }
+};
+
 
 // 表格相关
 const columns = [
     { type: 'index', label: '序号', width: 55, align: 'center' },
     { prop: 'schoolName', label: '校区', align: 'center' },
+    { prop: 'timeRange', label: '汇总时间', align: 'center' },
     {
-        prop: 'amount',
-        label: '收支类型',
+        prop: 'budgetBefore',
+        label: '初期盈余（元）',
         align: 'center',
-        formatter: (row) => row.amount >= 0 ? '收入' : '支出'
+        formatter: (row) => row.budgetBefore.toFixed(2)
     },
-    { prop: 'category', label: '费用项目', align: 'center', formatter: (row) => conventions.getPaymentCategory(row.category) },
-    { prop: 'paymentMethod', label: '支付方式', align: 'center', formatter: (row) => conventions.getPaymentMethod(row.paymentMethod) },
     {
-        prop: 'clientName',
-        label: '交易对象',
+        prop: 'incomeDuring',
+        label: '期间收入（元）',
         align: 'center',
-        formatter: (row) => row.clientName || row.receiver
+        width: "150",
+        formatter: (row) => row.incomeDuring.toFixed(2)
     },
-    { prop: 'clientPhone', label: '联系电话', align: 'center' },
     {
-        prop: 'amount',
-        label: '金额（元）',
-        align: 'center'
+        prop: 'expanseDuring',
+        label: '期间支出（元）',
+        align: 'center',
+        formatter: (row) => row.expanseDuring.toFixed(2)
     },
-    { prop: 'paymentTime', label: '制单时间', align: 'center' },
-    { prop: 'teacherName', label: '制单人', align: 'center' },
-    { prop: 'info', label: '备注', width: 120, align: 'center' },
+    {
+        prop: 'budgetAfter',
+        label: '期末盈余（元）',
+        align: 'center',
+        formatter: (row) => row.budgetAfter.toFixed(2)
+    }
 ];
 
 const page = reactive({
@@ -192,67 +207,28 @@ const showFilterDialog = () => {
 const handleQuery = () => {
     filterDialogVisible.value = false;
     page.index = 1;
-    getPayments();
+    calcSchoolBudget();
 };
 
 // 添加查询参数
 const queryParams = reactive({
-    schoolId: '',  // 修改 schoolName 为 schoolId
-    paymentType: '',
-    category: '',
-    paymentMethod: '',
-    clientName: '',
-    clientPhone: '',
+    schoolId: '',
     timeRange: [],
 });
 
-// 修改 getPayments 调用
-const getPayments = async () => {
+// 修改 calcSchoolBudget 调用
+const calcSchoolBudget = async () => {
+    if (!queryParams.schoolId || !queryParams.timeRange?.length) {
+        await initData();
+        return;
+    }
+    console.log(queryParams);
     loading.value = true;
     try {
-        const res = await request.post("/extra/getPayments", {
-            pageIndex: page.index,
-            pageSize: page.size,
-            paymentType: "all",
-            ...queryParams,
-            startTime: queryParams.timeRange?.[0] || '',
-            endTime: queryParams.timeRange?.[1] || '',
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
-            }
-        });
-        if (res.data.status != 200) {
-            console.log(res.data);
-            return;
-        }
-        tableData.value = res.data.payments;
-        page.total = res.data.total;
-    } catch (error) {
-        console.error('获取数据失败:', error);
-    } finally {
-        loading.value = false;
-    }
-};
-
-const resetQuery = () => {
-    Object.keys(queryParams).forEach(key => {
-        queryParams[key] = key === 'timeRange' ? [] : '';
-    });
-    handleQuery();
-};
-
-// 修改导出方法，添加筛选条件
-const handleExport = async () => {
-    try {
-        loading.value = true;
-        const res = await request.post("/extra/getPayments", {
-            pageIndex: 1,
-            pageSize: 999999,
-            paymentType: "all",
-            ...queryParams,
-            startTime: queryParams.timeRange?.[0] || '',
-            endTime: queryParams.timeRange?.[1] || '',
+        const res = await request.post("/dept/calcSchoolBudget", {
+            schoolId: queryParams.schoolId,
+            startDate: queryParams.timeRange[0],
+            endDate: queryParams.timeRange[1]
         }, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
@@ -260,47 +236,68 @@ const handleExport = async () => {
         });
 
         if (res.data.status !== 200) {
-            ElMessage.error(res.data.message || '导出失败');
+            ElMessage.error(res.data.message || '获取数据失败');
             return;
         }
 
+        // 构造表格数据
+        tableData.value = [{
+            ...res.data.data,
+            timeRange: `${queryParams.timeRange[0]} 至 ${queryParams.timeRange[1]}`
+        }];
+        page.total = 1;
+    } catch (error) {
+        console.error('获取数据失败:', error);
+        ElMessage.error('获取数据失败');
+    } finally {
+        loading.value = false;
+    }
+};
+
+const resetQuery = async () => {
+    Object.keys(queryParams).forEach(key => {
+        queryParams[key] = key === 'timeRange' ? [] : '';
+    });
+    filterDialogVisible.value = false;
+    await initData();
+};
+
+// 修改导出方法，添加筛选条件
+const handleExport = async () => {
+    if (!tableData.value.length) {
+        ElMessage.warning('暂无数据可导出');
+        return;
+    }
+
+    try {
         // 构建Excel数据
-        const excelData = res.data.payments.map(item => ({
+        const excelData = tableData.value.map(item => ({
             '校区': item.schoolName,
-            '收支类型': item.amount >= 0 ? '收入' : '支出',
-            '费用项目': conventions.getPaymentCategory(item.category),
-            '支付方式': conventions.getPaymentMethod(item.paymentMethod),
-            '交易对象': item.clientName || item.receiver,
-            '联系电话': item.clientPhone,
-            '金额（元）': Math.abs(item.amount),
-            '制单时间': item.paymentTime,
-            '制单人': item.teacherName,
-            '备注': item.info
+            '日期区间': item.timeRange,
+            '初期盈余（元）': item.budgetBefore.toFixed(2),
+            '期间收入（元）': item.incomeDuring.toFixed(2),
+            '期间支出（元）': item.expanseDuring.toFixed(2),
+            '期末盈余（元）': item.budgetAfter.toFixed(2)
         }));
 
         // 使用 xlsx 库导出
         import('xlsx').then(XLSX => {
             const worksheet = XLSX.utils.json_to_sheet(excelData);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, '收支明细');
-
-            // 生成文件并下载
-            XLSX.writeFile(workbook, `收支明细表${new Date().toLocaleDateString()}.xlsx`);
+            XLSX.utils.book_append_sheet(workbook, worksheet, '收支汇总');
+            XLSX.writeFile(workbook, `收支汇总表${new Date().toLocaleDateString()}.xlsx`);
             ElMessage.success('导出成功');
         });
-
     } catch (error) {
         console.error('导出失败:', error);
         ElMessage.error('导出失败');
-    } finally {
-        loading.value = false;
     }
 };
 // 修改 changePage
 const changePage = async (val: number) => {
     if (loading.value) return;
     page.index = val;
-    await getPayments();
+    await calcSchoolBudget();
 };
 
 // 选择相关

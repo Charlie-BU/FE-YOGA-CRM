@@ -146,7 +146,7 @@ const baseColumns = [
     { prop: 'amount', label: '金额（元）', align: 'center', formatter: (row) => Math.abs(row.amount) },
     { prop: 'category', label: '费用项目', align: 'center', formatter: (row) => conventions.getPaymentCategory(row.category) },
     { prop: 'paymentMethod', label: '支付方式', align: 'center', formatter: (row) => conventions.getPaymentMethod(row.paymentMethod) },
-    { prop: 'paymentTime', label: '支付时间', align: 'center' },
+    { prop: 'paymentDate', label: '支付时间', align: 'center' },
     { prop: 'info', label: '备注', width: 120, align: 'center' },
 ];
 

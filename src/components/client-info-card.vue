@@ -16,9 +16,9 @@
             <el-descriptions :column="2" border>
                 <el-descriptions-item label="姓名">{{ client.name }}</el-descriptions-item>
                 <el-descriptions-item label="渠道来源">{{ conventions.getFromSource(client.fromSource)
-                    }}</el-descriptions-item>
+                }}</el-descriptions-item>
                 <el-descriptions-item label="性别">{{ conventions.getGender(client.gender)
-                    }}</el-descriptions-item>
+                }}</el-descriptions-item>
                 <el-descriptions-item label="年龄">{{ client.age }}</el-descriptions-item>
                 <el-descriptions-item label="身份证">{{ client.IDNumber }}</el-descriptions-item>
                 <el-descriptions-item label="电话">{{ client.phone }}</el-descriptions-item>
@@ -53,7 +53,7 @@
                     <el-descriptions-item label="成单时间">{{ client.cooperateTime }}</el-descriptions-item>
                     <el-descriptions-item label="合同编号">{{ client.contractNo }}</el-descriptions-item>
                     <el-descriptions-item label="预约备注" :span="2">{{ client.detailedInfo
-                        }}</el-descriptions-item>
+                    }}</el-descriptions-item>
                 </el-descriptions>
             </div>
 
@@ -73,10 +73,10 @@
                         </template>
                     </el-table-column>
                     <el-table-column prop="teacherName" label="负责老师" align="center" />
-                    <el-table-column prop="paymentTime" label="交易时间" align="center">
+                    <el-table-column prop="paymentDate" label="交易时间" align="center">
                         <template #default="scope">
-                            <el-tooltip :content="scope.row.paymentTime" placement="top" effect="dark">
-                                <span>{{ scope.row.paymentTime }}</span>
+                            <el-tooltip :content="scope.row.paymentDate" placement="top" effect="dark">
+                                <span>{{ scope.row.paymentDate }}</span>
                             </el-tooltip>
                         </template>
                     </el-table-column>
@@ -91,7 +91,7 @@
                     <el-descriptions-item label="校区">{{ client.schoolName }}</el-descriptions-item>
                     <el-descriptions-item label="已学课时（周）">{{ client.learnedWeeks }}</el-descriptions-item>
                     <el-descriptions-item v-if="client.comboId" label="学习套餐">{{ client.comboName
-                        }}</el-descriptions-item>
+                    }}</el-descriptions-item>
                     <el-descriptions-item label="学习课程">{{ client.courseNames }}</el-descriptions-item>
                 </el-descriptions>
 
@@ -119,12 +119,12 @@
                 <el-descriptions :column="2" border>
                     <el-descriptions-item label="公寓名">{{ dormInfo.name }}</el-descriptions-item>
                     <el-descriptions-item label="类型">{{ conventions.getDormitoryCategory(dormInfo.category)
-                        }}</el-descriptions-item>
+                    }}</el-descriptions-item>
                     <el-descriptions-item label="房间号 / 户号">{{ roomInfo.roomNumber }}</el-descriptions-item>
                     <el-descriptions-item label="楼栋">{{ roomInfo.building }}</el-descriptions-item>
                     <el-descriptions-item label="床位号">{{ bedInfo.bedNumber }}</el-descriptions-item>
                     <el-descriptions-item label="床位类型">{{ conventions.getBedCategory(bedInfo.category)
-                    }}</el-descriptions-item>
+                        }}</el-descriptions-item>
                     <el-descriptions-item label="入住时间">{{ client.bedCheckInDate }}</el-descriptions-item>
                     <el-descriptions-item label="状态" :span="2">
                         <span :style="{ color: isOverdue ? '#ff4949' : '#93ff40' }">

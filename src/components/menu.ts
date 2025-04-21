@@ -80,7 +80,7 @@ export const menuData: Menus[] = [
                 pid: "1",
                 index: "/transaction-summary",
                 title: "收入支出汇总表"
-            },
+            }
             // {
             //     id: "010-3",
             //     pid: "1",
@@ -99,79 +99,85 @@ export const menuData: Menus[] = [
             //     index: "/inventory-balance",
             //     title: "物资库存余额查询"
             // },
-            {
-                id: "010-6",
-                pid: "1",
-                index: "/course-channel-stats",
-                title: "课程按渠道分类统计表"
-            },
-            {
-                id: "010-7",
-                pid: "1",
-                index: "/staff-channel-course",
-                title: "业务员渠道课程预约统计表"
-            },
-            {
-                id: "010-8",
-                pid: "1",
-                index: "/personal-performance",
-                title: "个人绩效明细表"
-            },
-            {
-                id: "010-9",
-                pid: "1",
-                index: "/staff-performance",
-                title: "人员业绩核算表"
-            },
-            {
-                id: "010-10",
-                pid: "1",
-                index: "/customer-service-daily",
-                title: "客服成交数据日报表"
-            },
-            {
-                id: "010-11",
-                pid: "1",
-                index: "/customer-service-daily-personal",
-                title: "客服成交数据日报表（个人）"
-            },
-            {
-                id: "010-12",
-                pid: "1",
-                index: "/customer-service-leads",
-                title: "客服线索数据日报表"
-            },
-            {
-                id: "010-13",
-                pid: "1",
-                index: "/customer-service-leads-personal",
-                title: "客服线索数据日报表（个人）"
-            },
-            {
-                id: "010-14",
-                pid: "1",
-                index: "/customer-service-conversion",
-                title: "客服转客户数据日报表"
-            },
-            {
-                id: "010-15",
-                pid: "1",
-                index: "/customer-service-conversion-personal",
-                title: "客服转客户数据日报表（个人）"
-            },
-            {
-                id: "010-16",
-                pid: "1",
-                index: "/customer-service-summary",
-                title: "客服总数据报表"
-            },
-            {
-                id: "010-17",
-                pid: "1",
-                index: "/date-summary",
-                title: "日期总数据报表"
-            }
+            // {
+            //     id: "010-6",
+            //     pid: "1",
+            //     index: "/course-channel-stats",
+            //     title: "课程按渠道分类统计表"
+            // },
+            // {
+            //     id: "010-7",
+            //     pid: "1",
+            //     index: "/staff-channel-course",
+            //     title: "业务员渠道课程预约统计表"
+            // },
+            // {
+            //     id: "010-8",
+            //     pid: "1",
+            //     index: "/personal-performance",
+            //     title: "个人绩效明细表"
+            // },
+            // {
+            //     id: "010-9",
+            //     pid: "1",
+            //     index: "/staff-performance",
+            //     title: "人员业绩核算表"
+            // },
+            // {
+            //     id: "010-10",
+            //     pid: "1",
+            //     index: "/customer-service-daily",
+            //     title: "客服成交数据日报表"
+            // },
+            // {
+            //     id: "010-11",
+            //     pid: "1",
+            //     index: "/customer-service-daily-personal",
+            //     title: "客服成交数据日报表（个人）"
+            // },
+            // {
+            //     id: "010-12",
+            //     pid: "1",
+            //     index: "/customer-service-leads",
+            //     title: "客服线索数据日报表"
+            // },
+            // {
+            //     id: "010-13",
+            //     pid: "1",
+            //     index: "/customer-service-leads-personal",
+            //     title: "客服线索数据日报表（个人）"
+            // },
+            // {
+            //     id: "010-14",
+            //     pid: "1",
+            //     index: "/customer-service-conversion",
+            //     title: "客服转客户数据日报表"
+            // },
+            // {
+            //     id: "010-15",
+            //     pid: "1",
+            //     index: "/customer-service-conversion-personal",
+            //     title: "客服转客户数据日报表（个人）"
+            // },
+            // {
+            //     id: "010-16",
+            //     pid: "1",
+            //     index: "/customer-service-summary",
+            //     title: "客服总数据报表"
+            // },
+            // {
+            //     id: "010-17",
+            //     pid: "1",
+            //     index: "/date-summary",
+            //     title: "日期总数据报表"
+            // }
         ]
+    },
+    {
+        id: "011",
+        title: "用户操作日志",
+        index: "/logs",
+        icon: "List"
     }
 
     // {
