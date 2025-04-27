@@ -3,6 +3,7 @@
         <el-tabs v-model="activeTab">
             <el-tab-pane label="收入管理" name="income">
                 <div class="container">
+                    <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
                     <el-button type="warning" :icon="CirclePlusFilled" @click="handleAdd">新增</el-button>
 
                     <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
@@ -26,7 +27,8 @@
 
                     <div class="pagination" style="margin-top: 20px; text-align: right;">
                         <el-pagination v-model:current-page="page.index" v-model:page-size="page.size"
-                            :total="page.total" @current-change="changePage" layout="total, prev, pager, next">
+                            :total="page.total" @current-change="changePage" @size-change="handleSizeChange"
+                            :page-sizes="[10, 20, 50, 100]" layout="sizes, total, prev, pager, next">
                         </el-pagination>
                     </div>
                 </div>
@@ -34,6 +36,7 @@
 
             <el-tab-pane label="支出管理" name="expense">
                 <div class="container">
+                    <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
                     <el-button type="warning" :icon="CirclePlusFilled" @click="handleAdd">新增</el-button>
 
                     <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
@@ -56,7 +59,8 @@
 
                     <div class="pagination" style="margin-top: 20px; text-align: right;">
                         <el-pagination v-model:current-page="page.index" v-model:page-size="page.size"
-                            :total="page.total" @current-change="changePage" layout="total, prev, pager, next">
+                            :total="page.total" @current-change="changePage" @size-change="handleSizeChange"
+                            :page-sizes="[10, 20, 50, 100]" layout="sizes, total, prev, pager, next">
                         </el-pagination>
                     </div>
                 </div>
@@ -128,12 +132,14 @@
 <script setup lang="ts" name="system-user">
 import { ref, reactive, onMounted, watch, computed } from 'vue';
 import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { CirclePlusFilled } from '@element-plus/icons-vue';
+import { CirclePlusFilled, Refresh } from '@element-plus/icons-vue';
+import { handleRefresh } from '@/utils/index';
 import request from '@/utils/request';
 import * as conventions from '@/utils/conventions';
 import { getUserInfo } from '@/utils/login-check';
 
 const userInfo = ref(null);
+
 onMounted(async () => {
     userInfo.value = await getUserInfo();
     await getPayments(activeTab.value === 'income');
@@ -170,6 +176,11 @@ const page = reactive({
     size: 10,
     total: 0,
 })
+
+const handleSizeChange = async (val: number) => {
+    page.size = val;
+    await getPayments(activeTab.value === 'income');
+}
 
 const tableData = ref([]);
 // 添加 loading 状态

@@ -11,6 +11,7 @@
                         </div>
 
                         <div class="table-container">
+                            <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
                             <el-button type="warning" :icon="CirclePlusFilled"
                                 @click="editModelVisible = true">新增课程</el-button>
                             <!-- 原有的课程管理表格和弹窗 -->
@@ -57,8 +58,10 @@
 
                             <div class="pagination" style="margin-top: 20px; text-align: right;">
                                 <el-pagination v-model:current-page="page.index" v-model:page-size="page.size"
-                                    :total="page.total" @current-change="changePage"
-                                    layout="total, prev, pager, next" />
+                                    :total="page.total" @current-change="changePage" @size-change="handleSizeChange"
+                                    :page-sizes="[10, 20, 50, 100]" layout="sizes, total, prev, pager, next">
+                                    <template #default></template>
+                                </el-pagination>
                             </div>
                         </div>
                     </div>
@@ -75,6 +78,7 @@
                         </div>
 
                         <div class="table-container">
+                            <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
                             <el-button type="warning" :icon="CirclePlusFilled"
                                 @click="comboDialogVisible = true">新增套餐</el-button>
 
@@ -107,7 +111,9 @@
                             <div class="pagination" style="margin-top: 20px; text-align: right;">
                                 <el-pagination v-model:current-page="comboPage.index" v-model:page-size="comboPage.size"
                                     :total="comboPage.total" @current-change="changeComboPage"
-                                    layout="total, prev, pager, next" />
+                                    @size-change="handleComboSizeChange" :page-sizes="[10, 20, 50, 100]"
+                                    layout="sizes, total, prev, pager, next">
+                                </el-pagination>
                             </div>
                         </div>
                     </div>
@@ -235,7 +241,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { CirclePlusFilled } from '@element-plus/icons-vue';
+import { CirclePlusFilled, Refresh } from '@element-plus/icons-vue';
+import { handleRefresh } from '@/utils/index';
 import * as conventions from '@/utils/conventions';
 import request from '@/utils/request';
 
@@ -252,6 +259,21 @@ onMounted(async () => {
         ElMessage.error('初始化数据失败');
     }
 });
+
+const handleSizeChange = async (val: number) => {
+    if (loading.value) return;
+    page.size = val;
+    page.index = 1;
+    await getCourses(currentSelectedSchoolId.value);
+};
+
+// 套餐分页大小变化
+const handleComboSizeChange = async (val: number) => {
+    if (comboLoading.value) return;
+    comboPage.size = val;
+    comboPage.index = 1;
+    await getCombos(currentSelectedSchoolId.value);
+};
 
 // 校区树
 const treeData = computed(() => {
@@ -415,6 +437,7 @@ const handleTeacherChange = (type: 'chief' | 'class' | 'assistant') => {
 };
 
 const changePage = async (val: number) => {
+    if (loading.value) return;
     page.index = val;
     await getCourses(currentSelectedSchoolId.value);
 };
@@ -604,6 +627,7 @@ const handleComboSchoolChange = async (schoolId) => {
 };
 
 const changeComboPage = async (val: number) => {
+    if (comboLoading.value) return;
     comboPage.index = val;
     await getCombos(currentSelectedSchoolId.value);
 };

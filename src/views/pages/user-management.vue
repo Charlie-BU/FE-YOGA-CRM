@@ -32,7 +32,9 @@
 
                     <div class="pagination" style="margin-top: 20px; text-align: right;">
                         <el-pagination v-model:current-page="page.index" v-model:page-size="page.size"
-                            :total="page.total" @current-change="changePage" layout="total, prev, pager, next">
+                            :total="page.total" @current-change="changePage" @size-change="handleSizeChange"
+                            :page-sizes="[10, 20, 50, 100]" layout="sizes, total, prev, pager, next">
+                            <template #default></template>
                         </el-pagination>
                     </div>
                 </div>
@@ -88,6 +90,14 @@ onMounted(async () => {
     await getUsers(); // 再获取用户列表
 });
 const router = useRouter();
+
+
+const handleSizeChange = async (val: number) => {
+    if (loading.value) return; // 如果正在加载，则不执行
+    page.size = val;
+    page.index = 1; // 切换每页条数时，通常会重置为第一页
+    await getUsers(selectedSchoolId.value);
+};
 
 // 查询相关
 const query = reactive({

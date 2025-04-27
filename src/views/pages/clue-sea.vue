@@ -3,6 +3,7 @@
         <!-- <TableSearch :query="query" :options="searchOpt" :search="handleSearch" /> -->
 
         <div class="container">
+            <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
             <el-button type="primary" :icon="Search" @click="showFilterDialog">
                 筛选查询
             </el-button>
@@ -38,7 +39,8 @@
 
             <div class="pagination" style="margin-top: 20px; text-align: right;">
                 <el-pagination v-model:current-page="page.index" v-model:page-size="page.size" :total="page.total"
-                    @current-change="changePage" layout="total, prev, pager, next">
+                    @current-change="changePage" @size-change="handleSizeChange" :page-sizes="[10, 20, 50, 100]"
+                    layout="sizes, total, prev, pager, next">
                     <template #default></template>
                 </el-pagination>
             </div>
@@ -177,18 +179,26 @@
 <script setup lang="ts" name="system-user">
 import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { CirclePlusFilled, Download, Upload, Setting, Search } from '@element-plus/icons-vue';
+import { CirclePlusFilled, Download, Upload, Setting, Search, Refresh } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
 import request from '@/utils/request';
-import TableSearch from '@/components/table-search.vue';
-import { FormOptionList } from '@/types/form-option';
 import * as conventions from '@/utils/conventions';
+import { handleRefresh } from '@/utils/index';
 import * as XLSX from 'xlsx';
 
 onMounted(async () => {
     await getClients();
     initColumnSettings();
 })
+
+
+
+const handleSizeChange = async (val: number) => {
+    if (loading.value) return; // 如果正在加载，则不执行
+    page.size = val;
+    page.index = 1; // 切换每页条数时，通常会重置为第一页
+    await getClients();
+};
 
 // 筛选相关
 // 添加筛选弹窗控制变量
@@ -844,7 +854,7 @@ const handleUpload = async () => {
                 });
 
                 if (res.data.status === 200) {
-                    ElMessage.success('导入成功');
+                    ElMessage.success(res.data.message);
                     importDialogVisible.value = false;
                     getClients(); // 刷新列表
                 } else {

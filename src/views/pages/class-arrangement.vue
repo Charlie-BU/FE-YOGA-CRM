@@ -58,7 +58,9 @@
 
                     <div class="pagination" style="margin-top: 20px; text-align: right;">
                         <el-pagination v-model:current-page="page.index" v-model:page-size="page.size"
-                            :total="page.total" @current-change="changePage" layout="total, prev, pager, next" />
+                            :total="page.total" @current-change="changePage" @size-change="handleSizeChange"
+                            :page-sizes="[10, 20, 50, 100]" layout="sizes, total, prev, pager, next">
+                        </el-pagination>
                     </div>
                 </div>
             </div>
@@ -126,7 +128,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { CirclePlusFilled } from '@element-plus/icons-vue';
+import { Refresh } from '@element-plus/icons-vue';
+import { handleRefresh } from '@/utils/index';
 import * as conventions from '@/utils/conventions';
 import request from '@/utils/request';
 
@@ -324,6 +327,11 @@ const changePage = async (val: number) => {
     page.index = val;
     await getCourses(currentSelectedSchoolId.value);
 };
+
+const handleSizeChange = async (val: number) => {
+    page.size = val;
+    await getCourses(currentSelectedSchoolId.value);
+}
 
 // 修改清空表单的方法
 const closeDialog = () => {

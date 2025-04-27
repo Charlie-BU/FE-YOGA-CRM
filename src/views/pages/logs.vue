@@ -50,7 +50,8 @@
 
             <div class="pagination" style="margin-top: 20px; text-align: right;">
                 <el-pagination v-model:current-page="page.index" v-model:page-size="page.size" :total="page.total"
-                    @current-change="changePage" layout="total, prev, pager, next">
+                    @current-change="changePage" @size-change="handleSizeChange" :page-sizes="[10, 20, 50, 100]"
+                    layout="sizes, total, prev, pager, next">
                 </el-pagination>
             </div>
         </div>
@@ -221,6 +222,11 @@ const changePage = async (val: number) => {
     page.index = val;
     await getLogs();
 };
+
+const handleSizeChange = async (val: number) => {
+    page.size = val;
+    await getLogs();
+}
 
 const tableRef = ref();
 

@@ -4,6 +4,7 @@
 
             <el-tab-pane label="校区管理" name="school">
                 <div class="container">
+                    <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
                     <el-button type="warning" :icon="CirclePlusFilled" @click="handleAdd('school')">新增校区</el-button>
                     <el-table :data="schoolData" style="width: 100%; margin-top: 20px;" v-loading="loading.school">
                         <el-table-column type="index" label="序号" width="55" align="center" />
@@ -30,7 +31,9 @@
                                 default-expand-all highlight-current />
                         </div>
                         <!-- 右侧部门列表 -->
-                        <div class="table-container">
+                        <div class="table-container"> <el-button type="primary" :icon="Refresh"
+                                @click="handleRefresh">刷新</el-button>
+
                             <el-button type="warning" :icon="CirclePlusFilled"
                                 @click="handleAdd('department')">新增部门</el-button>
                             <el-table :data="filteredDepartmentData" style="width: 100%; margin-top: 20px;"
@@ -104,7 +107,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { CirclePlusFilled } from '@element-plus/icons-vue';
+import { CirclePlusFilled, Refresh } from '@element-plus/icons-vue';
+import { handleRefresh } from '@/utils/index';
 import request from '@/utils/request';
 
 const activeTab = ref('school');

@@ -2,16 +2,16 @@
     <div>
         <!-- <TableSearch :query="query" :options="searchOpt" :search="handleSearch" /> -->
         <el-tabs v-model="activeTab" @tab-click="handleTabClick">
-            <el-tab-pane label="未预约到店客户" name="unReserved"></el-tab-pane>
+            <el-tab-pane label="全部客户" name="all"></el-tab-pane>
             <el-tab-pane label="已预约到店客户" name="reserved"></el-tab-pane>
         </el-tabs>
         <div class="container">
+            <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
             <el-button type="primary" :icon="Search" @click="showFilterDialog">
                 筛选查询
             </el-button>
             <el-button type="warning" :icon="Download" @click="exportToExcel">导出</el-button>
-            <el-button type="warning" :icon="Download" @click="exportToExcel">导出</el-button>
-            <el-button v-if="currClientStatus === 3" type="primary" :disabled="selectedRows.length !== 1"
+            <el-button v-if="!currClientStatus" type="primary" :disabled="selectedRows.length !== 1"
                 @click="handleReserve">预约到店</el-button>
             <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1"
                 @click="handleCancelReserve">取消预约</el-button>
@@ -58,7 +58,8 @@
 
             <div class="pagination" style="margin-top: 20px; text-align: right;">
                 <el-pagination v-model:current-page="page.index" v-model:page-size="page.size" :total="page.total"
-                    @current-change="changePage" layout="total, prev, pager, next">
+                    @current-change="changePage" @size-change="handleSizeChange" :page-sizes="[10, 20, 50, 100]"
+                    layout="sizes, total, prev, pager, next">
                     <template #default></template>
                 </el-pagination>
             </div>
@@ -282,11 +283,9 @@
 <script setup lang="ts" name="system-user">
 import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { Download, Setting, Search } from '@element-plus/icons-vue';
+import { Download, Setting, Search, Refresh } from '@element-plus/icons-vue';
 import { User } from '@/types/user';
 import request from '@/utils/request';
-import TableSearch from '@/components/table-search.vue';
-import { FormOptionList } from '@/types/form-option';
 import * as conventions from '@/utils/conventions';
 import * as XLSX from 'xlsx';
 import ClientInfoCard from '@/components/client-info-card.vue'
@@ -294,6 +293,7 @@ import ClientInfoCard from '@/components/client-info-card.vue'
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { loginCheck } from '@/utils/login-check';
+import { handleRefresh } from '@/utils/index';
 
 const briefUserInfo = ref(null)
 
@@ -304,9 +304,15 @@ onMounted(async () => {
     initColumnSettings();
 });
 
-const activeTab = ref('unReserved');
+const handleSizeChange = async (val: number) => {
+    if (loading.value) return; // 如果正在加载，则不执行
+    page.size = val;
+    page.index = 1; // 切换每页条数时，通常会重置为第一页
+    await getClients();
+};
 
-// 筛选相关
+const activeTab = ref('all');
+
 // 筛选相关
 const filterDialogVisible = ref(false);
 
@@ -338,7 +344,7 @@ const query = reactive({
 });
 
 // 未预约客户的搜索选项
-const unReservedSearchOpt = ref([
+const allSearchOpt = ref([
     { type: 'input', label: '姓名：', prop: 'name' },
     {
         type: 'select',
@@ -424,7 +430,7 @@ const reservedSearchOpt = ref([
 
 // 计算当前应该显示的搜索选项
 const currentSearchOpt = computed(() => {
-    return currClientStatus.value === 3 ? unReservedSearchOpt.value : reservedSearchOpt.value;
+    return currClientStatus.value === 3 ? allSearchOpt.value : reservedSearchOpt.value;
 });
 
 // 重置查询条件
@@ -618,18 +624,18 @@ const applyColumnSettings = () => {
 // 修改切换客户状态的方法，添加列设置更新
 const handleTabClick = async (tab) => {
     const statusMap = {
-        unReserved: 3,
+        all: null,
         reserved: 4,
     };
     // 如果点击的是当前已选中的标签页，则不执行任何操作
     if (currClientStatus.value === statusMap[tab.props.name]) return;
 
     selectedRows.value = []; // 清空选中行
-    const newStatus = activeTab.value === 'unReserved' ? 4 : 3;
+    const newStatus = activeTab.value === 'all' ? 4 : null;
 
     // 更新状态和列
     currClientStatus.value = newStatus;
-    columns.value = newStatus === 3 ? defaultColumns : secondColumns;
+    columns.value = newStatus === null ? defaultColumns : secondColumns;
 
     // 更新列设置并重新获取数据
     updateColumnSettings();
@@ -642,7 +648,7 @@ const page = reactive({
     total: 0,
 })
 
-const currClientStatus = ref(3);
+const currClientStatus = ref(null);
 const tableData = ref([]);
 // 添加 loading 状态
 const loading = ref(false);
@@ -892,6 +898,10 @@ const handleComboChange = async (comboId) => {
 
 const handleReserve = async () => {
     if (!selectedRows.value.length) return;
+    if (selectedRows.value[0].clientStatus !== 3) {
+        ElMessage.warning('该客户不是待预约状态，无法预约');
+        return;
+    }
     try {
         // 获取校区列表和套餐列表
         await Promise.all([

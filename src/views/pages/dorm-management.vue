@@ -9,6 +9,7 @@
                 </div>
 
                 <div class="table-container">
+                    <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
                     <el-button type="primary" :icon="CirclePlusFilled"
                         @click="editDormitoryVisible = true">新增公寓</el-button>
                     <!-- 公寓列表表格 -->
@@ -37,8 +38,8 @@
 
                     <div class="pagination" style="margin-top: 20px; text-align: right;">
                         <el-pagination v-model:current-page="dormPage.index" v-model:page-size="dormPage.size"
-                            :total="dormPage.total" @current-change="changeDormPage"
-                            layout="total, prev, pager, next" />
+                            :total="dormPage.total" @current-change="changeDormPage" @size-change="changeDormPageSize"
+                            :page-sizes="[10, 20, 50, 100]" layout="sizes, total, prev, pager, next" />
                     </div>
                 </div>
             </div>
@@ -220,7 +221,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { CirclePlusFilled } from '@element-plus/icons-vue';
+import { CirclePlusFilled, Refresh } from '@element-plus/icons-vue';
+import { handleRefresh } from '@/utils/index';
 import * as conventions from '@/utils/conventions';
 import request from '@/utils/request';
 
@@ -327,6 +329,11 @@ const getSchools = async () => {
 
 const changeDormPage = async (val: number) => {
     dormPage.index = val;
+    await getDormitories(currentSelectedSchoolId.value);
+};
+
+const changeDormPageSize = async (page) => {
+    dormPage.size = page;
     await getDormitories(currentSelectedSchoolId.value);
 };
 
