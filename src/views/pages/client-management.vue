@@ -70,7 +70,7 @@
             <el-form :model="query" label-width="100px">
                 <el-row :gutter="20">
                     <el-col :span="12" v-for="(item, index) in currentSearchOpt" :key="index">
-                        <el-form-item :label="item.label">
+                        <el-form-item :label="item.label" style="white-space: nowrap; margin: 10px;">
                             <el-input v-if="item.type === 'input'" v-model="query[item.prop]"
                                 :placeholder="`请输入${item.label.replace('：', '')}`" clearable />
                             <el-select v-else-if="item.type === 'select'" v-model="query[item.prop]"
@@ -101,7 +101,7 @@
             <el-divider></el-divider>
             <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
                 <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
-                    }}</el-checkbox>
+                }}</el-checkbox>
             </el-checkbox-group>
             <template #footer>
                 <span class="dialog-footer">

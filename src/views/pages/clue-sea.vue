@@ -101,7 +101,7 @@
                 </el-form-item>
                 <el-form-item label="所属人">
                     <el-select v-model="assignForm.userId" placeholder="请选择所属人" style="width: 100%" filterable>
-                        <el-option v-for="item in userOptions" :key="item.value" :label="item.label"
+                        <el-option v-for="item in schoolTeacherOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
                 </el-form-item>
@@ -155,7 +155,8 @@
                             <el-input v-if="item.type === 'input'" v-model="query[item.prop]"
                                 :placeholder="`请输入${item.label.replace('：', '')}`" clearable />
                             <el-select v-else-if="item.type === 'select'" v-model="query[item.prop]"
-                                :placeholder="`请选择${item.label.replace('：', '')}`" style="width: 100%" clearable>
+                                :placeholder="`请选择${item.label.replace('：', '')}`" style="width: 100%" clearable
+                                :multiple="item.multiple" collapse-tags collapse-tags-tooltip filterable>
                                 <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label"
                                     :value="opt.value" />
                             </el-select>
@@ -189,9 +190,30 @@ import * as XLSX from 'xlsx';
 onMounted(async () => {
     await getClients();
     initColumnSettings();
+    await getAllUsers(); // 添加这一行
 })
 
+const userOptions = ref([]);
 
+// 获取所有用户列表
+const getAllUsers = async () => {
+    try {
+        const res = await request.post("/user/getAllUsers", {}, {
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
+        });
+        if (res.data.status === 200) {
+            userOptions.value = res.data.users.map(user => ({
+                label: user.username,
+                value: user.id
+            }));
+        }
+    } catch (error) {
+        console.error('获取用户列表失败:', error);
+        ElMessage.error('获取用户列表失败');
+    }
+};
 
 const handleSizeChange = async (val: number) => {
     if (loading.value) return; // 如果正在加载，则不执行
@@ -210,14 +232,17 @@ const showFilterDialog = () => {
 };
 
 const resetQuery = () => {
-    // 重置所有查询条件
     Object.keys(query).forEach(key => {
-        query[key] = key === 'timeRange' ? [] : '';
+        if (['timeRange', 'fromSource', 'clientStatus', 'creatorId', 'affiliatedUserId'].includes(key)) {
+            query[key] = []; // 重置多选数组
+        } else {
+            query[key] = '';
+        }
     });
 };
 const query = reactive({
     name: '',
-    fromSource: '',
+    fromSource: [], // 改为数组
     gender: '',
     age: '',
     IDNumber: '',
@@ -228,8 +253,10 @@ const query = reactive({
     rednote: '',
     shangwutong: '',
     address: '',
-    clientStatus: '',
+    clientStatus: [], // 改为数组
     timeRange: [],
+    creatorId: [], // 创建人ID数组
+    affiliatedUserId: [], // 所属人/合作老师ID数组
 });
 const searchOpt = ref<any[]>([
     { type: 'input', label: '姓名：', prop: 'name' },
@@ -237,10 +264,11 @@ const searchOpt = ref<any[]>([
         type: 'select',
         label: '渠道来源：',
         prop: 'fromSource',
+        multiple: true, // 添加多选属性
         options: conventions.fromSources.map(item => ({
             label: item.name,
             value: item.id
-        }))
+        })),
     },
     {
         type: 'select',
@@ -264,6 +292,7 @@ const searchOpt = ref<any[]>([
         type: 'select',
         label: '客户状态：',
         prop: 'clientStatus',
+        multiple: true, // 添加多选属性
         options: conventions.clientStatuses.map(item => ({
             label: item.name,
             value: item.id
@@ -275,7 +304,21 @@ const searchOpt = ref<any[]>([
         prop: 'timeRange',
         startPlaceholder: '开始日期',
         endPlaceholder: '结束日期'
-    }
+    },
+    {
+        type: 'select',
+        label: '创建人：',
+        prop: 'creatorId',
+        multiple: true,
+        options: userOptions,
+    },
+    {
+        type: 'select',
+        label: '所属人：',
+        prop: 'affiliatedUserId',
+        multiple: true,
+        options: userOptions,
+    },
 ]);
 const handleSearch = async () => {
     if (loading.value) return;
@@ -569,7 +612,7 @@ const assignForm = ref({
     userId: ''
 });
 const branchOptions = ref([]);
-const userOptions = ref([]);
+const schoolTeacherOptions = ref([]);
 
 // 在 methods 部分添加
 const handleAssign = async () => {
@@ -606,7 +649,7 @@ const handleBranchChange = async (branchId) => {
             }
         });
         if (userRes.data.status === 200) {
-            userOptions.value = userRes.data.users.map(item => ({
+            schoolTeacherOptions.value = userRes.data.users.map(item => ({
                 label: item.username,
                 value: item.id
             }));
