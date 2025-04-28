@@ -53,7 +53,7 @@
             <el-divider></el-divider>
             <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
                 <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
-                    }}</el-checkbox>
+                }}</el-checkbox>
             </el-checkbox-group>
             <template #footer>
                 <span class="dialog-footer">
@@ -70,7 +70,16 @@
                     <el-col v-for="(item, index) in options.list" :key="index" :span="options.span">
                         <el-form-item :label="item.label" :prop="item.prop"
                             :rules="item.rules || (item.required ? [{ required: true, message: `请输入${item.label}`, trigger: 'blur' }] : [])">
-                            <el-input v-if="item.type === 'input'" v-model="formData[item.prop]"
+                            <div v-if="item.prop === 'info'">
+                                <el-select style="width: 100%; margin-bottom: 10px" placeholder="查看历史备注">
+                                    <el-option v-for="(note, index) in currClientInfo || []" :key="index" :label="note"
+                                        :value="note" />
+                                </el-select>
+                                <el-input v-model="formData[item.prop]" :type="item.inputType || 'text'"
+                                    :placeholder="`新增${item.label}`" />
+                            </div>
+
+                            <el-input v-else-if="item.type === 'input'" v-model="formData[item.prop]"
                                 :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`" />
                             <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]"
                                 :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
@@ -346,7 +355,13 @@ const allColumns = ref([
     { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 150, align: 'center' },
     { prop: 'creatorName', label: '创建人', align: 'center' },
     { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
-    { prop: 'info', label: '备注', width: 150, align: 'center' },
+    {
+        prop: 'info',
+        label: '客户备注',
+        width: 150,
+        align: 'center',
+        formatter: (row) => row.info ? [...row.info].reverse().join(' | ') : ''
+    },
 ]);
 
 // 列设置相关
@@ -509,7 +524,7 @@ const options = ref<any>({
         { type: 'input', label: '小红书', prop: 'rednote' },
         { type: 'input', label: '商务通', prop: 'shangwutong' },
         { type: 'input', label: '地区', prop: 'address' },
-        { type: 'input', label: '备注', prop: 'info' }
+        { type: 'input', label: '客户备注', prop: 'info' }
     ]
 })
 
@@ -527,10 +542,14 @@ const closeDialog = () => {
     formRef.value?.resetFields();
 };
 
-// 修改 handleEdit 方法
+const currClientInfo = ref([]);
 const handleEdit = (row) => {
-    const { clientStatus, affiliatedUserId, createdUserId, createdTime, affiliatedUserName, ...rest } = row;
+    const { clientStatus, affiliatedappointerId, createdappointerId, createdTime, affiliatedUserName, info, ...rest } = row;
     formData.value = JSON.parse(JSON.stringify(rest));
+    // formData.value["info"] = row.info ? row.info[row.info.length - 1] : '';
+    if (row.info) {
+        currClientInfo.value = row.info;
+    }
     isEdit.value = true;
     editModelVisible.value = true;
 };
@@ -809,7 +828,7 @@ const exportToExcel = async () => {
                     '客户状态': conventions.getClientStatus(item.clientStatus),
                     '所属人/合作老师': item.affiliatedUserName,
                     '创建时间': item.createdTime,
-                    '备注': item.info
+                    '客户备注': item.info
                 }));
 
                 const wb = XLSX.utils.book_new();
@@ -857,7 +876,7 @@ const downloadTemplate = () => {
             '小红书': 'rednote123',
             '商务通': 'shangwutong123',
             '地区': '上海市浦东新区',
-            '备注': '这是一条测试数据'
+            '客户备注': '这是一条测试数据'
         }
     ];
 

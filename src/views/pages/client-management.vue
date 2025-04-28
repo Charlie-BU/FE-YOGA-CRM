@@ -33,7 +33,6 @@
             <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
                 @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
                 <el-table-column type="selection" width="55" align="center" fixed="left" />
-                <!-- 修改为使用displayColumns，并固定序号和姓名列 -->
                 <template v-for="item in displayColumns" :key="item.prop">
                     <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"
                         :width="item.width" :align="item.align" show-overflow-tooltip fixed="left" />
@@ -119,7 +118,17 @@
                     <el-col v-for="(item, index) in options.list" :key="index" :span="options.span">
                         <el-form-item :label="item.label" :prop="item.prop"
                             :rules="item.rules || (item.required ? [{ required: true, message: `请输入${item.label}`, trigger: 'blur' }] : [])">
-                            <el-input v-if="item.type === 'input'" v-model="formData[item.prop]"
+
+                            <div v-if="item.prop === 'info'">
+                                <el-select style="width: 100%; margin-bottom: 10px" placeholder="查看历史备注">
+                                    <el-option v-for="(note, index) in currClientInfo || []" :key="index" :label="note"
+                                        :value="note" />
+                                </el-select>
+                                <el-input v-model="formData[item.prop]" :type="item.inputType || 'text'"
+                                    :placeholder="`新增${item.label}`" />
+                            </div>
+
+                            <el-input v-else-if="item.type === 'input'" v-model="formData[item.prop]"
                                 :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`" />
                             <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]"
                                 :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
@@ -192,9 +201,8 @@
                     <el-date-picker v-model="assignForm.nextTalkDate" type="date" placeholder="选择日期"
                         style="width: 100%" />
                 </el-form-item>
-                <el-form-item label="预约备注:">
-                    <el-input v-model="assignForm.detailedInfo" type="textarea" :rows="4"
-                        placeholder="请输入预约备注"></el-input>
+                <el-form-item label="客户备注:">
+                    <el-input v-model="assignForm.info" type="textarea" :rows="4" placeholder="请输入客户备注"></el-input>
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -262,7 +270,7 @@
                         <el-option :label="briefUserInfo?.username" :value="briefUserInfo?.id" />
                     </el-select>
                 </el-form-item>
-                <el-form-item label="备注:">
+                <el-form-item label="客户备注:">
                     <el-input v-model="paymentForm.info" type="textarea" :rows="3" placeholder="请输入备注信息"></el-input>
                 </el-form-item>
             </el-form>
@@ -487,7 +495,13 @@ const defaultColumns = [
     { prop: 'clientStatus', label: '客户状态', width: 150, align: 'center', formatter: (row) => conventions.getClientStatus(row.clientStatus) },
     { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 150, align: 'center' },
     { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
-    { prop: 'info', label: '备注', width: 150, align: 'center' },
+    {
+        prop: 'info',
+        label: '客户备注',
+        width: 150,
+        align: 'center',
+        formatter: (row) => row.info ? [...row.info].reverse().join(' | ') : ''
+    },
 ]
 
 const secondColumns = [
@@ -526,7 +540,13 @@ const secondColumns = [
     { prop: 'contractNo', label: '合同编号', width: 150, align: 'center' },
     { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
     { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
-    { prop: 'detailedInfo', label: '预约备注', width: 150, align: 'center' }
+    {
+        prop: 'info',
+        label: '客户备注',
+        width: 150,
+        align: 'center',
+        formatter: (row) => row.info ? [...row.info].reverse().join(' | ') : ''
+    },
 ]
 const columns = ref(defaultColumns)
 
@@ -750,7 +770,11 @@ const options = ref<any>({
         { type: 'input', label: '小红书', prop: 'rednote' },
         { type: 'input', label: '商务通', prop: 'shangwutong' },
         { type: 'input', label: '地区', prop: 'address' },
-        { type: 'input', label: '备注', prop: 'info' }
+        {
+            type: 'select',
+            label: '客户备注',
+            prop: 'info'
+        }
     ]
 })
 
@@ -768,10 +792,14 @@ const closeDialog = () => {
     formRef.value?.resetFields();
 };
 
-// 修改 handleEdit 方法
+const currClientInfo = ref([]);
 const handleEdit = (row) => {
-    const { clientStatus, affiliatedappointerId, createdappointerId, createdTime, affiliatedUserName, ...rest } = row;
+    const { clientStatus, affiliatedappointerId, createdappointerId, createdTime, affiliatedUserName, info, ...rest } = row;
     formData.value = JSON.parse(JSON.stringify(rest));
+    // formData.value["info"] = row.info ? row.info[row.info.length - 1] : '';
+    if (row.info) {
+        currClientInfo.value = row.info;
+    }
     isEdit.value = true;
     editModelVisible.value = true;
 };
@@ -858,7 +886,7 @@ const assignForm = ref({
     comboId: null,
     courseIds: [],
     nextTalkDate: '',
-    detailedInfo: ''
+    info: ''
 });
 
 const branchOptions = ref([]);
@@ -931,7 +959,7 @@ const handleBranchChange = async (schoolId) => {
     assignForm.value.appointerId = '';
     assignForm.value.courseIds = [];
     assignForm.value.nextTalkDate = '';
-    assignForm.value.detailedInfo = '';
+    assignForm.value.info = '';
     try {
         // 获取该校区的老师列表
         const userRes = await request.post('/dept/getSchoolUsers', {
@@ -1011,7 +1039,7 @@ const submitReserve = async () => {
                 comboId: null,
                 courseIds: [],
                 nextTalkDate: '',
-                detailedInfo: ''
+                info: ''
             };
             courseOptions.value = [];
             appointerOptions.value = [];
@@ -1108,7 +1136,7 @@ const exportToExcel = async () => {
                         '客户状态': conventions.getClientStatus(item.clientStatus),
                         '所属人/合作老师': item.affiliatedUserName,
                         '创建时间': item.createdTime,
-                        '备注': item.info
+                        '客户备注': item.info
                     };
 
                     // 如果是已预约客户，添加额外字段
@@ -1122,7 +1150,7 @@ const exportToExcel = async () => {
                             '下次沟通日期': item.nextTalkDate,
                             '跟进状态': item.processStatus === 1 ? "未成单" : item.processStatus === 2 ? "已成单" : "",
                             '成单时间': item.cooperateTime,
-                            '预约备注': item.detailedInfo
+                            '客户备注': item.info
                         };
                     }
                     return baseData;

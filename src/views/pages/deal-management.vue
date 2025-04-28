@@ -107,7 +107,7 @@ const columns = ref([
     { prop: 'cooperateTime', label: '成单时间', width: 120, align: 'center' },
     { prop: 'contractNo', label: '合同编号', width: 120, align: 'center' },
     { prop: 'fromSource', label: '渠道来源', width: 120, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
-    { prop: 'detailedInfo', label: '预约备注', width: 120, align: 'center' }
+    { prop: 'info', label: '客户备注', width: 120, align: 'center' }
 ])
 const page = reactive({
     index: 1,

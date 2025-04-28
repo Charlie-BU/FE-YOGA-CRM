@@ -33,7 +33,7 @@
                 </el-descriptions-item>
                 <el-descriptions-item label="所属人 / 合作老师">{{ client.affiliatedUserName }}</el-descriptions-item>
                 <el-descriptions-item label="创建时间">{{ client.createdTime }}</el-descriptions-item>
-                <el-descriptions-item label="备注" :span="2">{{ client.info }}</el-descriptions-item>
+                <el-descriptions-item label="客户备注" :span="2">{{ client.info }}</el-descriptions-item>
             </el-descriptions>
 
             <!-- 如果是已预约客户，显示预约信息 -->
@@ -52,8 +52,6 @@
                     </el-descriptions-item>
                     <el-descriptions-item label="成单时间">{{ client.cooperateTime }}</el-descriptions-item>
                     <el-descriptions-item label="合同编号">{{ client.contractNo }}</el-descriptions-item>
-                    <el-descriptions-item label="预约备注" :span="2">{{ client.detailedInfo
-                    }}</el-descriptions-item>
                 </el-descriptions>
             </div>
 
@@ -80,7 +78,7 @@
                             </el-tooltip>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="info" label="备注" align="center" />
+                    <el-table-column prop="info" label="客户备注" align="center" />
                 </el-table>
             </div>
 
@@ -109,7 +107,7 @@
                     <el-table-column prop="classTeacherName" label="班主任" align="center" min-width="100" />
                     <el-table-column prop="teachingAssistantName" label="助教" align="center" min-width="100" />
                     <el-table-column prop="price" label="课程价格（元）" width="150" align="center" min-width="100" />
-                    <el-table-column prop="info" label="课程备注" align="center" min-width="150" show-overflow-tooltip />
+                    <el-table-column prop="info" label="课程客户备注" align="center" min-width="150" show-overflow-tooltip />
                 </el-table>
             </div>
 
