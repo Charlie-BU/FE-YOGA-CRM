@@ -16,9 +16,9 @@
             <el-descriptions :column="2" border>
                 <el-descriptions-item label="姓名">{{ client.name }}</el-descriptions-item>
                 <el-descriptions-item label="渠道来源">{{ conventions.getFromSource(client.fromSource)
-                }}</el-descriptions-item>
+                    }}</el-descriptions-item>
                 <el-descriptions-item label="性别">{{ conventions.getGender(client.gender)
-                }}</el-descriptions-item>
+                    }}</el-descriptions-item>
                 <el-descriptions-item label="年龄">{{ client.age }}</el-descriptions-item>
                 <el-descriptions-item label="身份证">{{ client.IDNumber }}</el-descriptions-item>
                 <el-descriptions-item label="电话">{{ client.phone }}</el-descriptions-item>
@@ -89,25 +89,27 @@
                     <el-descriptions-item label="校区">{{ client.schoolName }}</el-descriptions-item>
                     <el-descriptions-item label="已学课时（周）">{{ client.learnedWeeks }}</el-descriptions-item>
                     <el-descriptions-item v-if="client.comboId" label="学习套餐">{{ client.comboName
-                    }}</el-descriptions-item>
+                        }}</el-descriptions-item>
                     <el-descriptions-item label="学习课程">{{ client.courseNames }}</el-descriptions-item>
                 </el-descriptions>
 
                 <h3 style="margin: 20px 0 15px;">分班信息</h3>
-                <el-table :data="courseRecords" style="width: 100%" class="course-table">
-                    <el-table-column prop="name" label="课程名称" align="center" min-width="120" />
-                    <el-table-column prop="category" label="课程类别" align="center" min-width="100">
+                <el-table :data="lessonRecords" style="width: 100%" class="course-table">
+                    <el-table-column prop="name" label="班级名称" align="center" min-width="120" />
+                    <el-table-column prop="courseName" label="课程名称" align="center" min-width="120" />
+                    <el-table-column prop="category" label="类别" align="center" min-width="100">
                         <template #default="scope">
                             {{ conventions.getCourseCategory(scope.row.category) }}
                         </template>
                     </el-table-column>
                     <el-table-column prop="schoolName" label="校区" align="center" min-width="120" />
-                    <el-table-column prop="duration" label="总课时（周）" width="150" align="center" min-width="100" />
+                    <el-table-column prop="startDate" label="开课日期" width="150" align="center" min-width="100" />
+                    <el-table-column prop="endDate" label="结课日期" width="150" align="center" min-width="100" />
+
                     <el-table-column prop="chiefTeacherName" label="主讲人" align="center" min-width="100" />
                     <el-table-column prop="classTeacherName" label="班主任" align="center" min-width="100" />
                     <el-table-column prop="teachingAssistantName" label="助教" align="center" min-width="100" />
-                    <el-table-column prop="price" label="课程价格（元）" width="150" align="center" min-width="100" />
-                    <el-table-column prop="info" label="课程客户备注" align="center" min-width="150" show-overflow-tooltip />
+                    <el-table-column prop="info" label="班级备注" align="center" min-width="150" show-overflow-tooltip />
                 </el-table>
             </div>
 
@@ -117,12 +119,12 @@
                 <el-descriptions :column="2" border>
                     <el-descriptions-item label="公寓名">{{ dormInfo.name }}</el-descriptions-item>
                     <el-descriptions-item label="类型">{{ conventions.getDormitoryCategory(dormInfo.category)
-                    }}</el-descriptions-item>
+                        }}</el-descriptions-item>
                     <el-descriptions-item label="房间号 / 户号">{{ roomInfo.roomNumber }}</el-descriptions-item>
                     <el-descriptions-item label="楼栋">{{ roomInfo.building }}</el-descriptions-item>
                     <el-descriptions-item label="床位号">{{ bedInfo.bedNumber }}</el-descriptions-item>
                     <el-descriptions-item label="床位类型">{{ conventions.getBedCategory(bedInfo.category)
-                        }}</el-descriptions-item>
+                    }}</el-descriptions-item>
                     <el-descriptions-item label="入住时间">{{ client.bedCheckInDate }}</el-descriptions-item>
                     <el-descriptions-item label="状态" :span="2">
                         <span :style="{ color: isOverdue ? '#ff4949' : '#93ff40' }">
@@ -156,14 +158,14 @@ const emit = defineEmits(['update:modelValue'])
 
 const visible = ref(false)
 const paymentRecords = ref([])
-const courseRecords = ref([])
+const lessonRecords = ref([])
 
 watch(() => props.modelValue, async (newVal) => {
     visible.value = newVal
     if (newVal && props.client.id) {
         await Promise.all([
             getPaymentRecords(),
-            getCourseRecords(),
+            getLessonRecords(),
             getDormInfo()
         ])
     }
@@ -195,11 +197,11 @@ const getPaymentRecords = async () => {
 }
 
 // 获取课程记录
-const getCourseRecords = async () => {
+const getLessonRecords = async () => {
     try {
-        const courseIds = props.client.courseIds;
-        const res = await request.post('/course/getCoursesByIds', {
-            courseIds
+        const lessonIds = props.client.lessonIds;
+        const res = await request.post('/course/getLessonsByIds', {
+            lessonIds
         }, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
@@ -207,13 +209,13 @@ const getCourseRecords = async () => {
         })
 
         if (res.data.status === 200) {
-            courseRecords.value = res.data.courses || []
+            lessonRecords.value = res.data.courses || []
         } else {
-            courseRecords.value = []
+            lessonRecords.value = []
         }
     } catch (error) {
-        console.error('获取课程记录失败:', error)
-        ElMessage.error('获取课程记录失败')
+        console.error('获取班级信息失败:', error)
+        ElMessage.error('获取班级信息失败')
     }
 }
 

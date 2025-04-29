@@ -33,12 +33,6 @@
                                     show-overflow-tooltip />
                                 <el-table-column prop="price" label="价格" width="100" align="center"
                                     show-overflow-tooltip />
-                                <el-table-column prop="chiefTeacherName" label="主讲教师" width="100" align="center"
-                                    show-overflow-tooltip />
-                                <el-table-column prop="classTeacherName" label="班主任" width="100" align="center"
-                                    show-overflow-tooltip />
-                                <el-table-column prop="teachingAssistantName" label="助教" width="100" align="center"
-                                    show-overflow-tooltip />
                                 <el-table-column prop="info" label="备注" width="150" align="center"
                                     show-overflow-tooltip />
                                 <el-table-column prop="creatorName" label="创建人" width="100" align="center"
@@ -156,33 +150,6 @@
                     <el-col :span="12">
                         <el-form-item label="价格" prop="price">
                             <el-input v-model="formData.price" type="number" placeholder="请输入价格（元）" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="主讲教师" prop="chiefTeacherId">
-                            <el-select v-model="formData.chiefTeacherId" placeholder="请选择主讲教师" style="width: 100%"
-                                @change="handleTeacherChange('chief')" filterable>
-                                <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
-                                    :value="item.value" />
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="班主任" prop="classTeacherId">
-                            <el-select v-model="formData.classTeacherId" placeholder="请选择班主任" style="width: 100%"
-                                @change="handleTeacherChange('class')" filterable>
-                                <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
-                                    :value="item.value" />
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="助教" prop="teachingAssistantId">
-                            <el-select v-model="formData.teachingAssistantId" placeholder="请选择助教" style="width: 100%"
-                                @change="handleTeacherChange('assistant')" filterable>
-                                <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
-                                    :value="item.value" />
-                            </el-select>
                         </el-form-item>
                     </el-col>
                     <el-col :span="24">

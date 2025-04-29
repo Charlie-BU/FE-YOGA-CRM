@@ -2,19 +2,25 @@
     <div>
         <div class="container">
             <div class="course-layout">
-                <!-- 添加课程管理的树状结构 -->
+                <!-- 添加班级管理的树状结构 -->
                 <div class="tree-container">
                     <el-tree :data="treeData" :props="{ label: 'name' }" @node-click="handleNodeClick"
                         default-expand-all highlight-current />
                 </div>
 
                 <div class="table-container">
+                    <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
+                    <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true">新增</el-button>
+
                     <el-table :data="tableData" style="width: 100%; margin-top: 20px;" v-loading="loading">
-                        <el-table-column type="index" label="序号" width="55" align="center">
-                            <template #filter-icon="slotProps"></template>
-                        </el-table-column>
-                        <el-table-column prop="name" label="课程名称" width="150" align="center" show-overflow-tooltip />
-                        <el-table-column prop="category" label="课程类别" width="100" align="center" show-overflow-tooltip>
+                        <el-table-column type="index" label="序号" width="55" align="center" />
+                        <el-table-column prop="name" label="班级名称" width="150" align="center" show-overflow-tooltip />
+                        <el-table-column prop="courseName" label="课程名称" width="150" align="center"
+                            show-overflow-tooltip />
+                        <el-table-column prop="startDate" label="开课日期" width="120" align="center"
+                            show-overflow-tooltip />
+                        <el-table-column prop="endDate" label="结课日期" width="120" align="center" show-overflow-tooltip />
+                        <el-table-column prop="category" label="班级类别" width="100" align="center" show-overflow-tooltip>
                             <template #default="scope">
                                 {{ conventions.getCourseCategory(scope.row.category) }}
                             </template>
@@ -44,16 +50,16 @@
                                 </el-button>
                             </template>
                         </el-table-column>
-
+                        <el-table-column prop="info" label="备注" width="120" align="center" show-overflow-tooltip />
                         <el-table-column prop="createdTime" label="创建时间" width="180" align="center"
                             show-overflow-tooltip />
 
-                        <!-- <el-table-column label="操作" width="180" fixed="right" align="center">
+                        <el-table-column label="操作" width="180" fixed="right" align="center">
                             <template #default="scope">
                                 <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
                                 <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
                             </template>
-                        </el-table-column> -->
+                        </el-table-column>
                     </el-table>
 
                     <div class="pagination" style="margin-top: 20px; text-align: right;">
@@ -66,14 +72,21 @@
             </div>
         </div>
 
-        <!-- 课程学员列表弹窗 -->
-        <el-dialog title="课程学员列表" v-model="studentsDialogVisible" width="800px" @close="handleStudentsDialogClose">
+        <!-- 班级学员列表弹窗 -->
+        <el-dialog title="班级学员列表" v-model="studentsDialogVisible" width="800px" @close="handleStudentsDialogClose">
             <div style="margin-bottom: 10px; text-align: right;">
                 <el-button type="primary" @click="showAddStudentDialog">添加学员</el-button>
             </div>
             <el-table :data="currentStudents" style="width: 100%">
                 <el-table-column type="index" label="序号" width="55" align="center" />
-                <el-table-column prop="name" label="姓名" width="120" align="center" show-overflow-tooltip />
+                <el-table-column prop="name" label="姓名" width="120" align="center">
+                    <template #default="scope">
+                        <el-button link type="primary" @click.stop="showClientInfo(scope.row)"
+                            style="font-size: inherit; padding: 0;">
+                            {{ scope.row.name }}
+                        </el-button>
+                    </template>
+                </el-table-column>
                 <el-table-column prop="gender" label="性别" align="center">
                     <template #default="scope">
                         {{ conventions.getGender(scope.row.gender) }}
@@ -92,6 +105,9 @@
 
         <!-- 添加学员弹窗 -->
         <el-dialog title="添加学员" v-model="addStudentDialogVisible" width="600px">
+            <div class="tip-box" style="margin-bottom: 15px; color: #E6A23C; font-size: 14px;">
+                <el-alert title="提示：只有已成单且报名该班级课程的客户才可被添加为班级学员" type="warning" :closable="false" />
+            </div>
             <el-form :model="addStudentForm" label-width="100px">
                 <el-form-item label="选择学员">
                     <el-select v-model="addStudentForm.studentId" filterable placeholder="请选择学员" style="width: 100%">
@@ -122,22 +138,107 @@
                 </span>
             </template>
         </el-dialog>
+
+        <!-- 新增 / 编辑弹窗 -->
+        <el-dialog :title="isEdit ? '编辑班级' : '新增班级'" v-model="editModelVisible" width="700px" destroy-on-close
+            :close-on-click-modal="false" @close="closeDialog">
+            <el-form :model="formData" label-width="100px">
+                <el-row :gutter="20">
+                    <el-col :span="12">
+                        <el-form-item label="* 班级名称" prop="name">
+                            <el-input v-model="formData.name" placeholder="请输入班级名称" />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="* 所属校区" prop="schoolId">
+                            <el-select v-model="formData.schoolId" placeholder="请选择校区" style="width: 100%"
+                                @change="handleBranchChange" filterable>
+                                <el-option v-for="item in schoolOptions" :key="item.value" :label="item.label"
+                                    :value="item.value" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="* 课程" prop="courseId">
+                            <el-select v-model="formData.courseId" placeholder="请选择课程" style="width: 100%" filterable>
+                                <el-option v-for="item in courseOptions" :key="item.value" :label="item.label"
+                                    :value="item.value" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="* 开课日期" prop="startDate">
+                            <el-date-picker v-model="formData.startDate" type="date" placeholder="请选择开课日期"
+                                style="width: 100%" value-format="YYYY-MM-DD" />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="结课日期" prop="endDate">
+                            <el-date-picker v-model="formData.endDate" type="date" placeholder="请选择结课日期"
+                                style="width: 100%" value-format="YYYY-MM-DD" />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="* 主讲教师" prop="chiefTeacherId">
+                            <el-select v-model="formData.chiefTeacherId" placeholder="请选择主讲教师" style="width: 100%"
+                                @change="(val) => handleTeacherChange('chief')" filterable>
+                                <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
+                                    :value="item.value" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="班主任" prop="classTeacherId">
+                            <el-select v-model="formData.classTeacherId" placeholder="请选择班主任" style="width: 100%"
+                                @change="(val) => handleTeacherChange('class')" filterable>
+                                <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
+                                    :value="item.value" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="助教" prop="teachingAssistantId">
+                            <el-select v-model="formData.teachingAssistantId" placeholder="请选择助教" style="width: 100%"
+                                @change="(val) => handleTeacherChange('assistant')" filterable>
+                                <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label"
+                                    :value="item.value" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="24">
+                        <el-form-item label="备注" prop="info">
+                            <el-input v-model="formData.info" type="textarea" placeholder="请输入备注信息" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="closeDialog">取消</el-button>
+                    <el-button type="primary" @click="submitForm">确定</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <!-- 客户信息卡弹窗 -->
+        <ClientInfoCard v-model="clientInfoDialogVisible" :client="currentClient" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Refresh } from '@element-plus/icons-vue';
+import { Refresh, CirclePlusFilled } from '@element-plus/icons-vue';
 import { handleRefresh } from '@/utils/index';
 import * as conventions from '@/utils/conventions';
 import request from '@/utils/request';
+import ClientInfoCard from '@/components/client-info-card.vue'
 
 onMounted(async () => {
     try {
         await Promise.all([
             getSchools(),
-            getCourses(),
+            getLessons(),
         ]);
     } catch (error) {
         console.error('初始化数据失败:', error);
@@ -162,7 +263,7 @@ const currentSelectedSchoolId = ref(null);
 const handleNodeClick = async (node) => {
     page.index = 1;
     currentSelectedSchoolId.value = node.id;
-    await getCourses(node.id);
+    await getLessons(node.id);
 };
 
 
@@ -176,12 +277,13 @@ const page = reactive({
 const tableData = ref([]);
 const editModelVisible = ref(false);
 const isEdit = ref(false);
-const formRef = ref();
 // 修改表单数据的初始值
 const formData = ref({
     name: '',
-    category: undefined,
     schoolId: '',
+    courseId: '',
+    startDate: '', // 新增开课日期字段
+    endDate: '', // 新增结课日期字段
     duration: '',
     price: '',
     chiefTeacherId: '',
@@ -190,21 +292,13 @@ const formData = ref({
     info: '',
 });
 
-const rules = {
-    name: [{ required: true, message: '请输入课程名称', trigger: 'blur' }],
-    category: [{ required: true, message: '请输入课程类别', trigger: 'blur' }],
-    schoolId: [{ required: true, message: '请选择所属校区', trigger: 'change' }],
-    duration: [{ required: true, message: '请输入课时（周）', trigger: 'blur' }],
-    price: [{ required: true, message: '请输入价格（元）', trigger: 'blur' }],
-    chiefTeacherId: [{ required: true, message: '请选择主讲教师', trigger: 'change' }],
-};
-
 const schoolOptions = ref([]);
+const courseOptions = ref([]);
 const teacherOptions = ref([]);
 
 
-// 获取课程列表
-const getCourses = async (schoolId = null) => {
+// 获取班级列表
+const getLessons = async (schoolId = null) => {
     loading.value = true;
     try {
         const params = {
@@ -214,40 +308,41 @@ const getCourses = async (schoolId = null) => {
         if (schoolId) {
             Object.assign(params, { schoolId });
         }
-        const res = await request.post("/course/getCourses", params, {
+        const res = await request.post("/course/getLessons", params, {
             headers: { sessionid: localStorage.getItem("sessionid") }
         });
         if (res.data.status === 200) {
-            // 获取每个课程的学员人数
-            const coursesWithStudents = await Promise.all(
-                res.data.courses.map(async (course) => {
+            // 获取每个班级的学员人数
+            const lessonsWithStudents = await Promise.all(
+                res.data.lessons.map(async (lesson) => {
                     try {
-                        const studentRes = await request.post("/course/getCourseClients", {
-                            courseId: course.id
+                        const studentRes = await request.post("/course/getLessonClients", {
+                            lessonId: lesson.id
                         }, {
                             headers: { sessionid: localStorage.getItem("sessionid") }
                         });
                         return {
-                            ...course,
+                            ...lesson,
                             studentCount: studentRes.data.total || 0,
                             students: studentRes.data.clients || []
                         };
                     } catch (error) {
-                        console.error(`获取课程${course.id}的学员人数失败:`, error);
+                        console.error(`获取班级${lesson.id}的学员人数失败:`, error);
                         return {
-                            ...course,
+                            ...lesson,
                             studentCount: 0,
                             students: []
                         };
                     }
                 })
             );
-            tableData.value = coursesWithStudents;
+            tableData.value = lessonsWithStudents;
+            console.log(lessonsWithStudents);
             page.total = res.data.total;
         }
     } catch (error) {
-        console.error('获取课程列表失败:', error);
-        ElMessage.error('获取课程列表失败');
+        console.error('获取班级列表失败:', error);
+        ElMessage.error('获取班级列表失败');
     } finally {
         loading.value = false;
     }
@@ -273,12 +368,28 @@ const getSchools = async () => {
 // 处理校区切换
 const handleBranchChange = async (branchId) => {
     try {
-        // 清空教师相关字段
+        // 清空相关字段
+        formData.value.courseId = '';
         formData.value.chiefTeacherId = '';
         formData.value.classTeacherId = '';
         formData.value.teachingAssistantId = '';
+        // 获取该校区的课程列表
+        const courseRes = await request.post('/course/getCourses', {
+            schoolId: branchId
+        }, {
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
+        });
+        if (courseRes.data.status === 200) {
+            courseOptions.value = courseRes.data.courses.map(item => ({
+                label: item.name,
+                value: item.id
+            }));
+        }
 
-        // 获取该分店的用户列表
+
+        // 获取该校区的教师列表
         const userRes = await request.post('/dept/getSchoolUsers', {
             schoolId: branchId
         }, {
@@ -299,21 +410,21 @@ const handleBranchChange = async (branchId) => {
 };
 
 // 获取教师列表
-const getTeachers = async () => {
-    try {
-        const res = await request.post("/user/getTeachers", {}, {
-            headers: { sessionid: localStorage.getItem("sessionid") }
-        });
-        if (res.data.status === 200) {
-            teacherOptions.value = res.data.teachers.map(item => ({
-                label: item.username,
-                value: item.id
-            }));
-        }
-    } catch (error) {
-        console.error('获取教师列表失败:', error);
-    }
-};
+// const getTeachers = async () => {
+//     try {
+//         const res = await request.post("/user/getTeachers", {}, {
+//             headers: { sessionid: localStorage.getItem("sessionid") }
+//         });
+//         if (res.data.status === 200) {
+//             teacherOptions.value = res.data.teachers.map(item => ({
+//                 label: item.username,
+//                 value: item.id
+//             }));
+//         }
+//     } catch (error) {
+//         console.error('获取教师列表失败:', error);
+//     }
+// };
 
 // 处理教师选择
 const handleTeacherChange = (type: 'chief' | 'class' | 'assistant') => {
@@ -325,12 +436,12 @@ const handleTeacherChange = (type: 'chief' | 'class' | 'assistant') => {
 
 const changePage = async (val: number) => {
     page.index = val;
-    await getCourses(currentSelectedSchoolId.value);
+    await getLessons(currentSelectedSchoolId.value);
 };
 
 const handleSizeChange = async (val: number) => {
     page.size = val;
-    await getCourses(currentSelectedSchoolId.value);
+    await getLessons(currentSelectedSchoolId.value);
 }
 
 // 修改清空表单的方法
@@ -339,8 +450,10 @@ const closeDialog = () => {
     isEdit.value = false;
     formData.value = {
         name: '',
-        category: undefined, // 修改为 undefined
         schoolId: '',
+        courseId: '',
+        startDate: '', // 新增开课日期字段
+        endDate: '', // 新增结课日期字段
         duration: '',
         price: '',
         chiefTeacherId: '',
@@ -348,39 +461,65 @@ const closeDialog = () => {
         teachingAssistantId: '',
         info: '',
     };
-    formRef.value?.resetFields();
 };
 
 const handleEdit = (row) => {
     formData.value = JSON.parse(JSON.stringify(row));
     isEdit.value = true;
     editModelVisible.value = true;
+    // 触发校区变更，加载该校区的教师列表
+    handleBranchChange(row.schoolId);
 };
 
+const handleDelete = (row) => {
+    ElMessageBox.confirm(
+        '确认删除该班级吗？',
+        '警告',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(async () => {
+        try {
+            const res = await request.post('/course/deleteLesson', {
+                id: row.id
+            }, {
+                headers: { sessionid: localStorage.getItem("sessionid") }
+            });
+            if (res.data.status === 200) {
+                ElMessage.success('删除成功');
+                getLessons(currentSelectedSchoolId.value);
+            } else {
+                ElMessage.error(res.data.message || '删除失败');
+            }
+        } catch (error) {
+            console.error('删除失败:', error);
+            ElMessage.error('删除失败');
+        }
+    }).catch(() => {
+        // 取消删除操作
+    });
+};
 
 const submitForm = async () => {
-    if (!formRef.value) return;
-    await formRef.value.validate(async (valid) => {
-        if (valid) {
-            try {
-                const url = isEdit.value ? '/course/updateCourse' : '/course/addCourse';
-                const res = await request.post(url, formData.value, {
-                    headers: { sessionid: localStorage.getItem("sessionid") }
-                });
+    try {
+        const url = isEdit.value ? '/course/updateLesson' : '/course/addLesson';
+        const res = await request.post(url, formData.value, {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        });
 
-                if (res.data.status === 200) {
-                    ElMessage.success(isEdit.value ? '编辑成功' : '添加成功');
-                    closeDialog();
-                    getCourses(currentSelectedSchoolId.value);
-                } else {
-                    ElMessage.error(res.data.message || '操作失败');
-                }
-            } catch (error) {
-                console.error('提交失败:', error);
-                ElMessage.error('操作失败');
-            }
+        if (res.data.status === 200) {
+            ElMessage.success(isEdit.value ? '编辑成功' : '添加成功');
+            closeDialog();
+            getLessons(currentSelectedSchoolId.value);
+        } else {
+            ElMessage.error(res.data.message || '操作失败');
         }
-    });
+    } catch (error) {
+        console.error('操作失败:', error);
+        ElMessage.error('操作失败');
+    }
 };
 
 // 添加学员
@@ -394,7 +533,9 @@ const availableStudents = ref([]);
 const showAddStudentDialog = async () => {
     try {
         // 获取可选学员列表
-        const res = await request.post("/extra/getDealedClients", {}, {
+        const res = await request.post("/course/getQualifiedStudents", {
+            lessonCourseId: currentLessonCourseId.value,
+        }, {
             headers: { sessionid: localStorage.getItem("sessionid") }
         });
         if (res.data.status === 200) {
@@ -416,7 +557,7 @@ const submitAddStudent = async () => {
 
     try {
         const res = await request.post('/course/addStudent', {
-            courseId: currentCourseId.value,
+            courseId: currentLessonId.value,
             studentId: addStudentForm.value.studentId
         }, {
             headers: { sessionid: localStorage.getItem("sessionid") }
@@ -429,8 +570,8 @@ const submitAddStudent = async () => {
             studentsDialogVisible.value = false;
             // 重置表单
             addStudentForm.value.studentId = '';
-            // 刷新课程列表
-            getCourses(currentSelectedSchoolId.value);
+            // 刷新班级列表
+            getLessons(currentSelectedSchoolId.value);
         } else {
             ElMessage.error(res.data.message || '添加失败');
         }
@@ -443,7 +584,7 @@ const submitAddStudent = async () => {
 // 移除学员
 const handleRemoveStu = (row) => {
     ElMessageBox.confirm(
-        '确认将该学员移除该课程吗？',
+        '确认将该学员移除该班级吗？',
         '警告',
         {
             confirmButtonText: '确定',
@@ -454,7 +595,7 @@ const handleRemoveStu = (row) => {
         try {
             const res = await request.post('/course/removeStudent', {
                 stuId: row.id,
-                courseId: currentCourseId.value
+                lessonId: currentLessonId.value
             }, {
                 headers: { sessionid: localStorage.getItem("sessionid") }
             });
@@ -462,7 +603,7 @@ const handleRemoveStu = (row) => {
                 ElMessage.success('移除成功');
                 // 关闭学员列表弹窗
                 studentsDialogVisible.value = false;
-                getCourses(currentSelectedSchoolId.value);
+                getLessons(currentSelectedSchoolId.value);
             } else {
                 ElMessage.error(res.data.message || '移除失败');
             }
@@ -474,13 +615,15 @@ const handleRemoveStu = (row) => {
 };
 
 const handleStudentsDialogClose = () => {
-    currentCourseId.value = null;
+    currentLessonId.value = null;
+    currentLessonCourseId.value = null;
 };
 
 
 const studentsDialogVisible = ref(false);
 const currentStudents = ref([]);
-const currentCourseId = ref(null);
+const currentLessonId = ref(null);
+const currentLessonCourseId = ref(null);
 
 const showStudents = async (row) => {
     try {
@@ -495,7 +638,8 @@ const showStudents = async (row) => {
         }));
 
         currentStudents.value = students;
-        currentCourseId.value = row.id;
+        currentLessonId.value = row.id;
+        currentLessonCourseId.value = row.courseId;
         studentsDialogVisible.value = true;
     } catch (error) {
         console.error('获取学员详情失败:', error);
@@ -526,7 +670,7 @@ const submitGraduateNum = async () => {
         if (res.data.status === 200) {
             ElMessage.success('更新成功');
             graduateNumDialogVisible.value = false;
-            getCourses(currentSelectedSchoolId.value);
+            getLessons(currentSelectedSchoolId.value);
         } else {
             ElMessage.error(res.data.message || '更新失败');
         }
@@ -535,6 +679,16 @@ const submitGraduateNum = async () => {
         ElMessage.error('更新失败');
     }
 };
+
+// 客户信息卡相关
+const clientInfoDialogVisible = ref(false)
+const currentClient = ref({})
+
+// 显示客户信息卡
+const showClientInfo = (client) => {
+    currentClient.value = { ...client }
+    clientInfoDialogVisible.value = true
+}
 </script>
 
 <style scoped>
