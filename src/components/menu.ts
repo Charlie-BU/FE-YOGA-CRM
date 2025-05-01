@@ -80,7 +80,7 @@ export const menuData: Menus[] = [
                 pid: "1",
                 index: "/transaction-summary",
                 title: "收入支出汇总表"
-            }
+            },
             // {
             //     id: "010-3",
             //     pid: "1",
@@ -159,18 +159,18 @@ export const menuData: Menus[] = [
             //     index: "/customer-service-conversion-personal",
             //     title: "客服转客户数据日报表（个人）"
             // },
-            // {
-            //     id: "010-16",
-            //     pid: "1",
-            //     index: "/customer-service-summary",
-            //     title: "客服总数据报表"
-            // },
-            // {
-            //     id: "010-17",
-            //     pid: "1",
-            //     index: "/date-summary",
-            //     title: "日期总数据报表"
-            // }
+            {
+                id: "010-16",
+                pid: "1",
+                index: "/customer-service-summary",
+                title: "客服总数据报表"
+            },
+            {
+                id: "010-17",
+                pid: "1",
+                index: "/date-summary",
+                title: "日期总数据报表"
+            }
         ]
     },
     {
