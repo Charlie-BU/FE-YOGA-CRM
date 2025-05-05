@@ -13,6 +13,8 @@
             <el-button type="warning" :icon="Download" @click="exportToExcel">导出</el-button>
             <el-button v-if="!currClientStatus" type="primary" :disabled="selectedRows.length !== 1"
                 @click="handleReserve">预约到店</el-button>
+            <el-button v-else type="primary" :disabled="selectedRows.length !== 1"
+                @click="handleReserve">再次预约</el-button>
             <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1"
                 @click="handleCancelReserve">取消预约</el-button>
             <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 2" type="success"
@@ -100,7 +102,7 @@
             <el-divider></el-divider>
             <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
                 <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
-                }}</el-checkbox>
+                    }}</el-checkbox>
             </el-checkbox-group>
             <template #footer>
                 <span class="dialog-footer">
@@ -161,8 +163,8 @@
                     <el-date-picker v-model="assignForm.appointDate" type="date" placeholder="选择日期"
                         style="width: 100%" />
                 </el-form-item>
-                <el-form-item label="* 预约人:">
-                    <el-select v-model="assignForm.appointerId" placeholder="请选择预约人" style="width: 100%" filterable>
+                <el-form-item label="接待人:">
+                    <el-select v-model="assignForm.appointerId" placeholder="请选择接待人" style="width: 100%" filterable>
                         <el-option v-for="item in appointerOptions" :key="item.value" :label="item.label"
                             :value="item.value" />
                     </el-select>
@@ -402,7 +404,7 @@ const reservedSearchOpt = ref([
         options: [] // 需要动态获取
     },
     { type: 'input', label: '所属人：', prop: 'affiliatedUserName' },
-    { type: 'input', label: '预约人：', prop: 'appointerName' },
+    { type: 'input', label: '接待人：', prop: 'appointerName' },
     { type: 'input', label: '地区：', prop: 'address' },
     {
         type: 'daterange',
@@ -530,7 +532,7 @@ const secondColumns = [
     { prop: 'weixin', label: '微信', width: 150, align: 'center' },
     { prop: 'schoolName', label: '校区', width: 150, align: 'center' },
     { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 150, align: 'center' },
-    { prop: 'appointerName', label: '预约人', width: 150, align: 'center' },
+    { prop: 'appointerName', label: '接待人', width: 150, align: 'center' },
     { prop: 'courseNames', label: '课程', width: 150, align: 'center' },
     { prop: 'address', label: '地区', width: 150, align: 'center' },
     { prop: 'appointDate', label: '预约日期', width: 150, align: 'center' },
@@ -925,9 +927,8 @@ const handleComboChange = async (comboId) => {
 
 
 const handleReserve = async () => {
-    if (!selectedRows.value.length) return;
-    if (selectedRows.value[0].clientStatus !== 3) {
-        ElMessage.warning('该客户不是待预约状态，无法预约');
+    if (selectedRows.value.length !== 1) {
+        ElMessage.warning('请选择一个客户');
         return;
     }
     try {
@@ -947,6 +948,30 @@ const handleReserve = async () => {
                 }));
             }
         });
+
+        // 获取选中的客户信息
+        const client = selectedRows.value[0];
+        // 如果有校区ID，触发校区变更事件以加载相关数据
+        if (client.schoolId) {
+            handleBranchChange(assignForm.value.schoolId);
+        }
+
+        // 如果有套餐ID，触发套餐变更事件以加载相关课程
+        if (client.comboId) {
+            handleComboChange(assignForm.value.comboId);
+        }
+        // 预填充表单数据
+        assignForm.value = {
+            schoolId: client.schoolId || '', // 校区ID
+            appointDate: '', // 预约日期默认为空，需要重新选择
+            appointerId: client.appointerId || '', // 接待人ID
+            useCombo: client.useCombo || false, // 是否使用套餐
+            comboId: client.comboId || null, // 套餐ID
+            courseIds: client.courseIds || [], // 课程ID列表
+            nextTalkDate: '', // 下次沟通日期默认为空，需要重新选择
+            info: '' // 备注信息默认为空，需要重新填写
+        };
+
         assignDialogVisible.value = true;
     } catch (error) {
         console.error('获取数据失败:', error);
@@ -1000,7 +1025,7 @@ const handleBranchChange = async (schoolId) => {
 
 const submitReserve = async () => {
     // 表单验证
-    if (!assignForm.value.schoolId || !assignForm.value.appointerId || !assignForm.value.appointDate ||
+    if (!assignForm.value.schoolId || !assignForm.value.appointDate ||
         (assignForm.value.useCombo && !assignForm.value.comboId) ||
         (!assignForm.value.useCombo && (!assignForm.value.courseIds || assignForm.value.courseIds.length === 0))) {
         ElMessage.warning('请填写必要信息');
@@ -1144,7 +1169,7 @@ const exportToExcel = async () => {
                         return {
                             ...baseData,
                             '校区': item.schoolName,
-                            '预约人': item.appointerName,
+                            '接待人': item.appointerName,
                             '课程': item.courseNames,
                             '预约日期': item.appointDate,
                             '下次沟通日期': item.nextTalkDate,

@@ -25,12 +25,22 @@
                 <template v-for="item in displayColumns" :key="item.prop">
                     <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"
                         :width="item.width" :align="item.align" show-overflow-tooltip />
+                    <el-table-column v-else-if="item.prop === 'name'" :prop="item.prop" :label="item.label"
+                        :width="item.width" :align="item.align" show-overflow-tooltip fixed="left">
+                        <template #default="scope">
+                            <span class="clickable-name" @click.stop="showClientInfo(scope.row)">
+                                {{ scope.row.name }}
+                            </span>
+                        </template>
+                    </el-table-column>
                     <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width"
                         :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
                 </template>
 
-                <el-table-column label="操作" width="180" fixed="right" align="center">
+                <el-table-column label="操作" width="220" fixed="right" align="center">
                     <template #default="scope">
+                        <el-button size="small" type="success" @click="handleToClient(scope.row.id)">转客户</el-button>
+
                         <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
                         <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
                     </template>
@@ -53,7 +63,7 @@
             <el-divider></el-divider>
             <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
                 <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
-                }}</el-checkbox>
+                    }}</el-checkbox>
             </el-checkbox-group>
             <template #footer>
                 <span class="dialog-footer">
@@ -183,6 +193,9 @@
                 </div>
             </template>
         </el-dialog>
+
+        <!-- 客户信息卡弹窗 -->
+        <ClientInfoCard v-model="clientInfoDialogVisible" :client="currentClient" />
     </div>
 </template>
 
@@ -339,7 +352,26 @@ const handleSearch = async () => {
 // 表格相关
 const allColumns = ref([
     { type: 'index', label: '序号', width: 55, align: 'center', prop: 'index' },
-    { prop: 'name', label: '姓名', width: 120, align: 'center' },
+    {
+        prop: 'name',
+        label: '姓名',
+        width: 150,
+        align: 'center',
+        // 添加自定义渲染函数
+        renderCell: (h, { row }) => {
+            return h(
+                'span',
+                {
+                    style: 'color: #409EFF; cursor: pointer;',
+                    onClick: (event) => {
+                        event.stopPropagation();
+                        showClientInfo(row);
+                    }
+                },
+                row.name
+            );
+        }
+    },
     { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
     { prop: 'gender', label: '性别', align: 'center', formatter: (row) => conventions.getGender(row.gender) },
     { prop: 'age', label: '年龄', align: 'center' },
@@ -490,7 +522,9 @@ const options = ref<any>({
     labelWidth: '100px',
     span: 12,
     list: [
-        { type: 'input', label: '姓名', prop: 'name', required: true },
+        {
+            type: 'input', label: '姓名', prop: 'name', required: true,
+        },
         {
             type: 'select',
             label: '渠道来源',
@@ -747,8 +781,8 @@ const handleUnassign = async () => {
     });
 };
 
-const handleToClient = async () => {
-    if (!selectedRows.value.length) return;
+const handleToClient = async (clientId) => {
+    if (!clientId && !selectedRows.value.length) return;
 
     ElMessageBox.confirm(
         '确认将选中的线索转为正式客户吗？',
@@ -760,7 +794,10 @@ const handleToClient = async () => {
         }
     ).then(async () => {
         try {
-            const ids = selectedRows.value.map(row => row.id);
+            let ids = selectedRows.value.map(row => row.id);
+            if (clientId) {
+                ids = [clientId];
+            }
             const res = await request.post('/extra/convertToClients', {
                 ids: ids
             }, {
@@ -935,6 +972,14 @@ const handleUpload = async () => {
         uploading.value = false;
     }
 };
+
+// 客户信息卡相关状态
+const clientInfoDialogVisible = ref(false);
+const currentClient = ref(null);
+const showClientInfo = (client) => {
+    currentClient.value = client;
+    clientInfoDialogVisible.value = true;
+};
 </script>
 
 <style scoped>
@@ -977,5 +1022,14 @@ const handleUpload = async () => {
 
 .dialog-footer {
     text-align: right;
+}
+
+.clickable-name {
+    color: #409EFF;
+    cursor: pointer;
+}
+
+.clickable-name:hover {
+    text-decoration: underline;
 }
 </style>

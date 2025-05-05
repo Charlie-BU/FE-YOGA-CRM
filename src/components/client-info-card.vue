@@ -41,7 +41,7 @@
                 <h3>预约信息</h3>
                 <el-descriptions :column="2" border>
                     <el-descriptions-item label="校区">{{ client.schoolName }}</el-descriptions-item>
-                    <el-descriptions-item label="预约人">{{ client.appointerName }}</el-descriptions-item>
+                    <el-descriptions-item label="接待人">{{ client.appointerName }}</el-descriptions-item>
                     <el-descriptions-item v-if="client.comboId" label="套餐">{{ client.comboName }}</el-descriptions-item>
                     <el-descriptions-item label="课程">{{ client.courseNames }}</el-descriptions-item>
                     <el-descriptions-item label="预约日期">{{ client.appointDate }}</el-descriptions-item>
