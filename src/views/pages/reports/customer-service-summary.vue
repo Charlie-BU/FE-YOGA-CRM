@@ -33,7 +33,7 @@
                     color: '#606266',
                     fontWeight: 'bold'
                 }">
-                <el-table-column label="客服信息" width="120" fixed>
+                <el-table-column label="客服信息" width="120" fixed show-overflow-tooltip>
                     <template #default="scope">
                         {{ scope.row.schoolName.slice(0, 2) }}-{{ scope.row.username }}
                     </template>
@@ -41,17 +41,17 @@
 
                 <!-- 城市报名数据 -->
                 <el-table-column label="报名城市数据">
-                    <el-table-column prop="shanghaiCount" label="报上海" align="center" />
-                    <el-table-column prop="beijingCount" label="报北京" align="center" />
-                    <el-table-column prop="guangzhouCount" label="报广州" align="center" />
-                    <el-table-column prop="chengduCount" label="报成都" align="center" />
+                    <el-table-column prop="shanghaiCount" label="报上海" align="center" show-overflow-tooltip />
+                    <el-table-column prop="beijingCount" label="报北京" align="center" show-overflow-tooltip />
+                    <el-table-column prop="guangzhouCount" label="报广州" align="center" show-overflow-tooltip />
+                    <el-table-column prop="chengduCount" label="报成都" align="center" show-overflow-tooltip />
                 </el-table-column>
 
                 <!-- 总体数据 -->
                 <el-table-column label="总体数据">
-                    <el-table-column prop="totalToClient" label="总转客户" align="center" />
-                    <el-table-column prop="totalDealed" label="总报名" align="center" />
-                    <el-table-column prop="totalConversion" label="总转化率" align="center">
+                    <el-table-column prop="totalToClient" label="总转客户" align="center" show-overflow-tooltip />
+                    <el-table-column prop="totalDealed" label="总报名" align="center" show-overflow-tooltip />
+                    <el-table-column prop="totalConversion" label="总转化率" align="center" show-overflow-tooltip>
                         <template #default="scope">
                             {{ calculateRate(scope.row.totalDealed, scope.row.totalToClient) }}%
                         </template>
@@ -60,9 +60,9 @@
 
                 <!-- 商务通数据 -->
                 <el-table-column label="商务通数据">
-                    <el-table-column prop="bwAdd" label="商务通加" align="center" />
-                    <el-table-column prop="bwSignup" label="商务通报" align="center" />
-                    <el-table-column prop="bwConversion" label="商转化率" align="center">
+                    <el-table-column prop="bwAdd" label="商务通加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="bwSignup" label="商务通报" align="center" show-overflow-tooltip />
+                    <el-table-column prop="bwConversion" label="商转化率" align="center show-overflow-tooltip">
                         <template #default="scope">
                             {{ calculateRate(scope.row.bwSignup, scope.row.bwAdd) }}%
                         </template>
@@ -71,9 +71,9 @@
 
                 <!-- 红推数据 -->
                 <el-table-column label="红推数据">
-                    <el-table-column prop="redAdd" label="红推" align="center" />
-                    <el-table-column prop="redSignup" label="红推报" align="center" />
-                    <el-table-column prop="redConversion" label="红推转化率" align="center">
+                    <el-table-column prop="redAdd" label="红推" align="center" show-overflow-tooltip />
+                    <el-table-column prop="redSignup" label="红推报" align="center" show-overflow-tooltip />
+                    <el-table-column prop="redConversion" label="红推转化率" align="center" show-overflow-tooltip>
                         <template #default="scope">
                             {{ calculateRate(scope.row.redSignup, scope.row.redAdd) }}%
                         </template>
@@ -82,9 +82,9 @@
 
                 <!-- 信息流数据 -->
                 <el-table-column label="信息流数据">
-                    <el-table-column prop="infoAdd" label="信息流加" align="center" />
-                    <el-table-column prop="infoSignup" label="信息流报" align="center" />
-                    <el-table-column prop="infoConversion" label="信转化率" align="center">
+                    <el-table-column prop="infoAdd" label="信息流加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="infoSignup" label="信息流报" align="center" show-overflow-tooltip />
+                    <el-table-column prop="infoConversion" label="信转化率" align="center" show-overflow-tooltip>
                         <template #default="scope">
                             {{ calculateRate(scope.row.infoSignup, scope.row.infoAdd) }}%
                         </template>
@@ -93,50 +93,50 @@
 
                 <!-- 点评数据 -->
                 <el-table-column label="点评数据">
-                    <el-table-column prop="dpAdd" label="点评加" align="center" />
-                    <el-table-column prop="dpSignup" label="点评报" align="center" />
+                    <el-table-column prop="dpAdd" label="点评加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="dpSignup" label="点评报" align="center" show-overflow-tooltip />
                 </el-table-column>
 
                 <!-- 电话数据 -->
                 <el-table-column label="电话数据">
-                    <el-table-column prop="phoneAdd" label="电话加" align="center" />
-                    <el-table-column prop="phoneSignup" label="电话报" align="center" />
+                    <el-table-column prop="phoneAdd" label="电话加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="phoneSignup" label="电话报" align="center" show-overflow-tooltip />
                 </el-table-column>
 
                 <!-- 小红书数据 -->
                 <el-table-column label="小红书数据">
-                    <el-table-column prop="xhsAdd" label="小红书加" align="center" />
-                    <el-table-column prop="xhsSignup" label="小红书报" align="center" />
+                    <el-table-column prop="xhsAdd" label="小红书加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="xhsSignup" label="小红书报" align="center" show-overflow-tooltip />
                 </el-table-column>
 
                 <!-- 抖音数据 -->
                 <el-table-column label="抖音数据">
-                    <el-table-column prop="dyAdd" label="抖音加" align="center" />
-                    <el-table-column prop="dySignup" label="抖音报" align="center" />
+                    <el-table-column prop="dyAdd" label="抖音加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="dySignup" label="抖音报" align="center" show-overflow-tooltip />
                 </el-table-column>
 
                 <!-- 推荐/介绍数据 -->
                 <el-table-column label="推荐/介绍数据">
-                    <el-table-column prop="referAdd" label="推荐/介绍加" align="center" />
-                    <el-table-column prop="referSignup" label="推荐/介绍报" align="center" />
+                    <el-table-column prop="referAdd" label="推荐/介绍加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="referSignup" label="推荐/介绍报" align="center" show-overflow-tooltip />
                 </el-table-column>
 
                 <!-- 自己进店数据 -->
                 <el-table-column label="自己进店数据">
-                    <el-table-column prop="selfAdd" label="自己进店加" align="center" />
-                    <el-table-column prop="selfSignup" label="自己进店报" align="center" />
+                    <el-table-column prop="selfAdd" label="自己进店加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="selfSignup" label="自己进店报" align="center" show-overflow-tooltip />
                 </el-table-column>
 
                 <!-- 公众号数据 -->
                 <el-table-column label="公众号数据">
-                    <el-table-column prop="mpAdd" label="公众号加" align="center" />
-                    <el-table-column prop="mpSignup" label="公众号报" align="center" />
+                    <el-table-column prop="mpAdd" label="公众号加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="mpSignup" label="公众号报" align="center" show-overflow-tooltip />
                 </el-table-column>
 
                 <!-- 视频号数据 -->
                 <el-table-column label="视频号数据">
-                    <el-table-column prop="videoAdd" label="视频号加" align="center" />
-                    <el-table-column prop="videoSignup" label="视频号报" align="center" />
+                    <el-table-column prop="videoAdd" label="视频号加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="videoSignup" label="视频号报" align="center" show-overflow-tooltip />
                 </el-table-column>
             </el-table>
         </div>
@@ -179,7 +179,6 @@ const handleQuery = async () => {
             }
         });
         if (res.data.status === 200) {
-            console.log(res.data.allData);
             tableData.value = res.data.allData;
         } else {
             console.error('查询数据失败:', res.data.message);

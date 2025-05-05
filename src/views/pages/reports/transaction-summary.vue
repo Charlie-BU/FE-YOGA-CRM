@@ -39,7 +39,7 @@
 
             <!-- 原有的表格部分 -->
             <el-table ref="tableRef" :data="tableData" style="width: 100%;" @selection-change="handleSelectionChange"
-                @row-click="handleRowClick" v-loading="loading">
+                @row-click="handleRowClick">
                 <el-table-column type="selection" width="55" align="center" />
                 <template v-for="item in columns" :key="item.prop">
                     <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"

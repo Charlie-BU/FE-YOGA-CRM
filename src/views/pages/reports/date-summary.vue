@@ -1,25 +1,14 @@
 <template>
     <div>
         <div class="container">
-            <!-- 添加筛选按钮 -->
             <div class="toolbar">
                 <el-button type="primary" :icon="Search" @click="showFilterDialog">筛选查询</el-button>
                 <el-button type="warning" :icon="Download" @click="handleExport">导出</el-button>
             </div>
 
-            <!-- 筛选弹窗 -->
             <el-dialog title="筛选条件" v-model="filterDialogVisible" width="800px" :close-on-click-modal="false">
                 <el-form :model="queryParams" label-width="100px">
                     <el-row :gutter="20">
-                        <el-col :span="12">
-                            <el-form-item label="校区">
-                                <el-select v-model="queryParams.schoolId" placeholder="请选择校区" clearable
-                                    style="width: 100%">
-                                    <el-option v-for="item in schoolOptions" :key="item.value" :label="item.label"
-                                        :value="item.value" />
-                                </el-select>
-                            </el-form-item>
-                        </el-col>
                         <el-col :span="24">
                             <el-form-item label="汇总时间">
                                 <el-date-picker v-model="queryParams.timeRange" type="daterange" range-separator="至"
@@ -37,284 +26,338 @@
                 </template>
             </el-dialog>
 
-            <!-- 原有的表格部分 -->
-            <el-table ref="tableRef" :data="tableData" style="width: 100%;" @selection-change="handleSelectionChange"
-                @row-click="handleRowClick" v-loading="loading">
-                <el-table-column type="selection" width="55" align="center" />
-                <template v-for="item in columns" :key="item.prop">
-                    <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"
-                        :width="item.width" :align="item.align" show-overflow-tooltip />
-                    <el-table-column v-else-if="item.prop === 'amount' && item.label === '金额（元）'" :label="item.label"
-                        :align="item.align">
+            <el-table ref="tableRef" :data="tableData" style="width: 100%" border :cell-style="{ textAlign: 'center' }"
+                :header-cell-style="{
+                    textAlign: 'center',
+                    backgroundColor: '#f5f7fa',
+                    color: '#606266',
+                    fontWeight: 'bold'
+                }">
+                <el-table-column label="日期" width="120" fixed show-overflow-tooltip>
+                    <template #default="scope">
+                        {{ scope.row.date }}
+                    </template>
+                </el-table-column>
+
+                <!-- 城市报名数据 -->
+                <el-table-column label="报名城市数据">
+                    <el-table-column prop="shanghaiCount" label="报上海" align="center" show-overflow-tooltip />
+                    <el-table-column prop="beijingCount" label="报北京" align="center" show-overflow-tooltip />
+                    <el-table-column prop="guangzhouCount" label="报广州" align="center" show-overflow-tooltip />
+                    <el-table-column prop="chengduCount" label="报成都" align="center" show-overflow-tooltip />
+                </el-table-column>
+
+                <!-- 总体数据 -->
+                <el-table-column label="总体数据">
+                    <el-table-column prop="totalToClient" label="总转客户" align="center" show-overflow-tooltip />
+                    <el-table-column prop="totalDealed" label="总报名" align="center" show-overflow-tooltip />
+                    <el-table-column prop="totalConversion" label="总转化率" align="center" show-overflow-tooltip>
                         <template #default="scope">
-                            <span :style="{ color: scope.row.amount >= 0 ? 'green' : '#red', fontWeight: 'bold' }">
-                                {{ scope.row.amount }}
-                            </span>
+                            {{ calculateRate(scope.row.totalDealed, scope.row.totalToClient) }}%
                         </template>
                     </el-table-column>
-                    <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width"
-                        :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
-                </template>
-            </el-table>
+                </el-table-column>
 
-            <div class="pagination" style="margin-top: 20px; text-align: right;">
-                <el-pagination v-model:current-page="page.index" v-model:page-size="page.size" :total="page.total"
-                    @current-change="changePage" layout="total, prev, pager, next">
-                </el-pagination>
-            </div>
+                <!-- 商务通数据 -->
+                <el-table-column label="商务通数据">
+                    <el-table-column prop="bwAdd" label="商务通加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="bwSignup" label="商务通报" align="center" show-overflow-tooltip />
+                    <el-table-column prop="bwConversion" label="商转化率" align="center show-overflow-tooltip">
+                        <template #default="scope">
+                            {{ calculateRate(scope.row.bwSignup, scope.row.bwAdd) }}%
+                        </template>
+                    </el-table-column>
+                </el-table-column>
+
+                <!-- 红推数据 -->
+                <el-table-column label="红推数据">
+                    <el-table-column prop="redAdd" label="红推" align="center" show-overflow-tooltip />
+                    <el-table-column prop="redSignup" label="红推报" align="center" show-overflow-tooltip />
+                    <el-table-column prop="redConversion" label="红推转化率" align="center" show-overflow-tooltip>
+                        <template #default="scope">
+                            {{ calculateRate(scope.row.redSignup, scope.row.redAdd) }}%
+                        </template>
+                    </el-table-column>
+                </el-table-column>
+
+                <!-- 信息流数据 -->
+                <el-table-column label="信息流数据">
+                    <el-table-column prop="infoAdd" label="信息流加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="infoSignup" label="信息流报" align="center" show-overflow-tooltip />
+                    <el-table-column prop="infoConversion" label="信转化率" align="center" show-overflow-tooltip>
+                        <template #default="scope">
+                            {{ calculateRate(scope.row.infoSignup, scope.row.infoAdd) }}%
+                        </template>
+                    </el-table-column>
+                </el-table-column>
+
+                <!-- 点评数据 -->
+                <el-table-column label="点评数据">
+                    <el-table-column prop="dpAdd" label="点评加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="dpSignup" label="点评报" align="center" show-overflow-tooltip />
+                </el-table-column>
+
+                <!-- 电话数据 -->
+                <el-table-column label="电话数据">
+                    <el-table-column prop="phoneAdd" label="电话加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="phoneSignup" label="电话报" align="center" show-overflow-tooltip />
+                </el-table-column>
+
+                <!-- 小红书数据 -->
+                <el-table-column label="小红书数据">
+                    <el-table-column prop="xhsAdd" label="小红书加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="xhsSignup" label="小红书报" align="center" show-overflow-tooltip />
+                </el-table-column>
+
+                <!-- 抖音数据 -->
+                <el-table-column label="抖音数据">
+                    <el-table-column prop="dyAdd" label="抖音加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="dySignup" label="抖音报" align="center" show-overflow-tooltip />
+                </el-table-column>
+
+                <!-- 推荐/介绍数据 -->
+                <el-table-column label="推荐/介绍数据">
+                    <el-table-column prop="referAdd" label="推荐/介绍加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="referSignup" label="推荐/介绍报" align="center" show-overflow-tooltip />
+                </el-table-column>
+
+                <!-- 自己进店数据 -->
+                <el-table-column label="自己进店数据">
+                    <el-table-column prop="selfAdd" label="自己进店加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="selfSignup" label="自己进店报" align="center" show-overflow-tooltip />
+                </el-table-column>
+
+                <!-- 公众号数据 -->
+                <el-table-column label="公众号数据">
+                    <el-table-column prop="mpAdd" label="公众号加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="mpSignup" label="公众号报" align="center" show-overflow-tooltip />
+                </el-table-column>
+
+                <!-- 视频号数据 -->
+                <el-table-column label="视频号数据">
+                    <el-table-column prop="videoAdd" label="视频号加" align="center" show-overflow-tooltip />
+                    <el-table-column prop="videoSignup" label="视频号报" align="center" show-overflow-tooltip />
+                </el-table-column>
+            </el-table>
         </div>
     </div>
 </template>
 
-<script setup lang="ts">
-import { Search } from '@element-plus/icons-vue'
-import { ref, reactive, onMounted, watch, computed } from 'vue';
-import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { Download } from '@element-plus/icons-vue';
-import request from '@/utils/request';
-import * as conventions from '@/utils/conventions';
-import { getUserInfo } from '@/utils/login-check';
+<script setup>
+import { ref, onMounted } from 'vue'
+import { Search, Download } from '@element-plus/icons-vue'
+import request from '@/utils/request'
+import { ElMessage } from 'element-plus'
+import * as XLSX from 'xlsx'
 
-const userInfo = ref(null);
-onMounted(async () => {
-    userInfo.value = await getUserInfo();
-    await getSchools();
-    await initData();
-});
-
-// 添加校区选项
-const schoolOptions = ref([]);
-
-// 添加获取校区列表方法
-const getSchools = async () => {
-    try {
-        const res = await request.post("/dept/getAllSchools", {}, {
-            headers: { sessionid: localStorage.getItem("sessionid") }
-        });
-        if (res.data.status === 200) {
-            schoolOptions.value = res.data.schools.map(item => ({
-                label: item.name,
-                value: item.id
-            }));
-        }
-    } catch (error) {
-        console.error('获取校区列表失败:', error);
-    }
-};
-
-// 添加初始化数据获取方法
-const initData = async () => {
-    loading.value = true;
-    try {
-        if (queryParams.timeRange.length === 0) {
-            // 获取当前日期
-            const now = new Date();
-            // 获取当月第一天（修复时区问题）
-            const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-                .toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                .replace(/\//g, '-');
-            // 获取当月最后一天（修复时区问题）
-            const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-                .toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                .replace(/\//g, '-');
-
-            // 设置默认查询参数
-            queryParams.timeRange = [startDate, endDate];
-        }
-        // 清空表格数据
-        tableData.value = [];
-        // 计算所有校区的数据
-        for (const school of schoolOptions.value) {
-            const res = await request.post("/dept/calcSchoolBudget", {
-                schoolId: school.value,
-                startDate: queryParams.timeRange[0],
-                endDate: queryParams.timeRange[1]
-            }, {
-                headers: {
-                    sessionid: localStorage.getItem("sessionid")
-                }
-            });
-
-            if (res.data.status === 200) {
-                tableData.value.push({
-                    ...res.data.data,
-                    timeRange: `${queryParams.timeRange[0]} 至 ${queryParams.timeRange[1]}`
-                });
-            }
-        }
-
-        page.total = tableData.value.length;
-    } catch (error) {
-        console.error('初始化数据失败:', error);
-        ElMessage.error('初始化数据失败');
-    } finally {
-        loading.value = false;
-    }
-};
-
-
-// 表格相关
-const columns = [
-    { type: 'index', label: '序号', width: 55, align: 'center' },
-    { prop: 'schoolName', label: '校区', align: 'center' },
-    { prop: 'timeRange', label: '汇总时间', align: 'center' },
-    {
-        prop: 'budgetBefore',
-        label: '初期盈余（元）',
-        align: 'center',
-        formatter: (row) => row.budgetBefore.toFixed(2)
-    },
-    {
-        prop: 'incomeDuring',
-        label: '期间收入（元）',
-        align: 'center',
-        width: "150",
-        formatter: (row) => row.incomeDuring.toFixed(2)
-    },
-    {
-        prop: 'expanseDuring',
-        label: '期间支出（元）',
-        align: 'center',
-        formatter: (row) => row.expanseDuring.toFixed(2)
-    },
-    {
-        prop: 'budgetAfter',
-        label: '期末盈余（元）',
-        align: 'center',
-        formatter: (row) => row.budgetAfter.toFixed(2)
-    }
-];
-
-const page = reactive({
-    index: 1,
-    size: 10,
-    total: 0,
+const loading = ref(false)
+const filterDialogVisible = ref(false)
+const tableData = ref([])
+const queryParams = ref({
+    timeRange: [
+        new Date(new Date().getFullYear(), new Date().getMonth(), 1).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
+        new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')
+    ]
 })
 
-const tableData = ref([]);
-// 添加 loading 状态
-const loading = ref(false);
 
-// 添加弹窗控制变量
-const filterDialogVisible = ref(false);
+// 计算转化率
+const calculateRate = (numerator, denominator) => {
+    if (!denominator) return 0
+    return ((numerator / denominator) * 100).toFixed(2)
+}
 
-// 添加显示弹窗方法
-const showFilterDialog = () => {
-    filterDialogVisible.value = true;
-};
-
-// 修改查询方法
-const handleQuery = () => {
-    filterDialogVisible.value = false;
-    page.index = 1;
-    calcSchoolBudget();
-};
-
-// 添加查询参数
-const queryParams = reactive({
-    schoolId: '',
-    timeRange: [],
-});
-
-// 修改 calcSchoolBudget 调用
-const calcSchoolBudget = async () => {
-    if (!queryParams.schoolId || !queryParams.timeRange?.length) {
-        await initData();
-        return;
-    }
-    console.log(queryParams);
+// 查询数据
+const handleQuery = async () => {
     loading.value = true;
     try {
-        const res = await request.post("/dept/calcSchoolBudget", {
-            schoolId: queryParams.schoolId,
-            startDate: queryParams.timeRange[0],
-            endDate: queryParams.timeRange[1]
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
-            }
-        });
-
-        if (res.data.status !== 200) {
-            ElMessage.error(res.data.message || '获取数据失败');
+        const [startDate, endDate] = queryParams.value.timeRange || [];
+        if (!startDate || !endDate) {
+            ElMessage.warning('请选择时间范围');
+            loading.value = false;
             return;
         }
 
-        // 构造表格数据
-        tableData.value = [{
-            ...res.data.data,
-            timeRange: `${queryParams.timeRange[0]} 至 ${queryParams.timeRange[1]}`
-        }];
-        page.total = 1;
+        // 清空现有数据
+        tableData.value = [];
+
+        // 生成日期范围内的所有日期
+        const dateList = [];
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        while (start <= end) {
+            dateList.push(start.toISOString().split('T')[0]);
+            start.setDate(start.getDate() + 1);
+        }
+
+        // 逐个请求每一天的数据
+        for (const date of dateList) {
+            try {
+                const res = await request.post("/user/getDateSummaryDataPerDay", { date }, {
+                    headers: {
+                        sessionid: localStorage.getItem("sessionid")
+                    }
+                });
+
+                if (res.data.status === 200) {
+                    // 将新数据添加到表格中
+                    tableData.value.push(res.data.data);
+                    // 按日期排序
+                    tableData.value.sort((a, b) => new Date(a.date) - new Date(b.date));
+                }
+            } catch (error) {
+                console.error(`获取 ${date} 数据失败:`, error);
+            }
+        }
+
     } catch (error) {
-        console.error('获取数据失败:', error);
-        ElMessage.error('获取数据失败');
+        console.error('查询数据失败:', error);
+        ElMessage.error('查询数据失败');
     } finally {
         loading.value = false;
+        filterDialogVisible.value = false;
     }
 };
 
-const resetQuery = async () => {
-    Object.keys(queryParams).forEach(key => {
-        queryParams[key] = key === 'timeRange' ? [] : '';
-    });
-    filterDialogVisible.value = false;
-    await initData();
-};
+// 重置查询
+const resetQuery = () => {
+    queryParams.value = {
+        timeRange: [],
+    }
+}
 
-// 修改导出方法，添加筛选条件
-const handleExport = async () => {
-    if (!tableData.value.length) {
+// 显示筛选弹窗
+const showFilterDialog = () => {
+    filterDialogVisible.value = true
+}
+
+// 导出数据
+const handleExport = () => {
+    // 检查是否有数据
+    if (!tableData.value || tableData.value.length === 0) {
         ElMessage.warning('暂无数据可导出');
         return;
     }
 
-    try {
-        // 构建Excel数据
-        const excelData = tableData.value.map(item => ({
-            '校区': item.schoolName,
-            '日期区间': item.timeRange,
-            '初期盈余（元）': item.budgetBefore.toFixed(2),
-            '期间收入（元）': item.incomeDuring.toFixed(2),
-            '期间支出（元）': item.expanseDuring.toFixed(2),
-            '期末盈余（元）': item.budgetAfter.toFixed(2)
-        }));
+    // 定义表头
+    const headers = [
+        ['日期', '报名城市数据', '', '', '', '总体数据', '', '', '商务通数据', '', '', '红推数据', '', '', '信息流数据', '', '',
+            '点评数据', '', '电话数据', '', '小红书数据', '', '抖音数据', '', '推荐/介绍数据', '', '自己进店数据', '', '公众号数据', '', '视频号数据', ''],
+        ['', '报上海', '报北京', '报广州', '报成都', '总转客户', '总报名', '总转化率', '商务通加', '商务通报', '商转化率',
+            '红推加', '红推报', '红推转化率', '信息流加', '信息流报', '信转化率', '点评加', '点评报', '电话加', '电话报',
+            '小红书加', '小红书报', '抖音加', '抖音报', '推荐/介绍加', '推荐/介绍报', '自己进店加', '自己进店报',
+            '公众号加', '公众号报', '视频号加', '视频号报']
+    ];
 
-        // 使用 xlsx 库导出
-        import('xlsx').then(XLSX => {
-            const worksheet = XLSX.utils.json_to_sheet(excelData);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, '收支汇总');
-            XLSX.writeFile(workbook, `收支汇总表${new Date().toLocaleDateString()}.xlsx`);
-            ElMessage.success('导出成功');
-        });
-    } catch (error) {
-        console.error('导出失败:', error);
-        ElMessage.error('导出失败');
+    // 处理数据
+    const data = tableData.value.map(row => {
+        return [
+            row.date,
+            row.shanghaiCount || 0,
+            row.beijingCount || 0,
+            row.guangzhouCount || 0,
+            row.chengduCount || 0,
+            row.totalToClient || 0,
+            row.totalDealed || 0,
+            `${calculateRate(row.totalDealed, row.totalToClient)}%`,
+            row.bwAdd || 0,
+            row.bwSignup || 0,
+            `${calculateRate(row.bwSignup, row.bwAdd)}%`,
+            row.redAdd || 0,
+            row.redSignup || 0,
+            `${calculateRate(row.redSignup, row.redAdd)}%`,
+            row.infoAdd || 0,
+            row.infoSignup || 0,
+            `${calculateRate(row.infoSignup, row.infoAdd)}%`,
+            row.dpAdd || 0,
+            row.dpSignup || 0,
+            row.phoneAdd || 0,
+            row.phoneSignup || 0,
+            row.xhsAdd || 0,
+            row.xhsSignup || 0,
+            row.dyAdd || 0,
+            row.dySignup || 0,
+            row.referAdd || 0,
+            row.referSignup || 0,
+            row.selfAdd || 0,
+            row.selfSignup || 0,
+            row.mpAdd || 0,
+            row.mpSignup || 0,
+            row.videoAdd || 0,
+            row.videoSignup || 0
+        ];
+    });
+
+    // 合并表头和数据
+    const exportData = [...headers, ...data];
+
+    // 创建工作表
+    const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+    // 设置列宽
+    ws['!cols'] = Array(33).fill({ wch: 12 }); // 设置所有列宽为12个字符
+    ws['!cols'][0] = { wch: 15 }; // 日期列宽设置为15个字符
+
+    // 设置单元格合并
+    ws['!merges'] = [
+        { s: { r: 0, c: 1 }, e: { r: 0, c: 4 } }, // 报名城市数据
+        { s: { r: 0, c: 5 }, e: { r: 0, c: 7 } }, // 总体数据
+        { s: { r: 0, c: 8 }, e: { r: 0, c: 10 } }, // 商务通数据
+        { s: { r: 0, c: 11 }, e: { r: 0, c: 13 } }, // 红推数据
+        { s: { r: 0, c: 14 }, e: { r: 0, c: 16 } }, // 信息流数据
+        { s: { r: 0, c: 17 }, e: { r: 0, c: 18 } }, // 点评数据
+        { s: { r: 0, c: 19 }, e: { r: 0, c: 20 } }, // 电话数据
+        { s: { r: 0, c: 21 }, e: { r: 0, c: 22 } }, // 小红书数据
+        { s: { r: 0, c: 23 }, e: { r: 0, c: 24 } }, // 抖音数据
+        { s: { r: 0, c: 25 }, e: { r: 0, c: 26 } }, // 推荐/介绍数据
+        { s: { r: 0, c: 27 }, e: { r: 0, c: 28 } }, // 自己进店数据
+        { s: { r: 0, c: 29 }, e: { r: 0, c: 30 } }, // 公众号数据
+        { s: { r: 0, c: 31 }, e: { r: 0, c: 32 } }  // 视频号数据
+    ];
+
+    // 设置单元格样式
+    for (let i = 0; i < exportData.length; i++) {
+        for (let j = 0; j < exportData[i].length; j++) {
+            const cellRef = XLSX.utils.encode_cell({ r: i, c: j });
+            if (!ws[cellRef]) ws[cellRef] = { v: '' };
+            
+            // 设置所有单元格居中对齐
+            ws[cellRef].s = {
+                alignment: { horizontal: 'center', vertical: 'center' },
+                font: { name: '微软雅黑' }
+            };
+
+            // 表头加粗
+            if (i < 2) {
+                ws[cellRef].s.font.bold = true;
+            }
+        }
     }
-};
-// 修改 changePage
-const changePage = async (val: number) => {
-    if (loading.value) return;
-    page.index = val;
-    await calcSchoolBudget();
+
+    // 创建工作簿
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '日期数据汇总');
+
+    // 获取时间范围作为文件名
+    const [startDate, endDate] = queryParams.value.timeRange || [];
+    const fileName = startDate && endDate 
+        ? `日期数据汇总_${startDate}_${endDate}.xlsx`
+        : `日期数据汇总_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    // 导出文件
+    XLSX.writeFile(wb, fileName);
 };
 
-// 选择相关
-const selectedRows = ref < any[] > ([]);
-
-const handleSelectionChange = (rows: any[]) => {
-    selectedRows.value = rows;
-};
-
-const tableRef = ref();
-
-const handleRowClick = (row) => {
-    tableRef.value?.toggleRowSelection(row);
-};
+onMounted(() => {
+    handleQuery()
+})
 </script>
 
 <style scoped>
+.container {
+    padding: 20px;
+}
+
 .toolbar {
     margin-bottom: 20px;
 }
@@ -322,8 +365,53 @@ const handleRowClick = (row) => {
 .dialog-footer {
     text-align: right;
 }
+</style>
 
-.el-table :deep(.cell) {
-    white-space: nowrap;
+<style>
+/* 添加全局样式 */
+.el-table .cell {
+    white-space: nowrap !important;
+    text-align: center !important;
+    padding: 0 8px !important;
+    /* 添加水平内边距 */
+}
+
+.el-table th.el-table__cell {
+    background-color: #f5f7fa !important;
+    color: #606266 !important;
+    font-weight: bold !important;
+}
+
+.el-table td.el-table__cell {
+    padding: 8px 0 !important;
+}
+
+/* 移除最小宽度限制，让单元格宽度自适应内容 */
+.el-table .el-table__cell {
+    min-width: auto !important;
+}
+
+/* 设置表格自动布局，优化列宽分配 */
+.el-table {
+    table-layout: auto !important;
+    width: fit-content !important;
+    min-width: 100% !important;
+}
+
+/* 确保固定列的样式 */
+.el-table .el-table__fixed-right-patch {
+    background-color: #f5f7fa;
+}
+
+/* 确保固定列的阴影效果 */
+.el-table--border .el-table__fixed-right {
+    box-shadow: -2px 0 8px rgba(0, 0, 0, .15);
+}
+
+/* 添加横向滚动容器样式 */
+.container {
+    padding: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 </style>
