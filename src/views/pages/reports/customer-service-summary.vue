@@ -33,9 +33,9 @@
                     color: '#606266',
                     fontWeight: 'bold'
                 }">
-                <el-table-column label="客服信息" fixed>
+                <el-table-column label="客服信息" width="120" fixed>
                     <template #default="scope">
-                        {{ scope.row.schoolName }} - {{ scope.row.username }}
+                        {{ scope.row.schoolName.slice(0, 2) }}-{{ scope.row.username }}
                     </template>
                 </el-table-column>
 
@@ -49,11 +49,11 @@
 
                 <!-- 总体数据 -->
                 <el-table-column label="总体数据">
-                    <el-table-column prop="totalWechat" label="总加微信" align="center" />
-                    <el-table-column prop="totalSignup" label="总报名" align="center" />
+                    <el-table-column prop="totalToClient" label="总转客户" align="center" />
+                    <el-table-column prop="totalDealed" label="总报名" align="center" />
                     <el-table-column prop="totalConversion" label="总转化率" align="center">
                         <template #default="scope">
-                            {{ calculateRate(scope.row.totalSignup, scope.row.totalWechat) }}%
+                            {{ calculateRate(scope.row.totalDealed, scope.row.totalToClient) }}%
                         </template>
                     </el-table-column>
                 </el-table-column>
@@ -135,8 +135,8 @@
 
                 <!-- 视频号数据 -->
                 <el-table-column label="视频号数据">
-                    <el-table-column prop="videoAdd" label="视频号" align="center" />
-                    <el-table-column prop="videoAdd2" label="视频号2" align="center" />
+                    <el-table-column prop="videoAdd" label="视频号加" align="center" />
+                    <el-table-column prop="videoSignup" label="视频号报" align="center" />
                 </el-table-column>
             </el-table>
         </div>
@@ -148,6 +148,7 @@ import { ref, onMounted } from 'vue'
 import { Search, Download } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
+import * as XLSX from 'xlsx'
 
 const loading = ref(false)
 const filterDialogVisible = ref(false)
@@ -178,6 +179,7 @@ const handleQuery = async () => {
             }
         });
         if (res.data.status === 200) {
+            console.log(res.data.allData);
             tableData.value = res.data.allData;
         } else {
             console.error('查询数据失败:', res.data.message);
@@ -206,8 +208,104 @@ const showFilterDialog = () => {
 
 // 导出数据
 const handleExport = () => {
-    // 实现导出逻辑
-}
+    // 检查是否有数据
+    if (!tableData.value || tableData.value.length === 0) {
+        ElMessage.warning('暂无数据可导出');
+        return;
+    }
+
+    // 定义表头
+    const headers = [
+        ['客服信息', '报名城市数据', '', '', '', '总体数据', '', '', '商务通数据', '', '', '红推数据', '', '', '信息流数据', '', '',
+            '点评数据', '', '电话数据', '', '小红书数据', '', '抖音数据', '', '推荐/介绍数据', '', '自己进店数据', '', '公众号数据', '', '视频号数据', ''],
+        ['客服', '报上海', '报北京', '报广州', '报成都', '总转客户', '总报名', '总转化率', '商务通加', '商务通报', '商转化率',
+            '红推', '红推报', '红推转化率', '信息流加', '信息流报', '信转化率', '点评加', '点评报', '电话加', '电话报',
+            '小红书加', '小红书报', '抖音加', '抖音报', '推荐/介绍加', '推荐/介绍报', '自己进店加', '自己进店报',
+            '公众号加', '公众号报', '视频号加', '视频号报']
+    ];
+
+    // 处理数据
+    const data = tableData.value.map(row => {
+        return [
+            `${row.schoolName.slice(0, 2)}-${row.username}`,
+            row.shanghaiCount,
+            row.beijingCount,
+            row.guangzhouCount,
+            row.chengduCount,
+            row.totalToClient,
+            row.totalDealed,
+            `${calculateRate(row.totalDealed, row.totalToClient)}%`,
+            row.bwAdd,
+            row.bwSignup,
+            `${calculateRate(row.bwSignup, row.bwAdd)}%`,
+            row.redAdd,
+            row.redSignup,
+            `${calculateRate(row.redSignup, row.redAdd)}%`,
+            row.infoAdd,
+            row.infoSignup,
+            `${calculateRate(row.infoSignup, row.infoAdd)}%`,
+            row.dpAdd,
+            row.dpSignup,
+            row.phoneAdd,
+            row.phoneSignup,
+            row.xhsAdd,
+            row.xhsSignup,
+            row.dyAdd,
+            row.dySignup,
+            row.referAdd,
+            row.referSignup,
+            row.selfAdd,
+            row.selfSignup,
+            row.mpAdd,
+            row.mpSignup,
+            row.videoAdd,
+            row.videoSignup
+        ];
+    });
+
+    // 合并表头和数据
+    const exportData = [...headers, ...data];
+
+    // 创建工作表
+    const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+    // 设置单元格合并
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } }, // 客服信息
+        { s: { r: 0, c: 1 }, e: { r: 0, c: 4 } }, // 报名城市数据
+        { s: { r: 0, c: 5 }, e: { r: 0, c: 7 } }, // 总体数据
+        { s: { r: 0, c: 8 }, e: { r: 0, c: 10 } }, // 商务通数据
+        { s: { r: 0, c: 11 }, e: { r: 0, c: 13 } }, // 红推数据
+        { s: { r: 0, c: 14 }, e: { r: 0, c: 16 } }, // 信息流数据
+        { s: { r: 0, c: 17 }, e: { r: 0, c: 18 } }, // 点评数据
+        { s: { r: 0, c: 19 }, e: { r: 0, c: 20 } }, // 电话数据
+        { s: { r: 0, c: 21 }, e: { r: 0, c: 22 } }, // 小红书数据
+        { s: { r: 0, c: 23 }, e: { r: 0, c: 24 } }, // 抖音数据
+        { s: { r: 0, c: 25 }, e: { r: 0, c: 26 } }, // 推荐/介绍数据
+        { s: { r: 0, c: 27 }, e: { r: 0, c: 28 } }, // 自己进店数据
+        { s: { r: 0, c: 29 }, e: { r: 0, c: 30 } }, // 公众号数据
+        { s: { r: 0, c: 31 }, e: { r: 0, c: 32 } }  // 视频号数据
+    ];
+
+    // 创建工作簿
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '客服数据汇总');
+
+    // 获取时间范围和当前日期作为文件名
+    const [startDate, endDate] = queryParams.value.timeRange || [];
+    const date = new Date();
+    const currentDate = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+
+    // 构建文件名
+    let fileName = `客服数据汇总_全部`;
+    if (startDate && endDate) {
+        fileName = `客服数据汇总_${startDate}_${endDate}`;
+    }
+    fileName += '.xlsx';
+
+    // 导出文件
+    XLSX.writeFile(wb, fileName);
+};
 
 onMounted(() => {
     handleQuery()
