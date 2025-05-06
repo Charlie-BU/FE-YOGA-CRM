@@ -15,10 +15,8 @@
 
             <el-descriptions :column="2" border>
                 <el-descriptions-item label="姓名">{{ client.name }}</el-descriptions-item>
-                <el-descriptions-item label="渠道来源">{{ conventions.getFromSource(client.fromSource)
-                    }}</el-descriptions-item>
-                <el-descriptions-item label="性别">{{ conventions.getGender(client.gender)
-                    }}</el-descriptions-item>
+                <el-descriptions-item label="渠道来源">{{ conventions.getFromSource(client.fromSource) }}</el-descriptions-item>
+                <el-descriptions-item label="性别">{{ conventions.getGender(client.gender) }}</el-descriptions-item>
                 <el-descriptions-item label="年龄">{{ client.age }}</el-descriptions-item>
                 <el-descriptions-item label="身份证">{{ client.IDNumber }}</el-descriptions-item>
                 <el-descriptions-item label="电话">{{ client.phone }}</el-descriptions-item>
@@ -47,8 +45,7 @@
                     <el-descriptions-item label="预约日期">{{ client.appointDate }}</el-descriptions-item>
                     <el-descriptions-item label="下次沟通日期">{{ client.nextTalkDate }}</el-descriptions-item>
                     <el-descriptions-item label="跟进状态">
-                        <span class="status-highlight">{{ client.processStatus === 1 ? "未成单" :
-                            client.processStatus === 2 ? "已成单" : "" }}</span>
+                        <span class="status-highlight">{{ client.processStatus === 1 ? "未成单" : client.processStatus === 2 ? "已成单" : "" }}</span>
                     </el-descriptions-item>
                     <el-descriptions-item label="成单时间">{{ client.cooperateTime }}</el-descriptions-item>
                     <el-descriptions-item label="合同编号">{{ client.contractNo }}</el-descriptions-item>
@@ -67,7 +64,7 @@
                     </el-table-column>
                     <el-table-column prop="category" label="类型" align="center">
                         <template #default="scope">
-                            {{ scope.row.category === 1 ? '定金' : scope.row.category === 2 ? "尾款" : '其他' }}
+                            {{ scope.row.category === 1 ? "定金" : scope.row.category === 2 ? "尾款" : "其他" }}
                         </template>
                     </el-table-column>
                     <el-table-column prop="teacherName" label="负责老师" align="center" />
@@ -88,12 +85,11 @@
                 <el-descriptions :column="2" border>
                     <el-descriptions-item label="校区">{{ client.schoolName }}</el-descriptions-item>
                     <el-descriptions-item label="已学课时（周）">{{ client.learnedWeeks }}</el-descriptions-item>
-                    <el-descriptions-item v-if="client.comboId" label="学习套餐">{{ client.comboName
-                        }}</el-descriptions-item>
+                    <el-descriptions-item v-if="client.comboId" label="学习套餐">{{ client.comboName }}</el-descriptions-item>
                     <el-descriptions-item label="学习课程">{{ client.courseNames }}</el-descriptions-item>
                 </el-descriptions>
 
-                <h3 style="margin: 20px 0 15px;">分班信息</h3>
+                <h3 style="margin: 20px 0 15px">分班信息</h3>
                 <el-table :data="lessonRecords" style="width: 100%" class="course-table">
                     <el-table-column prop="name" label="班级名称" align="center" min-width="120" />
                     <el-table-column prop="courseName" label="课程名称" align="center" min-width="120" />
@@ -118,30 +114,57 @@
                 <h3>住宿信息</h3>
                 <el-descriptions :column="2" border>
                     <el-descriptions-item label="公寓名">{{ dormInfo.name }}</el-descriptions-item>
-                    <el-descriptions-item label="类型">{{ conventions.getDormitoryCategory(dormInfo.category)
-                        }}</el-descriptions-item>
+                    <el-descriptions-item label="类型">{{ conventions.getDormitoryCategory(dormInfo.category) }}</el-descriptions-item>
                     <el-descriptions-item label="房间号 / 户号">{{ roomInfo.roomNumber }}</el-descriptions-item>
                     <el-descriptions-item label="楼栋">{{ roomInfo.building }}</el-descriptions-item>
                     <el-descriptions-item label="床位号">{{ bedInfo.bedNumber }}</el-descriptions-item>
-                    <el-descriptions-item label="床位类型">{{ conventions.getBedCategory(bedInfo.category)
-                    }}</el-descriptions-item>
+                    <el-descriptions-item label="床位类型">{{ conventions.getBedCategory(bedInfo.category) }}</el-descriptions-item>
                     <el-descriptions-item label="入住时间">{{ client.bedCheckInDate }}</el-descriptions-item>
                     <el-descriptions-item label="状态" :span="2">
                         <span :style="{ color: isOverdue ? '#ff4949' : '#93ff40' }">
-                            {{ isOverdue ? '已超期' + overdueDays + '天' : '正常' }}
+                            {{ isOverdue ? "已超期" + overdueDays + "天" : "正常" }}
                         </span>
                     </el-descriptions-item>
                 </el-descriptions>
+            </div>
+
+            <!-- 添加客户日志展示区域 -->
+            <div class="client-logs">
+                <h3>客户日志</h3>
+                <el-table :data="clientLogs" style="width: 100%">
+                    <el-table-column prop="operation" label="日志内容" align="center" show-overflow-tooltip />
+                    <el-table-column prop="time" label="时间" align="center" width="180">
+                        <template #default="scope">
+                            <el-tooltip :content="scope.row.time" placement="top" effect="dark">
+                                <span>{{ scope.row.time }}</span>
+                            </el-tooltip>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="operatorName" label="操作人" align="center" width="120" />
+                </el-table>
+
+                <!-- 添加分页控件 -->
+                <div class="pagination-container">
+                    <el-pagination
+                        v-model:current-page="currentPage"
+                        v-model:page-size="pageSize"
+                        :page-sizes="[10, 20, 30, 50]"
+                        :total="total"
+                        layout="total, sizes, prev, pager, next, jumper"
+                        @size-change="handleSizeChange"
+                        @current-change="handleCurrentChange"
+                    />
+                </div>
             </div>
         </div>
     </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import * as conventions from '@/utils/conventions'
-import request from '@/utils/request'
-import { ElMessage } from 'element-plus'
+import { ref, watch, computed } from "vue";
+import * as conventions from "@/utils/conventions";
+import request from "@/utils/request";
+import { ElMessage } from "element-plus";
 
 const props = defineProps({
     modelValue: {
@@ -152,77 +175,90 @@ const props = defineProps({
         type: Object,
         required: true
     }
-})
+});
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(["update:modelValue"]);
 
-const visible = ref(false)
-const paymentRecords = ref([])
-const lessonRecords = ref([])
+const visible = ref(false);
+const paymentRecords = ref([]);
+const lessonRecords = ref([]);
+const clientLogs = ref([]);
+const total = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(10);
 
-watch(() => props.modelValue, async (newVal) => {
-    visible.value = newVal
-    if (newVal && props.client.id) {
-        await Promise.all([
-            getPaymentRecords(),
-            getLessonRecords(),
-            getDormInfo()
-        ])
+watch(
+    () => props.modelValue,
+    async (newVal) => {
+        visible.value = newVal;
+        if (newVal && props.client.id) {
+            await Promise.all([getPaymentRecords(), getLessonRecords(), getDormInfo(), getClientLogs()]);
+        }
     }
-})
+);
 
-watch(() => visible.value, (val) => {
-    emit('update:modelValue', val)
-})
+watch(
+    () => visible.value,
+    (val) => {
+        emit("update:modelValue", val);
+    }
+);
 
 const getPaymentRecords = async () => {
     try {
-        const res = await request.post('/extra/getClientPayments', {
-            clientId: props.client.id
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const res = await request.post(
+            "/extra/getClientPayments",
+            {
+                clientId: props.client.id
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        })
+        );
 
         if (res.data.status === 200) {
-            paymentRecords.value = res.data.payments || []
+            paymentRecords.value = res.data.payments || [];
         } else {
-            paymentRecords.value = []
+            paymentRecords.value = [];
         }
     } catch (error) {
-        console.error('获取交易记录失败:', error)
-        ElMessage.error('获取交易记录失败')
+        console.error("获取交易记录失败:", error);
+        ElMessage.error("获取交易记录失败");
     }
-}
+};
 
 // 获取课程记录
 const getLessonRecords = async () => {
     try {
         const lessonIds = props.client.lessonIds;
-        const res = await request.post('/course/getLessonsByIds', {
-            lessonIds
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const res = await request.post(
+            "/course/getLessonsByIds",
+            {
+                lessonIds
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        })
+        );
 
         if (res.data.status === 200) {
-            lessonRecords.value = res.data.courses || []
+            lessonRecords.value = res.data.courses || [];
         } else {
-            lessonRecords.value = []
+            lessonRecords.value = [];
         }
     } catch (error) {
-        console.error('获取班级信息失败:', error)
-        ElMessage.error('获取班级信息失败')
+        console.error("获取班级信息失败:", error);
+        ElMessage.error("获取班级信息失败");
     }
-}
+};
 
 const dormInfo = <any>ref({});
 const roomInfo = <any>ref({});
 const bedInfo = <any>ref({});
-
 
 const isOverdue = ref(false);
 const overdueDays = ref(0);
@@ -232,13 +268,17 @@ const getDormInfo = async () => {
     if (!props.client.bedId) return;
 
     try {
-        const res = await request.post('/dorm/getDormInfoByBedId', {
-            bedId: props.client.bedId
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const res = await request.post(
+            "/dorm/getDormInfoByBedId",
+            {
+                bedId: props.client.bedId
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        });
+        );
 
         if (res.data.status === 200) {
             dormInfo.value = res.data.dorm;
@@ -260,8 +300,8 @@ const getDormInfo = async () => {
             }
         }
     } catch (error) {
-        console.error('获取住宿信息失败:', error);
-        ElMessage.error('获取住宿信息失败');
+        console.error("获取住宿信息失败:", error);
+        ElMessage.error("获取住宿信息失败");
     }
 };
 
@@ -273,7 +313,7 @@ const getStatusStep = computed(() => {
         3: 3, // 已转客户
         4: 4, // 已预约到店
         5: 5, // 已成单
-        6: 6  // 已毕业
+        6: 6 // 已毕业
     };
     const clientStatus = props.client.clientStatus;
     const processStatus = props.client.processStatus;
@@ -289,6 +329,46 @@ const getStatusStep = computed(() => {
     }
     return 0;
 });
+
+const getClientLogs = async () => {
+    try {
+        const res = await request.post(
+            "/extra/getClientLogs",
+            {
+                clientId: props.client.id,
+                pageIndex: currentPage.value,
+                pageSize: pageSize.value
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            }
+        );
+
+        if (res.data.status === 200) {
+            clientLogs.value = res.data.logs || [];
+            total.value = res.data.total || 0;
+        } else {
+            clientLogs.value = [];
+            total.value = 0;
+        }
+    } catch (error) {
+        console.error("获取日志失败:", error);
+        ElMessage.error("获取日志失败");
+    }
+};
+
+const handleCurrentChange = (val: number) => {
+    currentPage.value = val;
+    getClientLogs();
+};
+
+const handleSizeChange = (val: number) => {
+    pageSize.value = val;
+    currentPage.value = 1;
+    getClientLogs();
+};
 </script>
 
 <style scoped>
@@ -319,6 +399,22 @@ const getStatusStep = computed(() => {
     margin-bottom: 15px;
     font-weight: bold;
     color: #303133;
+}
+
+.client-logs {
+    margin-top: 20px;
+}
+
+.client-logs h3 {
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: #303133;
+}
+
+.pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: left;
 }
 
 .el-descriptions-item__content span {

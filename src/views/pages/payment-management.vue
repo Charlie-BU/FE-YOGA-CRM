@@ -6,15 +6,12 @@
                     <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
                     <el-button type="warning" :icon="CirclePlusFilled" @click="handleAdd">新增</el-button>
 
-                    <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
-                        @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
+                    <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px" @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
                         <!-- 保持原有的表格内容 -->
                         <el-table-column type="selection" width="55" align="center" />
                         <template v-for="item in columns" :key="item.prop">
-                            <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"
-                                :width="item.width" :align="item.align" show-overflow-tooltip />
-                            <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width"
-                                :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
+                            <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label" :width="item.width" :align="item.align" show-overflow-tooltip />
+                            <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width" :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
                         </template>
 
                         <el-table-column label="操作" width="180" fixed="right" align="center">
@@ -25,10 +22,16 @@
                         </el-table-column>
                     </el-table>
 
-                    <div class="pagination" style="margin-top: 20px; text-align: right;">
-                        <el-pagination v-model:current-page="page.index" v-model:page-size="page.size"
-                            :total="page.total" @current-change="changePage" @size-change="handleSizeChange"
-                            :page-sizes="[10, 20, 50, 100]" layout="sizes, total, prev, pager, next">
+                    <div class="pagination" style="margin-top: 20px; text-align: right">
+                        <el-pagination
+                            v-model:current-page="page.index"
+                            v-model:page-size="page.size"
+                            :total="page.total"
+                            @current-change="changePage"
+                            @size-change="handleSizeChange"
+                            :page-sizes="[10, 20, 50, 100]"
+                            layout="sizes, total, prev, pager, next"
+                        >
                         </el-pagination>
                     </div>
                 </div>
@@ -39,14 +42,11 @@
                     <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
                     <el-button type="warning" :icon="CirclePlusFilled" @click="handleAdd">新增</el-button>
 
-                    <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
-                        @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
+                    <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px" @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
                         <el-table-column type="selection" width="55" align="center" />
                         <template v-for="item in columns" :key="item.prop">
-                            <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"
-                                :width="item.width" :align="item.align" show-overflow-tooltip />
-                            <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width"
-                                :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
+                            <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label" :width="item.width" :align="item.align" show-overflow-tooltip />
+                            <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width" :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
                         </template>
 
                         <el-table-column label="操作" width="180" fixed="right" align="center">
@@ -57,10 +57,16 @@
                         </el-table-column>
                     </el-table>
 
-                    <div class="pagination" style="margin-top: 20px; text-align: right;">
-                        <el-pagination v-model:current-page="page.index" v-model:page-size="page.size"
-                            :total="page.total" @current-change="changePage" @size-change="handleSizeChange"
-                            :page-sizes="[10, 20, 50, 100]" layout="sizes, total, prev, pager, next">
+                    <div class="pagination" style="margin-top: 20px; text-align: right">
+                        <el-pagination
+                            v-model:current-page="page.index"
+                            v-model:page-size="page.size"
+                            :total="page.total"
+                            @current-change="changePage"
+                            @size-change="handleSizeChange"
+                            :page-sizes="[10, 20, 50, 100]"
+                            layout="sizes, total, prev, pager, next"
+                        >
                         </el-pagination>
                     </div>
                 </div>
@@ -68,22 +74,15 @@
         </el-tabs>
 
         <!-- 新增 / 编辑收入 -->
-        <el-dialog :title="isEdit ? '编辑收入' : '新增收入'" v-model="editModelVisible" width="700px" destroy-on-close
-            :close-on-click-modal="false" @close="closeDialog">
+        <el-dialog :title="isEdit ? '编辑收入' : '新增收入'" v-model="editModelVisible" width="700px" destroy-on-close :close-on-click-modal="false" @close="closeDialog">
             <el-form ref="formRef" :model="formData" :rules="rules" :label-width="options.labelWidth">
                 <el-row :gutter="20">
                     <el-col v-for="(item, index) in options.list" :key="index" :span="options.span">
-                        <el-form-item :label="item.label" :prop="item.prop"
-                            :rules="item.rules || (item.required ? [{ required: true, message: `请输入${item.label}`, trigger: 'blur' }] : [])">
-                            <el-input v-if="item.label === '负责教师'" :type="item.inputType || 'text'"
-                                :placeholder=userInfo?.username :disabled="item.disabled" />
-                            <el-input v-else-if="item.type === 'input'" v-model="formData[item.prop]"
-                                :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`"
-                                :disabled="item.disabled" />
-                            <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]"
-                                :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
-                                <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label"
-                                    :value="opt.value" />
+                        <el-form-item :label="item.label" :prop="item.prop" :rules="item.rules || (item.required ? [{ required: true, message: `请输入${item.label}`, trigger: 'blur' }] : [])">
+                            <el-input v-if="item.label === '负责教师'" :type="item.inputType || 'text'" :placeholder="userInfo?.username" :disabled="item.disabled" />
+                            <el-input v-else-if="item.type === 'input'" v-model="formData[item.prop]" :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`" :disabled="item.disabled" />
+                            <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]" :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
+                                <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label" :value="opt.value" />
                             </el-select>
                         </el-form-item>
                     </el-col>
@@ -98,22 +97,15 @@
         </el-dialog>
 
         <!-- 新增 / 编辑支出 -->
-        <el-dialog :title="isEdit ? '编辑支出' : '新增支出'" v-model="editExpenseModelVisible" width="700px" destroy-on-close
-            :close-on-click-modal="false" @close="closeDialog">
+        <el-dialog :title="isEdit ? '编辑支出' : '新增支出'" v-model="editExpenseModelVisible" width="700px" destroy-on-close :close-on-click-modal="false" @close="closeDialog">
             <el-form ref="formRef" :model="formData" :rules="rules" :label-width="expenseOptions.labelWidth">
                 <el-row :gutter="20">
                     <el-col v-for="(item, index) in expenseOptions.list" :key="index" :span="expenseOptions.span">
-                        <el-form-item :label="item.label" :prop="item.prop"
-                            :rules="item.rules || (item.required ? [{ required: true, message: `请输入${item.label}`, trigger: 'blur' }] : [])">
-                            <el-input v-if="item.label === '负责教师'" :type="item.inputType || 'text'"
-                                :placeholder=userInfo?.username :disabled="item.disabled" />
-                            <el-input v-else-if="item.type === 'input'" v-model="formData[item.prop]"
-                                :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`"
-                                :disabled="item.disabled" />
-                            <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]"
-                                :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
-                                <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label"
-                                    :value="opt.value" />
+                        <el-form-item :label="item.label" :prop="item.prop" :rules="item.rules || (item.required ? [{ required: true, message: `请输入${item.label}`, trigger: 'blur' }] : [])">
+                            <el-input v-if="item.label === '负责教师'" :type="item.inputType || 'text'" :placeholder="userInfo?.username" :disabled="item.disabled" />
+                            <el-input v-else-if="item.type === 'input'" v-model="formData[item.prop]" :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`" :disabled="item.disabled" />
+                            <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]" :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
+                                <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label" :value="opt.value" />
                             </el-select>
                         </el-form-item>
                     </el-col>
@@ -130,43 +122,55 @@
 </template>
 
 <script setup lang="ts" name="system-user">
-import { ref, reactive, onMounted, watch, computed } from 'vue';
-import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { CirclePlusFilled, Refresh } from '@element-plus/icons-vue';
-import { handleRefresh } from '@/utils/index';
-import request from '@/utils/request';
-import * as conventions from '@/utils/conventions';
-import { getUserInfo } from '@/utils/login-check';
+import { ref, reactive, onMounted, watch, computed } from "vue";
+import { ElMessage, ElMessageBox, vLoading } from "element-plus";
+import { CirclePlusFilled, Refresh } from "@element-plus/icons-vue";
+import { handleRefresh } from "@/utils/index";
+import request from "@/utils/request";
+import * as conventions from "@/utils/conventions";
+import { getUserInfo } from "@/utils/login-check";
 
 const userInfo = ref(null);
 
 onMounted(async () => {
     userInfo.value = await getUserInfo();
-    await getPayments(activeTab.value === 'income');
-})
+    await getPayments(activeTab.value === "income");
+});
 
 // 表格相关
-const baseColumns = [
-    { type: 'index', label: '序号', width: 55, align: 'center' },
-    { prop: 'teacherName', label: '负责教师', align: 'center' },
-    { prop: 'amount', label: '金额（元）', align: 'center', formatter: (row) => Math.abs(row.amount) },
-    { prop: 'category', label: '费用项目', align: 'center', formatter: (row) => conventions.getPaymentCategory(row.category) },
-    { prop: 'paymentMethod', label: '支付方式', align: 'center', formatter: (row) => conventions.getPaymentMethod(row.paymentMethod) },
-    { prop: 'paymentDate', label: '支付时间', align: 'center' },
-    { prop: 'info', label: '备注', width: 120, align: 'center' },
+// 首先定义列的接口类型
+interface TableColumn {
+    type?: string;
+    prop?: string;
+    label: string;
+    width?: number;
+    align: string;
+    formatter?: (row: any) => any;
+}
+
+// 修改 baseColumns 的声明
+const baseColumns: TableColumn[] = [
+    { type: "index", label: "序号", width: 55, align: "center" },
+    { prop: "teacherName", label: "负责教师", align: "center" },
+    { prop: "amount", label: "金额（元）", align: "center", formatter: (row) => Math.abs(row.amount) },
+    { prop: "category", label: "费用项目", align: "center", formatter: (row) => conventions.getPaymentCategory(row.category) },
+    { prop: "paymentMethod", label: "支付方式", align: "center", formatter: (row) => conventions.getPaymentMethod(row.paymentMethod) },
+    { prop: "paymentDate", label: "支付时间", align: "center" },
+    { prop: "info", label: "备注", width: 120, align: "center" }
 ];
 
-const columns = computed(() => {
-    if (activeTab.value === 'income') {
+// 修改 columns 计算属性
+const columns = computed<TableColumn[]>(() => {
+    if (activeTab.value === "income") {
         return [
             ...baseColumns.slice(0, 1),
-            { prop: 'clientName', label: '客户', align: 'center' },
+            { prop: "clientName", label: "客户", align: "center" },
             ...baseColumns.slice(1)
         ];
     } else {
         return [
             ...baseColumns.slice(0, 1),
-            { prop: 'receiver', label: '收款方', align: 'center' },
+            { prop: "receiver", label: "收款方", align: "center", formatter: (row) => row.receiver || row.clientName },
             ...baseColumns.slice(1)
         ];
     }
@@ -174,35 +178,38 @@ const columns = computed(() => {
 const page = reactive({
     index: 1,
     size: 10,
-    total: 0,
-})
+    total: 0
+});
 
 const handleSizeChange = async (val: number) => {
     page.size = val;
-    await getPayments(activeTab.value === 'income');
-}
+    await getPayments(activeTab.value === "income");
+};
 
 const tableData = ref([]);
 // 添加 loading 状态
 const loading = ref(false);
 
 // 添加 activeTab
-const activeTab = ref('income');
-
+const activeTab = ref("income");
 
 // 修改 getPayments 调用
 const getPayments = async (isIncome = true) => {
     loading.value = true;
     try {
-        const res = await request.post("/extra/getPayments", {
-            pageIndex: page.index,
-            pageSize: page.size,
-            paymentType: isIncome ? "income" : "expense",
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const res = await request.post(
+            "/extra/getPayments",
+            {
+                pageIndex: page.index,
+                pageSize: page.size,
+                paymentType: isIncome ? "income" : "expense"
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        });
+        );
         if (res.data.status != 200) {
             console.log(res.data);
             return;
@@ -210,7 +217,7 @@ const getPayments = async (isIncome = true) => {
         tableData.value = res.data.payments;
         page.total = res.data.total;
     } catch (error) {
-        console.error('获取数据失败:', error);
+        console.error("获取数据失败:", error);
     } finally {
         loading.value = false;
     }
@@ -219,69 +226,68 @@ const getPayments = async (isIncome = true) => {
 // 添加 watch 监听标签页变化
 watch(activeTab, async (newVal) => {
     page.index = 1; // 切换标签页时重置页码
-    await getPayments(newVal === 'income');
+    await getPayments(newVal === "income");
 });
 
 // 修改 changePage
 const changePage = async (val: number) => {
     if (loading.value) return;
     page.index = val;
-    await getPayments(activeTab.value === 'income');
+    await getPayments(activeTab.value === "income");
 };
 
 // 新增 / 编辑弹窗相关
 const options = ref<any>({
-    labelWidth: '100px',
+    labelWidth: "100px",
     span: 12,
     list: [
         {
-            type: 'select',
-            label: '客户',
-            prop: 'clientId',
+            type: "select",
+            label: "客户",
+            prop: "clientId",
             required: true,
             options: []
         },
         {
-            type: 'input',
-            label: '负责教师',
-            prop: 'teacherName',
+            type: "input",
+            label: "负责教师",
+            prop: "teacherName",
             // required: true,
-            disabled: true,
+            disabled: true
         },
         {
-            type: 'input',
-            label: '金额',
-            prop: 'amount',
-            inputType: 'number',
+            type: "input",
+            label: "金额",
+            prop: "amount",
+            inputType: "number",
             required: true
         },
         {
-            type: 'select',
-            label: '费用项目',
-            prop: 'category',
+            type: "select",
+            label: "费用项目",
+            prop: "category",
             required: true,
-            options: conventions.paymentCategories.map(item => ({
+            options: conventions.paymentCategories.map((item) => ({
                 label: item.name,
                 value: item.id
             }))
         },
         {
-            type: 'select',
-            label: '支付方式',
-            prop: 'paymentMethod',
+            type: "select",
+            label: "支付方式",
+            prop: "paymentMethod",
             required: true,
-            options: conventions.paymentMethods.map(item => ({
+            options: conventions.paymentMethods.map((item) => ({
                 label: item.name,
                 value: item.id
             }))
         },
-        { type: 'input', label: '备注', prop: 'info' }
+        { type: "input", label: "备注", prop: "info" }
     ]
-})
+});
 
-
-const editModelVisible = ref(false);  // 收入弹窗
-const editExpenseModelVisible = ref(false);  // 支出弹窗
+const editModelVisible = ref(false); // 收入弹窗
+const editExpenseModelVisible = ref(false); // 支出弹窗
 const isEdit = ref(false);
 const formRef = ref();
 const formData = ref({});
@@ -300,18 +306,21 @@ const closeDialog = () => {
 const handleEdit = async (row = null) => {
     try {
         // 获取客户列表
-        const clientRes = await request.post('/extra/getClients', {
-            pageIndex: 1,
-            pageSize: 999
-        }, {
-            headers: { sessionid: localStorage.getItem("sessionid") }
-        });
+        const clientRes = await request.post(
+            "/extra/getClients",
+            {
+                pageIndex: 1,
+                pageSize: 999
+            },
+            {
+                headers: { sessionid: localStorage.getItem("sessionid") }
+            }
+        );
         if (clientRes.data.status === 200) {
-            options.value.list.find(item => item.prop === 'clientId').options =
-                clientRes.data.clients.map(item => ({
-                    label: item.name,
-                    value: item.id
-                }));
+            options.value.list.find((item) => item.prop === "clientId").options = clientRes.data.clients.map((item) => ({
+                label: item.name,
+                value: item.id
+            }));
         }
 
         // // 获取教师列表
@@ -334,47 +343,46 @@ const handleEdit = async (row = null) => {
             };
         }
         isEdit.value = true;
-        if (activeTab.value === 'income') {
+        if (activeTab.value === "income") {
             editModelVisible.value = true;
         } else {
             editExpenseModelVisible.value = true;
         }
     } catch (error) {
-        console.error('获取选项数据失败:', error);
-        ElMessage.error('获取选项数据失败');
+        console.error("获取选项数据失败:", error);
+        ElMessage.error("获取选项数据失败");
     }
 };
 
-
 // 删除相关
 const handleDelete = (row) => {
-    ElMessageBox.confirm(
-        '确认删除该费用记录吗？',
-        '警告',
-        {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning',
-        }
-    ).then(async () => {
+    ElMessageBox.confirm("确认删除该费用记录吗？", "警告", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+    }).then(async () => {
         try {
-            const res = await request.post('/extra/deletePayment', {
-                id: row.id
-            }, {
-                headers: {
-                    sessionid: localStorage.getItem("sessionid")
+            const res = await request.post(
+                "/extra/deletePayment",
+                {
+                    id: row.id
+                },
+                {
+                    headers: {
+                        sessionid: localStorage.getItem("sessionid")
+                    }
                 }
-            });
+            );
             if (res.data.status === 200) {
-                ElMessage.success('删除成功');
+                ElMessage.success("删除成功");
                 // 修改这里，传入当前标签页对应的参数
-                await getPayments(activeTab.value === 'income');
+                await getPayments(activeTab.value === "income");
             } else {
-                ElMessage.error(res.data.message || '删除失败');
+                ElMessage.error(res.data.message || "删除失败");
             }
         } catch (error) {
-            console.error('删除失败:', error);
-            ElMessage.error('删除失败');
+            console.error("删除失败:", error);
+            ElMessage.error("删除失败");
         }
     });
 };
@@ -395,70 +403,73 @@ const handleRowClick = (row) => {
 // 新增支出的配置
 // 修改 expenseOptions 中的教师配置
 const expenseOptions = ref<any>({
-    labelWidth: '100px',
+    labelWidth: "100px",
     span: 12,
     list: [
         {
-            type: 'input',
-            label: '收款方',
-            prop: 'receiver',
+            type: "input",
+            label: "收款方",
+            prop: "receiver",
             required: true
         },
         {
-            type: 'input',
-            label: '负责教师',
-            prop: 'teacherName',
+            type: "input",
+            label: "负责教师",
+            prop: "teacherName",
             // required: true,
-            disabled: true,
+            disabled: true
         },
         {
-            type: 'input',
-            label: '金额',
-            prop: 'amount',
-            inputType: 'number',
+            type: "input",
+            label: "金额",
+            prop: "amount",
+            inputType: "number",
             required: true
         },
         {
-            type: 'select',
-            label: '费用项目',
-            prop: 'category',
+            type: "select",
+            label: "费用项目",
+            prop: "category",
             required: true,
-            options: conventions.paymentCategories.map(item => ({
+            options: conventions.paymentCategories.map((item) => ({
                 label: item.name,
                 value: item.id
             }))
         },
         {
-            type: 'select',
-            label: '支付方式',
-            prop: 'paymentMethod',
+            type: "select",
+            label: "支付方式",
+            prop: "paymentMethod",
             required: true,
-            options: conventions.paymentMethods.map(item => ({
+            options: conventions.paymentMethods.map((item) => ({
                 label: item.name,
                 value: item.id
             }))
         },
-        { type: 'input', label: '备注', prop: 'info' }
+        { type: "input", label: "备注", prop: "info" }
     ]
-})
+});
 
 // 修改 handleAdd 方法
 const handleAdd = async () => {
     try {
         // 只在收入管理时获取客户列表
-        if (activeTab.value === 'income') {
-            const clientRes = await request.post('/extra/getClients', {
-                pageIndex: 1,
-                pageSize: 999
-            }, {
-                headers: { sessionid: localStorage.getItem("sessionid") }
-            });
+        if (activeTab.value === "income") {
+            const clientRes = await request.post(
+                "/extra/getClients",
+                {
+                    pageIndex: 1,
+                    pageSize: 999
+                },
+                {
+                    headers: { sessionid: localStorage.getItem("sessionid") }
+                }
+            );
             if (clientRes.data.status === 200) {
-                options.value.list.find(item => item.prop === 'clientId').options =
-                    clientRes.data.clients.map(item => ({
-                        label: item.name,
-                        value: item.id
-                    }));
+                options.value.list.find((item) => item.prop === "clientId").options = clientRes.data.clients.map((item) => ({
+                    label: item.name,
+                    value: item.id
+                }));
             }
         }
 
@@ -467,14 +478,14 @@ const handleAdd = async () => {
             teacherId: userInfo.value?.id
         };
 
-        if (activeTab.value === 'income') {
+        if (activeTab.value === "income") {
             editModelVisible.value = true;
         } else {
             editExpenseModelVisible.value = true;
         }
     } catch (error) {
-        console.error('获取选项数据失败:', error);
-        ElMessage.error('获取选项数据失败');
+        console.error("获取选项数据失败:", error);
+        ElMessage.error("获取选项数据失败");
     }
 };
 
@@ -484,13 +495,13 @@ const submitForm = async () => {
     await formRef.value.validate(async (valid) => {
         if (valid) {
             if ((formData.value as any).amount === 0) {
-                ElMessage.error('金额不能为0');
+                ElMessage.error("金额不能为0");
                 return;
             }
             try {
-                const url = isEdit.value ? '/extra/updatePayment' : '/extra/addPayment';
+                const url = isEdit.value ? "/extra/updatePayment" : "/extra/addPayment";
                 // 支出时金额取负数
-                if (activeTab.value === 'expense') {
+                if (activeTab.value === "expense") {
                     (formData.value as any).amount = -Math.abs((formData.value as any).amount);
                 }
                 const res = await request.post(url, formData.value, {
@@ -500,15 +511,15 @@ const submitForm = async () => {
                 });
 
                 if (res.data.status === 200) {
-                    ElMessage.success(isEdit.value ? '编辑成功' : '添加成功');
+                    ElMessage.success(isEdit.value ? "编辑成功" : "添加成功");
                     closeDialog();
-                    getPayments(activeTab.value === 'income');
+                    getPayments(activeTab.value === "income");
                 } else {
-                    ElMessage.error(res.data.message || '操作失败');
+                    ElMessage.error(res.data.message || "操作失败");
                 }
             } catch (error) {
-                console.error('提交失败:', error);
-                ElMessage.error('操作失败');
+                console.error("提交失败:", error);
+                ElMessage.error("操作失败");
             }
         }
     });

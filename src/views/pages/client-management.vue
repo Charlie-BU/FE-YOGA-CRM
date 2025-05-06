@@ -7,47 +7,35 @@
         </el-tabs>
         <div class="container">
             <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
-            <el-button type="primary" :icon="Search" @click="showFilterDialog">
-                筛选查询
-            </el-button>
+            <el-button type="primary" :icon="Search" @click="showFilterDialog"> 筛选查询 </el-button>
             <el-button type="warning" :icon="Download" @click="exportToExcel">导出</el-button>
-            <el-button v-if="!currClientStatus" type="primary" :disabled="selectedRows.length !== 1"
-                @click="handleReserve">预约到店</el-button>
-            <el-button v-else type="primary" :disabled="selectedRows.length !== 1"
-                @click="handleReserve">再次预约</el-button>
-            <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1"
-                @click="handleCancelReserve">取消预约</el-button>
-            <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 2" type="success"
-                :disabled="selectedRows.length !== 1" @click="confirmCooperation">确认成单
-                -
-                签署合同</el-button>
-            <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 1" type="danger"
-                :disabled="selectedRows.length !== 1" @click="handleCancelCooperation">取消成单</el-button>
-            <el-button v-if="currClientStatus === 4" type="primary" :disabled="selectedRows.length !== 1"
-                @click="handlePayment">交定金</el-button>
-            <div style="float: right;">
+            <el-button v-if="!currClientStatus" type="primary" :disabled="selectedRows.length !== 1" @click="handleReserve">预约到店</el-button>
+            <el-button v-else type="primary" :disabled="selectedRows.length !== 1" @click="handleReserve">再次预约</el-button>
+            <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1" @click="handleCancelReserve">取消预约</el-button>
+            <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 2" type="success" :disabled="selectedRows.length !== 1" @click="confirmCooperation"
+                >确认成单 - 签署合同</el-button
+            >
+            <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 1" type="danger" :disabled="selectedRows.length !== 1" @click="handleCancelCooperation">取消成单</el-button>
+            <el-button v-if="currClientStatus === 4" type="primary" :disabled="selectedRows.length !== 1" @click="handlePayment(1)">缴费</el-button>
+            <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1" @click="handlePayment(2)">退费</el-button>
+            <div style="float: right">
                 <el-tooltip effect="dark" content="列设置" placement="top">
                     <el-button type="primary" :icon="Setting" circle @click="columnSettingVisible = true"></el-button>
                 </el-tooltip>
             </div>
 
-
-            <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px;"
-                @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
+            <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px" @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
                 <el-table-column type="selection" width="55" align="center" fixed="left" />
                 <template v-for="item in displayColumns" :key="item.prop">
-                    <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label"
-                        :width="item.width" :align="item.align" show-overflow-tooltip fixed="left" />
-                    <el-table-column v-else-if="item.prop === 'name'" :prop="item.prop" :label="item.label"
-                        :width="item.width" :align="item.align" show-overflow-tooltip fixed="left">
+                    <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label" :width="item.width" :align="item.align" show-overflow-tooltip fixed="left" />
+                    <el-table-column v-else-if="item.prop === 'name'" :prop="item.prop" :label="item.label" :width="item.width" :align="item.align" show-overflow-tooltip fixed="left">
                         <template #default="scope">
                             <span class="clickable-name" @click.stop="showClientInfo(scope.row)">
                                 {{ scope.row.name }}
                             </span>
                         </template>
                     </el-table-column>
-                    <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width"
-                        :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
+                    <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width" :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
                 </template>
                 <el-table-column label="操作" width="180" fixed="right" align="center">
                     <template #default="scope">
@@ -57,10 +45,16 @@
                 </el-table-column>
             </el-table>
 
-            <div class="pagination" style="margin-top: 20px; text-align: right;">
-                <el-pagination v-model:current-page="page.index" v-model:page-size="page.size" :total="page.total"
-                    @current-change="changePage" @size-change="handleSizeChange" :page-sizes="[10, 20, 50, 100]"
-                    layout="sizes, total, prev, pager, next">
+            <div class="pagination" style="margin-top: 20px; text-align: right">
+                <el-pagination
+                    v-model:current-page="page.index"
+                    v-model:page-size="page.size"
+                    :total="page.total"
+                    @current-change="changePage"
+                    @size-change="handleSizeChange"
+                    :page-sizes="[5, 10, 20, 50, 100]"
+                    layout="sizes, total, prev, pager, next"
+                >
                     <template #default></template>
                 </el-pagination>
             </div>
@@ -71,17 +65,20 @@
             <el-form :model="query" label-width="100px">
                 <el-row :gutter="20">
                     <el-col :span="12" v-for="(item, index) in currentSearchOpt" :key="index">
-                        <el-form-item :label="item.label" style="white-space: nowrap; margin: 10px;">
-                            <el-input v-if="item.type === 'input'" v-model="query[item.prop]"
-                                :placeholder="`请输入${item.label.replace('：', '')}`" clearable />
-                            <el-select v-else-if="item.type === 'select'" v-model="query[item.prop]"
-                                :placeholder="`请选择${item.label.replace('：', '')}`" style="width: 100%" clearable>
-                                <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label"
-                                    :value="opt.value" />
+                        <el-form-item :label="item.label" style="white-space: nowrap; margin: 10px">
+                            <el-input v-if="item.type === 'input'" v-model="query[item.prop]" :placeholder="`请输入${item.label.replace('：', '')}`" clearable />
+                            <el-select v-else-if="item.type === 'select'" v-model="query[item.prop]" :placeholder="`请选择${item.label.replace('：', '')}`" style="width: 100%" clearable>
+                                <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label" :value="opt.value" />
                             </el-select>
-                            <el-date-picker v-else-if="item.type === 'daterange'" v-model="query[item.prop]"
-                                type="daterange" range-separator="至" :start-placeholder="item.startPlaceholder"
-                                :end-placeholder="item.endPlaceholder" style="width: 100%" />
+                            <el-date-picker
+                                v-else-if="item.type === 'daterange'"
+                                v-model="query[item.prop]"
+                                type="daterange"
+                                range-separator="至"
+                                :start-placeholder="item.startPlaceholder"
+                                :end-placeholder="item.endPlaceholder"
+                                style="width: 100%"
+                            />
                         </el-form-item>
                     </el-col>
                 </el-row>
@@ -94,15 +91,12 @@
             </template>
         </el-dialog>
 
-
         <!-- 列设置弹窗 -->
         <el-dialog title="列设置" v-model="columnSettingVisible" width="500px">
-            <el-checkbox v-model="checkAll" :indeterminate="isIndeterminate"
-                @change="handleCheckAllChange">全选</el-checkbox>
+            <el-checkbox v-model="checkAll" :indeterminate="isIndeterminate" @change="handleCheckAllChange">全选</el-checkbox>
             <el-divider></el-divider>
             <el-checkbox-group v-model="checkedColumns" @change="handleCheckedColumnsChange">
-                <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label
-                    }}</el-checkbox>
+                <el-checkbox v-for="col in columnOptions" :key="col.prop" :label="col.prop">{{ col.label }}</el-checkbox>
             </el-checkbox-group>
             <template #footer>
                 <span class="dialog-footer">
@@ -113,29 +107,21 @@
         </el-dialog>
 
         <!-- 编辑弹窗 -->
-        <el-dialog :title="isEdit ? '编辑' : '新增'" v-model="editModelVisible" width="700px" destroy-on-close
-            :close-on-click-modal="false" @close="closeDialog">
+        <el-dialog :title="isEdit ? '编辑' : '新增'" v-model="editModelVisible" width="700px" destroy-on-close :close-on-click-modal="false" @close="closeDialog">
             <el-form ref="formRef" :model="formData" :rules="rules" :label-width="options.labelWidth">
                 <el-row :gutter="20">
                     <el-col v-for="(item, index) in options.list" :key="index" :span="options.span">
-                        <el-form-item :label="item.label" :prop="item.prop"
-                            :rules="item.rules || (item.required ? [{ required: true, message: `请输入${item.label}`, trigger: 'blur' }] : [])">
-
+                        <el-form-item :label="item.label" :prop="item.prop" :rules="item.rules || (item.required ? [{ required: true, message: `请输入${item.label}`, trigger: 'blur' }] : [])">
                             <div v-if="item.prop === 'info'">
                                 <el-select style="width: 100%; margin-bottom: 10px" placeholder="查看历史备注">
-                                    <el-option v-for="(note, index) in currClientInfo || []" :key="index" :label="note"
-                                        :value="note" />
+                                    <el-option v-for="(note, index) in currClientInfo || []" :key="index" :label="note" :value="note" />
                                 </el-select>
-                                <el-input v-model="formData[item.prop]" :type="item.inputType || 'text'"
-                                    :placeholder="`新增${item.label}`" />
+                                <el-input v-model="formData[item.prop]" :type="item.inputType || 'text'" :placeholder="`新增${item.label}`" />
                             </div>
 
-                            <el-input v-else-if="item.type === 'input'" v-model="formData[item.prop]"
-                                :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`" />
-                            <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]"
-                                :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
-                                <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label"
-                                    :value="opt.value" />
+                            <el-input v-else-if="item.type === 'input'" v-model="formData[item.prop]" :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`" />
+                            <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]" :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
+                                <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label" :value="opt.value" />
                             </el-select>
                         </el-form-item>
                     </el-col>
@@ -153,20 +139,16 @@
         <el-dialog title="预约到店" v-model="assignDialogVisible" width="700px" destroy-on-close>
             <el-form :model="assignForm" label-width="120px">
                 <el-form-item label="* 校区:">
-                    <el-select v-model="assignForm.schoolId" placeholder="请选择校区" style="width: 100%"
-                        @change="handleBranchChange" filterable>
-                        <el-option v-for="item in branchOptions" :key="item.value" :label="item.label"
-                            :value="item.value" />
+                    <el-select v-model="assignForm.schoolId" placeholder="请选择校区" style="width: 100%" @change="handleBranchChange" filterable>
+                        <el-option v-for="item in branchOptions" :key="item.value" :label="item.label" :value="item.value" />
                     </el-select>
                 </el-form-item>
                 <el-form-item label="* 预约日期:">
-                    <el-date-picker v-model="assignForm.appointDate" type="date" placeholder="选择日期"
-                        style="width: 100%" />
+                    <el-date-picker v-model="assignForm.appointDate" type="date" placeholder="选择日期" style="width: 100%" />
                 </el-form-item>
                 <el-form-item label="接待人:">
                     <el-select v-model="assignForm.appointerId" placeholder="请选择接待人" style="width: 100%" filterable>
-                        <el-option v-for="item in appointerOptions" :key="item.value" :label="item.label"
-                            :value="item.value" />
+                        <el-option v-for="item in appointerOptions" :key="item.value" :label="item.label" :value="item.value" />
                     </el-select>
                 </el-form-item>
 
@@ -175,33 +157,25 @@
                 </el-form-item>
 
                 <el-form-item v-if="assignForm.useCombo" label="* 套餐:">
-                    <el-select v-model="assignForm.comboId" placeholder="请选择套餐" style="width: 100%"
-                        @change="handleComboChange" filterable>
-                        <el-option v-for="item in comboOptions" :key="item.value" :label="item.label"
-                            :value="item.value" />
+                    <el-select v-model="assignForm.comboId" placeholder="请选择套餐" style="width: 100%" @change="handleComboChange" filterable>
+                        <el-option v-for="item in comboOptions" :key="item.value" :label="item.label" :value="item.value" />
                     </el-select>
                 </el-form-item>
 
                 <el-form-item v-if="assignForm.useCombo" label="* 课程:">
-                    <el-select v-model="assignForm.courseIds" :placeholder="selectedCombo?.courseNames.join('、')"
-                        style="width: 100%" multiple disabled>
-                        <el-option v-for="item in courseOptions" :key="item.value" :label="item.label"
-                            :value="item.value" />
+                    <el-select v-model="assignForm.courseIds" :placeholder="selectedCombo?.courseNames.join('、')" style="width: 100%" multiple disabled>
+                        <el-option v-for="item in courseOptions" :key="item.value" :label="item.label" :value="item.value" />
                     </el-select>
                 </el-form-item>
 
-
                 <el-form-item v-else label="* 课程:">
-                    <el-select v-model="assignForm.courseIds" placeholder="请选择课程" style="width: 100%" multiple
-                        filterable>
-                        <el-option v-for="item in courseOptions" :key="item.value" :label="item.label"
-                            :value="item.value" />
+                    <el-select v-model="assignForm.courseIds" placeholder="请选择课程" style="width: 100%" multiple filterable>
+                        <el-option v-for="item in courseOptions" :key="item.value" :label="item.label" :value="item.value" />
                     </el-select>
                 </el-form-item>
 
                 <el-form-item label="下次沟通日期:">
-                    <el-date-picker v-model="assignForm.nextTalkDate" type="date" placeholder="选择日期"
-                        style="width: 100%" />
+                    <el-date-picker v-model="assignForm.nextTalkDate" type="date" placeholder="选择日期" style="width: 100%" />
                 </el-form-item>
                 <el-form-item label="客户备注:">
                     <el-input v-model="assignForm.info" type="textarea" :rows="4" placeholder="请输入客户备注"></el-input>
@@ -253,22 +227,25 @@
             </template>
         </el-dialog>
 
-        <!-- 交定金弹窗 -->
-        <el-dialog title="交定金" v-model="paymentDialogVisible" width="500px" destroy-on-close>
+        <!-- 缴费弹窗 -->
+        <el-dialog :title="paymentDialogVisible === 1 ? '缴费' : '退费'" v-if="paymentDialogVisible !== 0" v-model="paymentDialogVisible" width="500px" destroy-on-close>
             <el-form :model="paymentForm" label-width="120px">
                 <el-form-item label="* 金额（元）:">
                     <el-input-number v-model="paymentForm.amount" :min="1" :max="999999" style="width: 100%" />
                 </el-form-item>
+                <el-form-item label="* 费用项目:">
+                    <el-select v-model="paymentForm.category" placeholder="请选择费用项目" style="width: 100%" filterable>
+                        <el-option v-for="item in conventions.paymentCategories" :key="item.id" :label="item.name" :value="item.id" />
+                    </el-select>
+                </el-form-item>
                 <el-form-item label="* 交易方式:">
                     <el-select v-model="paymentForm.paymentMethod" placeholder="请选择交易方式" style="width: 100%" filterable>
-                        <el-option v-for="item in conventions.paymentMethods" :key="item.id" :label="item.name"
-                            :value="item.id" />
+                        <el-option v-for="item in conventions.paymentMethods" :key="item.id" :label="item.name" :value="item.id" />
                     </el-select>
                 </el-form-item>
                 <el-form-item label="负责老师:">
                     <!-- 默认当前用户 -->
-                    <el-select v-model="paymentForm.teacherId" :placeholder=briefUserInfo?.username disabled
-                        style="width: 100%">
+                    <el-select v-model="paymentForm.teacherId" :placeholder="briefUserInfo?.username" disabled style="width: 100%">
                         <el-option :label="briefUserInfo?.username" :value="briefUserInfo?.id" />
                     </el-select>
                 </el-form-item>
@@ -278,12 +255,11 @@
             </el-form>
             <template #footer>
                 <span class="dialog-footer">
-                    <el-button @click="paymentDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="submitPayment">确定</el-button>
+                    <el-button @click="paymentDialogVisible = 0">取消</el-button>
+                    <el-button type="primary" @click="submitPayment(paymentDialogVisible)">确定</el-button>
                 </span>
             </template>
         </el-dialog>
-
 
         <!-- 客户信息卡弹窗 -->
         <ClientInfoCard v-model="clientInfoDialogVisible" :client="currentClient" />
@@ -291,21 +267,21 @@
 </template>
 
 <script setup lang="ts" name="system-user">
-import { ref, reactive, onMounted, computed } from 'vue';
-import { ElMessage, ElMessageBox, vLoading } from 'element-plus';
-import { Download, Setting, Search, Refresh } from '@element-plus/icons-vue';
-import { User } from '@/types/user';
-import request from '@/utils/request';
-import * as conventions from '@/utils/conventions';
-import * as XLSX from 'xlsx';
-import ClientInfoCard from '@/components/client-info-card.vue'
+import { ref, reactive, onMounted, computed } from "vue";
+import { ElMessage, ElMessageBox, vLoading } from "element-plus";
+import { Download, Setting, Search, Refresh } from "@element-plus/icons-vue";
+import { User } from "@/types/user";
+import request from "@/utils/request";
+import * as conventions from "@/utils/conventions";
+import * as XLSX from "xlsx";
+import ClientInfoCard from "@/components/client-info-card.vue";
 // 导出合同需要
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-import { loginCheck } from '@/utils/login-check';
-import { handleRefresh } from '@/utils/index';
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { loginCheck } from "@/utils/login-check";
+import { handleRefresh } from "@/utils/index";
 
-const briefUserInfo = ref(null)
+const briefUserInfo = ref(null);
 
 onMounted(async () => {
     briefUserInfo.value = await loginCheck();
@@ -321,7 +297,7 @@ const handleSizeChange = async (val: number) => {
     await getClients();
 };
 
-const activeTab = ref('all');
+const activeTab = ref("all");
 
 // 筛选相关
 const filterDialogVisible = ref(false);
@@ -332,109 +308,109 @@ const showFilterDialog = () => {
 
 // 修改查询对象，增加更多字段
 const query = reactive({
-    name: '',
-    fromSource: '',
-    gender: '',
-    age: '',
-    IDNumber: '',
-    phone: '',
-    weixin: '',
-    QQ: '',
-    douyin: '',
-    rednote: '',
-    shangwutong: '',
-    address: '',
+    name: "",
+    fromSource: "",
+    gender: "",
+    age: "",
+    IDNumber: "",
+    phone: "",
+    weixin: "",
+    QQ: "",
+    douyin: "",
+    rednote: "",
+    shangwutong: "",
+    address: "",
     timeRange: [], // 创建时间范围
     // 已预约客户特有字段
-    schoolId: '',
-    appointerId: '',
+    schoolId: "",
+    appointerId: "",
     appointDateRange: [], // 预约日期范围
     nextTalkDateRange: [], // 下次沟通日期范围
-    processStatus: '', // 跟进状态
+    processStatus: "" // 跟进状态
 });
 
 // 未预约客户的搜索选项
 const allSearchOpt = ref([
-    { type: 'input', label: '姓名：', prop: 'name' },
+    { type: "input", label: "姓名：", prop: "name" },
     {
-        type: 'select',
-        label: '渠道来源：',
-        prop: 'fromSource',
-        options: <any>conventions.fromSources.map(item => ({
+        type: "select",
+        label: "渠道来源：",
+        prop: "fromSource",
+        options: <any>conventions.fromSources.map((item) => ({
             label: item.name,
             value: item.id
         }))
     },
     {
-        type: 'select',
-        label: '性别：',
-        prop: 'gender',
-        options: conventions.genders.map(item => ({
+        type: "select",
+        label: "性别：",
+        prop: "gender",
+        options: conventions.genders.map((item) => ({
             label: item.name,
             value: item.id
         }))
     },
-    { type: 'input', label: '年龄：', prop: 'age' },
-    { type: 'input', label: '身份证：', prop: 'IDNumber' },
-    { type: 'input', label: '电话：', prop: 'phone' },
-    { type: 'input', label: '微信：', prop: 'weixin' },
-    { type: 'input', label: 'QQ：', prop: 'QQ' },
-    { type: 'input', label: '抖音：', prop: 'douyin' },
-    { type: 'input', label: '小红书：', prop: 'rednote' },
-    { type: 'input', label: '商务通：', prop: 'shangwutong' },
-    { type: 'input', label: '地区：', prop: 'address' },
+    { type: "input", label: "年龄：", prop: "age" },
+    { type: "input", label: "身份证：", prop: "IDNumber" },
+    { type: "input", label: "电话：", prop: "phone" },
+    { type: "input", label: "微信：", prop: "weixin" },
+    { type: "input", label: "QQ：", prop: "QQ" },
+    { type: "input", label: "抖音：", prop: "douyin" },
+    { type: "input", label: "小红书：", prop: "rednote" },
+    { type: "input", label: "商务通：", prop: "shangwutong" },
+    { type: "input", label: "地区：", prop: "address" },
     {
-        type: 'daterange',
-        label: '创建时间：',
-        prop: 'timeRange',
-        startPlaceholder: '开始日期',
-        endPlaceholder: '结束日期'
+        type: "daterange",
+        label: "创建时间：",
+        prop: "timeRange",
+        startPlaceholder: "开始日期",
+        endPlaceholder: "结束日期"
     }
 ]);
 
 // 已预约客户的搜索选项
 const reservedSearchOpt = ref([
-    { type: 'input', label: '姓名：', prop: 'name' },
-    { type: 'input', label: '电话：', prop: 'phone' },
-    { type: 'input', label: '微信：', prop: 'weixin' },
+    { type: "input", label: "姓名：", prop: "name" },
+    { type: "input", label: "电话：", prop: "phone" },
+    { type: "input", label: "微信：", prop: "weixin" },
     {
-        type: 'select',
-        label: '校区：',
-        prop: 'schoolId',
+        type: "select",
+        label: "校区：",
+        prop: "schoolId",
         options: [] // 需要动态获取
     },
-    { type: 'input', label: '所属人：', prop: 'affiliatedUserName' },
-    { type: 'input', label: '接待人：', prop: 'appointerName' },
-    { type: 'input', label: '地区：', prop: 'address' },
+    { type: "input", label: "所属人：", prop: "affiliatedUserName" },
+    { type: "input", label: "接待人：", prop: "appointerName" },
+    { type: "input", label: "地区：", prop: "address" },
     {
-        type: 'daterange',
-        label: '预约日期：',
-        prop: 'appointDateRange',
-        startPlaceholder: '开始日期',
-        endPlaceholder: '结束日期'
+        type: "daterange",
+        label: "预约日期：",
+        prop: "appointDateRange",
+        startPlaceholder: "开始日期",
+        endPlaceholder: "结束日期"
     },
     {
-        type: 'daterange',
-        label: '下次沟通日期：',
-        prop: 'nextTalkDateRange',
-        startPlaceholder: '开始日期',
-        endPlaceholder: '结束日期'
+        type: "daterange",
+        label: "下次沟通日期：",
+        prop: "nextTalkDateRange",
+        startPlaceholder: "开始日期",
+        endPlaceholder: "结束日期"
     },
     {
-        type: 'select',
-        label: '跟进状态：',
-        prop: 'processStatus',
+        type: "select",
+        label: "跟进状态：",
+        prop: "processStatus",
         options: [
-            { label: '未成单', value: 1 },
-            { label: '已成单', value: 2 }
+            { label: "未成单", value: 1 },
+            { label: "已成单", value: 2 }
         ]
     },
     {
-        type: 'daterange',
-        label: '创建时间：',
-        prop: 'timeRange',
-        startPlaceholder: '开始日期',
-        endPlaceholder: '结束日期'
+        type: "daterange",
+        label: "创建时间：",
+        prop: "timeRange",
+        startPlaceholder: "开始日期",
+        endPlaceholder: "结束日期"
     }
 ]);
 
@@ -445,11 +421,11 @@ const currentSearchOpt = computed(() => {
 
 // 重置查询条件
 const resetQuery = () => {
-    Object.keys(query).forEach(key => {
+    Object.keys(query).forEach((key) => {
         if (Array.isArray(query[key])) {
             query[key] = [];
         } else {
-            query[key] = '';
+            query[key] = "";
         }
     });
 };
@@ -462,18 +438,18 @@ const handleSearch = async () => {
 
 // 表格相关
 const defaultColumns = [
-    { type: 'index', label: '序号', width: 55, align: 'center', prop: 'index' },
+    { type: "index", label: "序号", width: 55, align: "center", prop: "index" },
     {
-        prop: 'name',
-        label: '姓名',
+        prop: "name",
+        label: "姓名",
         width: 150,
-        align: 'center',
+        align: "center",
         // 添加自定义渲染函数
         renderCell: (h, { row }) => {
             return h(
-                'span',
+                "span",
                 {
-                    style: 'color: #409EFF; cursor: pointer;',
+                    style: "color: #409EFF; cursor: pointer;",
                     onClick: (event) => {
                         event.stopPropagation();
                         showClientInfo(row);
@@ -483,42 +459,42 @@ const defaultColumns = [
             );
         }
     },
-    { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
-    { prop: 'gender', label: '性别', width: 150, align: 'center', formatter: (row) => conventions.getGender(row.gender) },
-    { prop: 'age', label: '年龄', width: 150, align: 'center' },
-    { prop: 'IDNumber', label: '身份证', width: 150, align: 'center' },
-    { prop: 'phone', label: '电话', width: 150, align: 'center' },
-    { prop: 'weixin', label: '微信', width: 150, align: 'center' },
-    { prop: 'QQ', label: 'QQ', width: 150, align: 'center' },
-    { prop: 'douyin', label: '抖音', width: 150, align: 'center' },
-    { prop: 'rednote', label: '小红书', width: 150, align: 'center' },
-    { prop: 'shangwutong', label: '商务通', width: 150, align: 'center' },
-    { prop: 'address', label: '地区', width: 150, align: 'center' },
-    { prop: 'clientStatus', label: '客户状态', width: 150, align: 'center', formatter: (row) => conventions.getClientStatus(row.clientStatus) },
-    { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 150, align: 'center' },
-    { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
+    { prop: "fromSource", label: "渠道来源", width: 150, align: "center", formatter: (row) => conventions.getFromSource(row.fromSource) },
+    { prop: "gender", label: "性别", width: 150, align: "center", formatter: (row) => conventions.getGender(row.gender) },
+    { prop: "age", label: "年龄", width: 150, align: "center" },
+    { prop: "IDNumber", label: "身份证", width: 150, align: "center" },
+    { prop: "phone", label: "电话", width: 150, align: "center" },
+    { prop: "weixin", label: "微信", width: 150, align: "center" },
+    { prop: "QQ", label: "QQ", width: 150, align: "center" },
+    { prop: "douyin", label: "抖音", width: 150, align: "center" },
+    { prop: "rednote", label: "小红书", width: 150, align: "center" },
+    { prop: "shangwutong", label: "商务通", width: 150, align: "center" },
+    { prop: "address", label: "地区", width: 150, align: "center" },
+    { prop: "clientStatus", label: "客户状态", width: 150, align: "center", formatter: (row) => conventions.getClientStatus(row.clientStatus) },
+    { prop: "affiliatedUserName", label: "所属人 / 合作老师", width: 150, align: "center" },
+    { prop: "createdTime", label: "创建时间", width: 150, align: "center" },
     {
-        prop: 'info',
-        label: '客户备注',
+        prop: "info",
+        label: "客户备注",
         width: 150,
-        align: 'center',
-        formatter: (row) => row.info ? [...row.info].reverse().join(' | ') : ''
-    },
-]
+        align: "center",
+        formatter: (row) => (row.info ? [...row.info].reverse().join(" | ") : "")
+    }
+];
 
 const secondColumns = [
-    { type: 'index', label: '序号', width: 55, align: 'center', prop: 'index' },
+    { type: "index", label: "序号", width: 55, align: "center", prop: "index" },
     {
-        prop: 'name',
-        label: '姓名',
+        prop: "name",
+        label: "姓名",
         width: 150,
-        align: 'center',
+        align: "center",
         // 添加自定义渲染函数
         renderCell: (h, { row }) => {
             return h(
-                'span',
+                "span",
                 {
-                    style: 'color: #409EFF; cursor: pointer;',
+                    style: "color: #409EFF; cursor: pointer;",
                     onClick: (event) => {
                         event.stopPropagation();
                         showClientInfo(row);
@@ -528,29 +504,29 @@ const secondColumns = [
             );
         }
     },
-    { prop: 'phone', label: '电话', width: 150, align: 'center' },
-    { prop: 'weixin', label: '微信', width: 150, align: 'center' },
-    { prop: 'schoolName', label: '校区', width: 150, align: 'center' },
-    { prop: 'affiliatedUserName', label: '所属人 / 合作老师', width: 150, align: 'center' },
-    { prop: 'appointerName', label: '接待人', width: 150, align: 'center' },
-    { prop: 'courseNames', label: '课程', width: 150, align: 'center' },
-    { prop: 'address', label: '地区', width: 150, align: 'center' },
-    { prop: 'appointDate', label: '预约日期', width: 150, align: 'center' },
-    { prop: 'nextTalkDate', label: '下次沟通日期', width: 150, align: 'center' },
-    { prop: 'processStatus', label: '跟进状态', width: 150, align: 'center', formatter: (row) => row.processStatus === 1 ? "未成单" : row.processStatus === 2 ? "已成单" : "" },
-    { prop: 'cooperateTime', label: '成单时间', width: 150, align: 'center' },
-    { prop: 'contractNo', label: '合同编号', width: 150, align: 'center' },
-    { prop: 'createdTime', label: '创建时间', width: 150, align: 'center' },
-    { prop: 'fromSource', label: '渠道来源', width: 150, align: 'center', formatter: (row) => conventions.getFromSource(row.fromSource) },
+    { prop: "phone", label: "电话", width: 150, align: "center" },
+    { prop: "weixin", label: "微信", width: 150, align: "center" },
+    { prop: "schoolName", label: "校区", width: 150, align: "center" },
+    { prop: "affiliatedUserName", label: "所属人 / 合作老师", width: 150, align: "center" },
+    { prop: "appointerName", label: "接待人", width: 150, align: "center" },
+    { prop: "courseNames", label: "课程", width: 150, align: "center" },
+    { prop: "address", label: "地区", width: 150, align: "center" },
+    { prop: "appointDate", label: "预约日期", width: 150, align: "center" },
+    { prop: "nextTalkDate", label: "下次沟通日期", width: 150, align: "center" },
+    { prop: "processStatus", label: "跟进状态", width: 150, align: "center", formatter: (row) => (row.processStatus === 1 ? "未成单" : row.processStatus === 2 ? "已成单" : "") },
+    { prop: "cooperateTime", label: "成单时间", width: 150, align: "center" },
+    { prop: "contractNo", label: "合同编号", width: 150, align: "center" },
+    { prop: "createdTime", label: "创建时间", width: 150, align: "center" },
+    { prop: "fromSource", label: "渠道来源", width: 150, align: "center", formatter: (row) => conventions.getFromSource(row.fromSource) },
     {
-        prop: 'info',
-        label: '客户备注',
+        prop: "info",
+        label: "客户备注",
         width: 150,
-        align: 'center',
-        formatter: (row) => row.info ? [...row.info].reverse().join(' | ') : ''
-    },
-]
-const columns = ref(defaultColumns)
+        align: "center",
+        formatter: (row) => (row.info ? [...row.info].reverse().join(" | ") : "")
+    }
+];
+const columns = ref(defaultColumns);
 
 // 列设置相关
 const columnSettingVisible = ref(false);
@@ -562,9 +538,9 @@ const isIndeterminate = ref(true);
 const columnOptions = computed(() => {
     // 过滤掉序号和姓名列，这些列不允许隐藏
     if (currClientStatus.value === 3) {
-        return defaultColumns.filter(col => col.prop !== 'operator' && col.prop !== 'index' && col.prop !== 'name');
+        return defaultColumns.filter((col) => col.prop !== "operator" && col.prop !== "index" && col.prop !== "name");
     } else {
-        return secondColumns.filter(col => col.prop !== 'operator' && col.prop !== 'index' && col.prop !== 'name');
+        return secondColumns.filter((col) => col.prop !== "operator" && col.prop !== "index" && col.prop !== "name");
     }
 });
 
@@ -572,12 +548,8 @@ const columnOptions = computed(() => {
 const displayColumns = computed(() => {
     const currentColumns = currClientStatus.value === 3 ? defaultColumns : secondColumns;
     // 始终显示序号和姓名列，加上用户选择的其他列
-    const fixedColumns = currentColumns.filter(col => col.prop === 'index' || col.prop === 'name');
-    const userSelectedColumns = currentColumns.filter(col =>
-        col.prop !== 'index' &&
-        col.prop !== 'name' &&
-        checkedColumns.value.includes(col.prop)
-    );
+    const fixedColumns = currentColumns.filter((col) => col.prop === "index" || col.prop === "name");
+    const userSelectedColumns = currentColumns.filter((col) => col.prop !== "index" && col.prop !== "name" && checkedColumns.value.includes(col.prop));
     return [...fixedColumns, ...userSelectedColumns];
 });
 
@@ -590,29 +562,27 @@ const initColumnSettings = () => {
 const updateColumnSettings = () => {
     const currentColumns = currClientStatus.value === 3 ? defaultColumns : secondColumns;
     // 默认显示所有列，但不包括固定列（序号和姓名）
-    const defaultColumnsToCheck = currentColumns
-        .filter(col => col.prop !== 'index' && col.prop !== 'name')
-        .map(col => col.prop);
+    const defaultColumnsToCheck = currentColumns.filter((col) => col.prop !== "index" && col.prop !== "name").map((col) => col.prop);
 
     checkedColumns.value = defaultColumnsToCheck;
     updateCheckAllStatus();
 
     // 尝试从本地存储加载用户保存的列设置
-    const storageKey = currClientStatus.value === 3 ? 'clientManagementColumns1' : 'clientManagementColumns2';
+    const storageKey = currClientStatus.value === 3 ? "clientManagementColumns1" : "clientManagementColumns2";
     const savedColumns = localStorage.getItem(storageKey);
     if (savedColumns) {
         try {
             checkedColumns.value = JSON.parse(savedColumns);
             updateCheckAllStatus();
         } catch (e) {
-            console.error('加载列设置失败:', e);
+            console.error("加载列设置失败:", e);
         }
     }
 };
 
 // 全选/取消全选
 const handleCheckAllChange = (val) => {
-    checkedColumns.value = val ? columnOptions.value.map(col => col.prop) : [];
+    checkedColumns.value = val ? columnOptions.value.map((col) => col.prop) : [];
     isIndeterminate.value = false;
 };
 
@@ -632,28 +602,28 @@ const updateCheckAllStatus = () => {
 const applyColumnSettings = () => {
     // 确保至少选择了一列
     if (checkedColumns.value.length === 0) {
-        ElMessage.warning('请至少选择一列');
+        ElMessage.warning("请至少选择一列");
         return;
     }
 
     // 保存到本地存储
-    const storageKey = currClientStatus.value === 3 ? 'clientManagementColumns1' : 'clientManagementColumns2';
+    const storageKey = currClientStatus.value === 3 ? "clientManagementColumns1" : "clientManagementColumns2";
     localStorage.setItem(storageKey, JSON.stringify(checkedColumns.value));
     columnSettingVisible.value = false;
-    ElMessage.success('列设置已保存');
+    ElMessage.success("列设置已保存");
 };
 
 // 修改切换客户状态的方法，添加列设置更新
 const handleTabClick = async (tab) => {
     const statusMap = {
         all: null,
-        reserved: 4,
+        reserved: 4
     };
     // 如果点击的是当前已选中的标签页，则不执行任何操作
     if (currClientStatus.value === statusMap[tab.props.name]) return;
 
     selectedRows.value = []; // 清空选中行
-    const newStatus = activeTab.value === 'all' ? 4 : null;
+    const newStatus = activeTab.value === "all" ? 4 : null;
 
     // 更新状态和列
     currClientStatus.value = newStatus;
@@ -666,9 +636,9 @@ const handleTabClick = async (tab) => {
 
 const page = reactive({
     index: 1,
-    size: 10,
-    total: 0,
-})
+    size: 5,
+    total: 0
+});
 
 const currClientStatus = ref(null);
 const tableData = ref([]);
@@ -677,55 +647,62 @@ const loading = ref(false);
 
 const getSchools = async () => {
     try {
-        const res = await request.post("/dept/getAllSchools", {}, {
-            headers: { sessionid: localStorage.getItem("sessionid") }
-        });
+        const res = await request.post(
+            "/dept/getAllSchools",
+            {},
+            {
+                headers: { sessionid: localStorage.getItem("sessionid") }
+            }
+        );
         if (res.data.status === 200) {
             // 更新已预约客户搜索选项中的校区选项
-            const schoolIndex = reservedSearchOpt.value.findIndex(opt => opt.prop === 'schoolId');
+            const schoolIndex = reservedSearchOpt.value.findIndex((opt) => opt.prop === "schoolId");
             if (schoolIndex !== -1) {
-                reservedSearchOpt.value[schoolIndex].options = res.data.schools.map(item => ({
+                reservedSearchOpt.value[schoolIndex].options = res.data.schools.map((item) => ({
                     label: item.name,
                     value: item.id
                 }));
             }
         }
     } catch (error) {
-        console.error('获取校区列表失败:', error);
+        console.error("获取校区列表失败:", error);
     }
 };
 
 const getClients = async () => {
     loading.value = true;
     try {
-        const res = await request.post("/extra/getClients", {
-            clientStatus: currClientStatus.value,
-            pageIndex: page.index,
-            pageSize: page.size,
-            ...query,
-            startTime: query.timeRange?.[0] || '',
-            endTime: query.timeRange?.[1] || '',
-            appointStartDate: query.appointDateRange?.[0] || '',
-            appointEndDate: query.appointDateRange?.[1] || '',
-            nextTalkStartDate: query.nextTalkDateRange?.[0] || '',
-            nextTalkEndDate: query.nextTalkDateRange?.[1] || '',
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const res = await request.post(
+            "/extra/getClients",
+            {
+                clientStatus: currClientStatus.value,
+                pageIndex: page.index,
+                pageSize: page.size,
+                ...query,
+                startTime: query.timeRange?.[0] || "",
+                endTime: query.timeRange?.[1] || "",
+                appointStartDate: query.appointDateRange?.[0] || "",
+                appointEndDate: query.appointDateRange?.[1] || "",
+                nextTalkStartDate: query.nextTalkDateRange?.[0] || "",
+                nextTalkEndDate: query.nextTalkDateRange?.[1] || ""
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        });
+        );
         if (res.data.status != 200) {
             return;
         }
         tableData.value = res.data.clients;
         page.total = res.data.total;
     } catch (error) {
-        console.error('获取数据失败:', error);
+        console.error("获取数据失败:", error);
     } finally {
         loading.value = false;
     }
 };
-
 
 const changePage = async (val: number) => {
     if (loading.value) return; // 如果正在加载，则不执行
@@ -735,50 +712,50 @@ const changePage = async (val: number) => {
 
 // 编辑弹窗相关
 const options = ref<any>({
-    labelWidth: '100px',
+    labelWidth: "100px",
     span: 12,
     list: [
-        { type: 'input', label: '姓名', prop: 'name', required: true },
+        { type: "input", label: "姓名", prop: "name", required: true },
         {
-            type: 'select',
-            label: '渠道来源',
-            prop: 'fromSource',
+            type: "select",
+            label: "渠道来源",
+            prop: "fromSource",
             required: true,
-            options: conventions.fromSources.map(item => ({
+            options: conventions.fromSources.map((item) => ({
                 label: item.name,
                 value: item.id
             }))
         },
         {
-            type: 'select',
-            label: '性别',
-            prop: 'gender',
-            options: conventions.genders.map(item => ({
+            type: "select",
+            label: "性别",
+            prop: "gender",
+            options: conventions.genders.map((item) => ({
                 label: item.name,
                 value: item.id
             }))
         },
         {
-            type: 'input',
-            label: '年龄',
-            prop: 'age',
-            inputType: 'number',
+            type: "input",
+            label: "年龄",
+            prop: "age",
+            inputType: "number"
         },
-        { type: 'input', label: '身份证', prop: 'IDNumber' },
-        { type: 'input', label: '电话', prop: 'phone' },
-        { type: 'input', label: '微信', prop: 'weixin', required: true },
-        { type: 'input', label: 'QQ', prop: 'QQ' },
-        { type: 'input', label: '抖音', prop: 'douyin' },
-        { type: 'input', label: '小红书', prop: 'rednote' },
-        { type: 'input', label: '商务通', prop: 'shangwutong' },
-        { type: 'input', label: '地区', prop: 'address' },
+        { type: "input", label: "身份证", prop: "IDNumber" },
+        { type: "input", label: "电话", prop: "phone" },
+        { type: "input", label: "微信", prop: "weixin", required: true },
+        { type: "input", label: "QQ", prop: "QQ" },
+        { type: "input", label: "抖音", prop: "douyin" },
+        { type: "input", label: "小红书", prop: "rednote" },
+        { type: "input", label: "商务通", prop: "shangwutong" },
+        { type: "input", label: "地区", prop: "address" },
         {
-            type: 'select',
-            label: '客户备注',
-            prop: 'info'
+            type: "select",
+            label: "客户备注",
+            prop: "info"
         }
     ]
-})
+});
 
 const editModelVisible = ref(false);
 const isEdit = ref(false);
@@ -812,7 +789,7 @@ const submitForm = async () => {
     await formRef.value.validate(async (valid) => {
         if (valid) {
             try {
-                const url = isEdit.value ? '/extra/updateClient' : '/extra/addClient';
+                const url = isEdit.value ? "/extra/updateClient" : "/extra/addClient";
                 const res = await request.post(url, formData.value, {
                     headers: {
                         sessionid: localStorage.getItem("sessionid")
@@ -820,53 +797,54 @@ const submitForm = async () => {
                 });
 
                 if (res.data.status === 200) {
-                    ElMessage.success(isEdit.value ? '编辑成功' : '添加成功');
+                    ElMessage.success(isEdit.value ? "编辑成功" : "添加成功");
                     closeDialog();
                     getClients();
                 } else {
-                    ElMessage.error(res.data.message || '操作失败');
+                    ElMessage.error(res.data.message || "操作失败");
                 }
             } catch (error) {
-                console.error('提交失败:', error);
-                ElMessage.error('操作失败');
+                console.error("提交失败:", error);
+                ElMessage.error("操作失败");
             }
         }
     });
 };
 
-
-// 删除相关 
+// 删除相关
 const handleDelete = (row: User) => {
-    ElMessageBox.confirm(
-        '确认删除该客户吗？',
-        '警告',
-        {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning',
-        }
-    ).then(async () => {
-        try {
-            const res = await request.post('/extra/deleteClient', {
-                id: row.id
-            }, {
-                headers: {
-                    sessionid: localStorage.getItem("sessionid")
+    ElMessageBox.confirm("确认删除该客户吗？", "警告", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+    })
+        .then(async () => {
+            try {
+                const res = await request.post(
+                    "/extra/deleteClient",
+                    {
+                        id: row.id
+                    },
+                    {
+                        headers: {
+                            sessionid: localStorage.getItem("sessionid")
+                        }
+                    }
+                );
+                if (res.data.status === 200) {
+                    ElMessage.success("删除成功");
+                    getClients();
+                } else {
+                    ElMessage.error(res.data.message || "删除失败");
                 }
-            });
-            if (res.data.status === 200) {
-                ElMessage.success('删除成功');
-                getClients();
-            } else {
-                ElMessage.error(res.data.message || '删除失败');
+            } catch (error) {
+                console.error("删除失败:", error);
+                ElMessage.error("删除失败");
             }
-        } catch (error) {
-            console.error('删除失败:', error);
-            ElMessage.error('删除失败');
-        }
-    }).catch(() => {
-        // 取消删除操作
-    });
+        })
+        .catch(() => {
+            // 取消删除操作
+        });
 };
 
 // 选择相关
@@ -881,14 +859,14 @@ const assignDialogVisible = ref(false);
 
 // 修改表单数据结构
 const assignForm = ref({
-    schoolId: '',
-    appointerId: '',
-    appointDate: '',
+    schoolId: "",
+    appointerId: "",
+    appointDate: "",
     useCombo: false,
     comboId: null,
     courseIds: [],
-    nextTalkDate: '',
-    info: ''
+    nextTalkDate: "",
+    info: ""
 });
 
 const branchOptions = ref([]);
@@ -902,39 +880,42 @@ const selectedCombo = ref<any>(null);
 // 添加获取套餐选项的方法
 const getComboOptions = async () => {
     try {
-        const res = await request.post('/course/getAllCombos', {}, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const res = await request.post(
+            "/course/getAllCombos",
+            {},
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        });
+        );
         if (res.data.status === 200) {
-            comboOptions.value = res.data.combos.map(item => ({
+            comboOptions.value = res.data.combos.map((item) => ({
                 label: item.showName,
                 value: item.id
             }));
             allCombos.value = res.data.combos;
         }
     } catch (error) {
-        console.error('获取套餐列表失败:', error);
-        ElMessage.error('获取套餐列表失败');
+        console.error("获取套餐列表失败:", error);
+        ElMessage.error("获取套餐列表失败");
     }
 };
 
 // 添加套餐选择处理方法
 const handleComboChange = async (comboId) => {
-    selectedCombo.value = allCombos.value.find(item => item.id === comboId);
+    selectedCombo.value = allCombos.value.find((item) => item.id === comboId);
 };
-
 
 const handleReserve = async () => {
     if (selectedRows.value.length !== 1) {
-        ElMessage.warning('请选择一个客户');
+        ElMessage.warning("请选择一个客户");
         return;
     }
     try {
         // 获取校区列表和套餐列表
         await Promise.all([
-            request.post('/dept/getAllSchools', null, {
+            request.post("/dept/getAllSchools", null, {
                 headers: {
                     sessionid: localStorage.getItem("sessionid")
                 }
@@ -942,7 +923,7 @@ const handleReserve = async () => {
             getComboOptions()
         ]).then(([branchRes]) => {
             if (branchRes.data.status === 200) {
-                branchOptions.value = branchRes.data.schools.map(item => ({
+                branchOptions.value = branchRes.data.schools.map((item) => ({
                     label: item.name,
                     value: item.id
                 }));
@@ -953,128 +934,142 @@ const handleReserve = async () => {
         const client = selectedRows.value[0];
         // 如果有校区ID，触发校区变更事件以加载相关数据
         if (client.schoolId) {
-            handleBranchChange(assignForm.value.schoolId);
+            await handleBranchChange(client.schoolId);
         }
-
         // 如果有套餐ID，触发套餐变更事件以加载相关课程
         if (client.comboId) {
-            handleComboChange(assignForm.value.comboId);
+            await handleComboChange(client.comboId);
         }
         // 预填充表单数据
         assignForm.value = {
-            schoolId: client.schoolId || '', // 校区ID
-            appointDate: '', // 预约日期默认为空，需要重新选择
-            appointerId: client.appointerId || '', // 接待人ID
+            schoolId: client.schoolId || "", // 校区ID
+            appointDate: "", // 预约日期默认为空，需要重新选择
+            appointerId: client.appointerId || "", // 接待人ID
             useCombo: client.useCombo || false, // 是否使用套餐
             comboId: client.comboId || null, // 套餐ID
             courseIds: client.courseIds || [], // 课程ID列表
-            nextTalkDate: '', // 下次沟通日期默认为空，需要重新选择
-            info: '' // 备注信息默认为空，需要重新填写
+            nextTalkDate: "", // 下次沟通日期默认为空，需要重新选择
+            info: "" // 备注信息默认为空，需要重新填写
         };
 
         assignDialogVisible.value = true;
     } catch (error) {
-        console.error('获取数据失败:', error);
-        ElMessage.error('获取数据失败');
+        console.error("获取数据失败:", error);
+        ElMessage.error("获取数据失败");
     }
 };
 
 // 修改 handleBranchChange 函数
 const handleBranchChange = async (schoolId) => {
-    assignForm.value.appointerId = '';
+    assignForm.value.appointerId = "";
     assignForm.value.courseIds = [];
-    assignForm.value.nextTalkDate = '';
-    assignForm.value.info = '';
+    assignForm.value.nextTalkDate = "";
+    assignForm.value.info = "";
     try {
         // 获取该校区的老师列表
-        const userRes = await request.post('/dept/getSchoolUsers', {
-            schoolId
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const userRes = await request.post(
+            "/dept/getSchoolUsers",
+            {
+                schoolId
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        });
+        );
         if (userRes.data.status === 200) {
-            appointerOptions.value = userRes.data.users.map(item => ({
+            appointerOptions.value = userRes.data.users.map((item) => ({
                 label: item.username,
                 value: item.id
             }));
         }
         // 获取该校区的课程列表
-        const courseRes = await request.post('/dept/getSchoolCourses', {
-            schoolId
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const courseRes = await request.post(
+            "/dept/getSchoolCourses",
+            {
+                schoolId
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        });
+        );
         if (courseRes.data.status === 200) {
-            courseOptions.value = courseRes.data.courses.map(item => ({
+            courseOptions.value = courseRes.data.courses.map((item) => ({
                 label: item.name,
                 value: item.id
             }));
         } else {
-            ElMessage.error('获取课程列表失败');
+            ElMessage.error("获取课程列表失败");
             console.log(courseRes.data);
         }
     } catch (error) {
-        console.error('获取数据失败:', error);
-        ElMessage.error('获取数据失败');
+        console.error("获取数据失败:", error);
+        ElMessage.error("获取数据失败");
     }
 };
 
 const submitReserve = async () => {
     // 表单验证
-    if (!assignForm.value.schoolId || !assignForm.value.appointDate ||
+    if (
+        !assignForm.value.schoolId ||
+        !assignForm.value.appointDate ||
         (assignForm.value.useCombo && !assignForm.value.comboId) ||
-        (!assignForm.value.useCombo && (!assignForm.value.courseIds || assignForm.value.courseIds.length === 0))) {
-        ElMessage.warning('请填写必要信息');
+        (!assignForm.value.useCombo && (!assignForm.value.courseIds || assignForm.value.courseIds.length === 0))
+    ) {
+        ElMessage.warning("请填写必要信息");
         return;
     }
     try {
-        const clientId = selectedRows.value.map(row => row.id)[0];
+        const clientId = selectedRows.value.map((row) => row.id)[0];
         // 处理日期时区问题
         const formData = {
             ...assignForm.value,
-            appointDate: assignForm.value.appointDate ? new Date(assignForm.value.appointDate).toLocaleDateString() : '',
-            nextTalkDate: assignForm.value.nextTalkDate ? new Date(assignForm.value.nextTalkDate).toLocaleDateString() : ''
+            appointDate: assignForm.value.appointDate ? new Date(assignForm.value.appointDate).toLocaleDateString() : "",
+            nextTalkDate: assignForm.value.nextTalkDate ? new Date(assignForm.value.nextTalkDate).toLocaleDateString() : ""
         };
         if (assignForm.value.useCombo) {
             formData.courseIds = selectedCombo.value.courseIds;
         }
 
-        const res = await request.post('/extra/submitReserve', {
-            clientId,
-            ...formData
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const res = await request.post(
+            "/extra/submitReserve",
+            {
+                clientId,
+                ...formData
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        });
+        );
 
         if (res.data.status === 200) {
-            ElMessage.success('预约成功');
+            ElMessage.success("预约成功");
             assignDialogVisible.value = false;
             // 重置表单
             assignForm.value = {
-                schoolId: '',
-                appointerId: '',
-                appointDate: '',
+                schoolId: "",
+                appointerId: "",
+                appointDate: "",
                 useCombo: false,
                 comboId: null,
                 courseIds: [],
-                nextTalkDate: '',
-                info: ''
+                nextTalkDate: "",
+                info: ""
             };
             courseOptions.value = [];
             appointerOptions.value = [];
             // 刷新客户列表
             await getClients();
         } else {
-            ElMessage.error(res.data.message || '预约失败');
+            ElMessage.error(res.data.message || "预约失败");
         }
     } catch (error) {
-        ElMessage.error('服务器繁忙，请稍后再试');
+        ElMessage.error("服务器繁忙，请稍后再试");
         console.log(error);
     }
 };
@@ -1082,37 +1077,39 @@ const submitReserve = async () => {
 const handleCancelReserve = async () => {
     if (!selectedRows.value.length) return;
 
-    ElMessageBox.confirm(
-        '确认取消该客户的预约吗？',
-        '警告',
-        {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning',
-        }
-    ).then(async () => {
-        try {
-            const res = await request.post('/extra/cancelReserve', {
-                clientId: selectedRows.value[0].id
-            }, {
-                headers: {
-                    sessionid: localStorage.getItem("sessionid")
-                }
-            });
+    ElMessageBox.confirm("确认取消该客户的预约吗？", "警告", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+    })
+        .then(async () => {
+            try {
+                const res = await request.post(
+                    "/extra/cancelReserve",
+                    {
+                        clientId: selectedRows.value[0].id
+                    },
+                    {
+                        headers: {
+                            sessionid: localStorage.getItem("sessionid")
+                        }
+                    }
+                );
 
-            if (res.data.status === 200) {
-                ElMessage.success('取消预约成功');
-                await getClients();
-            } else {
-                ElMessage.error(res.data.message || '取消预约失败');
+                if (res.data.status === 200) {
+                    ElMessage.success("取消预约成功");
+                    await getClients();
+                } else {
+                    ElMessage.error(res.data.message || "取消预约失败");
+                }
+            } catch (error) {
+                console.error("取消预约失败:", error);
+                ElMessage.error("取消预约失败");
             }
-        } catch (error) {
-            console.error('取消预约失败:', error);
-            ElMessage.error('取消预约失败');
-        }
-    }).catch(() => {
-        // 用户点击取消按钮，不做任何操作
-    });
+        })
+        .catch(() => {
+            // 用户点击取消按钮，不做任何操作
+        });
 };
 const tableRef = ref();
 
@@ -1121,93 +1118,94 @@ const handleRowClick = (row) => {
 };
 
 const exportToExcel = async () => {
-    ElMessageBox.confirm(
-        '确认导出客户数据？',
-        '提示',
-        {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning',
-        }
-    ).then(async () => {
-        try {
-            loading.value = true;
-            const res = await request.post("/extra/getClients", {
-                clientStatus: currClientStatus.value,
-                pageIndex: 1,
-                pageSize: 99999,
-                name: query.name
-            }, {
-                headers: {
-                    sessionid: localStorage.getItem("sessionid")
-                }
-            });
-
-            if (res.data.status === 200 && res.data.clients) {
-                const exportData = res.data.clients.map(item => {
-                    const baseData = {
-                        '姓名': item.name,
-                        '渠道来源': conventions.getFromSource(item.fromSource),
-                        '性别': conventions.getGender(item.gender),
-                        '年龄': item.age,
-                        '身份证': item.IDNumber,
-                        '电话': item.phone,
-                        '微信': item.weixin,
-                        'QQ': item.QQ,
-                        '抖音': item.douyin,
-                        '小红书': item.rednote,
-                        '商务通': item.shangwutong,
-                        '地区': item.address,
-                        '客户状态': conventions.getClientStatus(item.clientStatus),
-                        '所属人/合作老师': item.affiliatedUserName,
-                        '创建时间': item.createdTime,
-                        '客户备注': item.info
-                    };
-
-                    // 如果是已预约客户，添加额外字段
-                    if (currClientStatus.value === 4) {
-                        return {
-                            ...baseData,
-                            '校区': item.schoolName,
-                            '接待人': item.appointerName,
-                            '课程': item.courseNames,
-                            '预约日期': item.appointDate,
-                            '下次沟通日期': item.nextTalkDate,
-                            '跟进状态': item.processStatus === 1 ? "未成单" : item.processStatus === 2 ? "已成单" : "",
-                            '成单时间': item.cooperateTime,
-                            '客户备注': item.info
-                        };
+    ElMessageBox.confirm("确认导出客户数据？", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+    })
+        .then(async () => {
+            try {
+                loading.value = true;
+                const res = await request.post(
+                    "/extra/getClients",
+                    {
+                        clientStatus: currClientStatus.value,
+                        pageIndex: 1,
+                        pageSize: 99999,
+                        name: query.name
+                    },
+                    {
+                        headers: {
+                            sessionid: localStorage.getItem("sessionid")
+                        }
                     }
-                    return baseData;
-                });
+                );
 
-                const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.json_to_sheet(exportData);
-                XLSX.utils.book_append_sheet(wb, ws, currClientStatus.value === 3 ? '未预约客户数据' : '已预约客户数据');
+                if (res.data.status === 200 && res.data.clients) {
+                    const exportData = res.data.clients.map((item) => {
+                        const baseData = {
+                            姓名: item.name,
+                            渠道来源: conventions.getFromSource(item.fromSource),
+                            性别: conventions.getGender(item.gender),
+                            年龄: item.age,
+                            身份证: item.IDNumber,
+                            电话: item.phone,
+                            微信: item.weixin,
+                            QQ: item.QQ,
+                            抖音: item.douyin,
+                            小红书: item.rednote,
+                            商务通: item.shangwutong,
+                            地区: item.address,
+                            客户状态: conventions.getClientStatus(item.clientStatus),
+                            "所属人/合作老师": item.affiliatedUserName,
+                            创建时间: item.createdTime,
+                            客户备注: item.info
+                        };
 
-                const fileName = `客户数据_${currClientStatus.value === 3 ? '未预约' : '已预约'}_${new Date().toLocaleDateString()}.xlsx`;
-                XLSX.writeFile(wb, fileName);
-                ElMessage.success('导出成功');
-            } else {
-                ElMessage.error('导出失败：没有数据');
+                        // 如果是已预约客户，添加额外字段
+                        if (currClientStatus.value === 4) {
+                            return {
+                                ...baseData,
+                                校区: item.schoolName,
+                                接待人: item.appointerName,
+                                课程: item.courseNames,
+                                预约日期: item.appointDate,
+                                下次沟通日期: item.nextTalkDate,
+                                跟进状态: item.processStatus === 1 ? "未成单" : item.processStatus === 2 ? "已成单" : "",
+                                成单时间: item.cooperateTime,
+                                客户备注: item.info
+                            };
+                        }
+                        return baseData;
+                    });
+
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.json_to_sheet(exportData);
+                    XLSX.utils.book_append_sheet(wb, ws, currClientStatus.value === 3 ? "未预约客户数据" : "已预约客户数据");
+
+                    const fileName = `客户数据_${currClientStatus.value === 3 ? "未预约" : "已预约"}_${new Date().toLocaleDateString()}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    ElMessage.success("导出成功");
+                } else {
+                    ElMessage.error("导出失败：没有数据");
+                }
+            } catch (error) {
+                console.error("导出失败:", error);
+                ElMessage.error("导出失败");
+            } finally {
+                loading.value = false;
             }
-        } catch (error) {
-            console.error('导出失败:', error);
-            ElMessage.error('导出失败');
-        } finally {
-            loading.value = false;
-        }
-    }).catch(() => {
-        // 用户取消导出操作
-    });
+        })
+        .catch(() => {
+            // 用户取消导出操作
+        });
 };
-
 
 // 确认成单 / 签署合同逻辑
 const contractDialogVisible = ref(false);
 const contractForm = ref({
-    contractNo: '',
-    cooperateTime: ''
+    contractNo: "",
+    cooperateTime: ""
 });
 
 const confirmCooperation = () => {
@@ -1222,35 +1220,35 @@ const confirmCooperation = () => {
 // 导出合同
 const exportContract = async () => {
     try {
-        const contractElement = document.querySelector('.contract-content');
+        const contractElement = document.querySelector(".contract-content");
         if (!contractElement) {
-            ElMessage.error('获取合同内容失败');
+            ElMessage.error("获取合同内容失败");
             return;
         }
 
         const canvas = await html2canvas(contractElement as HTMLElement, {
             scale: 2, // 提高清晰度
             useCORS: true,
-            logging: false,
+            logging: false
         });
 
         const contentWidth = canvas.width;
         const contentHeight = canvas.height;
 
         // A4纸的尺寸[595.28,841.89]
-        const pageHeight = contentWidth / 592.28 * 841.89;
+        const pageHeight = (contentWidth / 592.28) * 841.89;
         let leftHeight = contentHeight;
         let position = 0;
         const imgWidth = 595.28;
-        const imgHeight = 592.28 / contentWidth * contentHeight;
+        const imgHeight = (592.28 / contentWidth) * contentHeight;
 
-        const pdf = new jsPDF('p', 'pt', 'a4');
+        const pdf = new jsPDF("p", "pt", "a4");
 
         if (leftHeight < pageHeight) {
-            pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, imgWidth, imgHeight);
+            pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 0, 0, imgWidth, imgHeight);
         } else {
             while (leftHeight > 0) {
-                pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, position, imgWidth, imgHeight);
+                pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 0, position, imgWidth, imgHeight);
                 leftHeight -= pageHeight;
                 position -= 841.89;
                 if (leftHeight > 0) {
@@ -1261,140 +1259,151 @@ const exportContract = async () => {
 
         const fileName = `瑜伽课程服务合同_${selectedRows.value[0]?.name}_${contractForm.value.contractNo}.pdf`;
         pdf.save(fileName);
-        ElMessage.success('合同导出成功');
+        ElMessage.success("合同导出成功");
     } catch (error) {
-        console.error('合同导出失败:', error);
-        ElMessage.error('合同导出失败');
+        console.error("合同导出失败:", error);
+        ElMessage.error("合同导出失败");
     }
 };
 
 const submitContract = async () => {
     try {
-        const res = await request.post('/extra/confirmCooperation', {
-            clientId: selectedRows.value[0].id,
-            contractNo: contractForm.value.contractNo,
-            cooperateTime: contractForm.value.cooperateTime
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const res = await request.post(
+            "/extra/confirmCooperation",
+            {
+                clientId: selectedRows.value[0].id,
+                contractNo: contractForm.value.contractNo,
+                cooperateTime: contractForm.value.cooperateTime
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        });
+        );
 
         if (res.data.status === 200) {
-            ElMessage.success('签约成功');
+            ElMessage.success("签约成功");
             contractDialogVisible.value = false;
             getClients();
         } else {
-            ElMessage.error(res.data.message || '签约失败');
+            ElMessage.error(res.data.message || "签约失败");
         }
     } catch (error) {
-        console.error('签约失败:', error);
-        ElMessage.error('签约失败');
+        console.error("签约失败:", error);
+        ElMessage.error("签约失败");
     }
 };
 
 const handleCancelCooperation = () => {
-    ElMessageBox.confirm(
-        '确认取消该客户的成单状态吗？',
-        '警告',
-        {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning',
-        }
-    ).then(async () => {
-        try {
-            const res = await request.post('/extra/cancelCooperation', {
-                clientId: selectedRows.value[0].id
-            }, {
-                headers: {
-                    sessionid: localStorage.getItem("sessionid")
-                }
-            });
+    ElMessageBox.confirm("确认取消该客户的成单状态吗？", "警告", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+    })
+        .then(async () => {
+            try {
+                const res = await request.post(
+                    "/extra/cancelCooperation",
+                    {
+                        clientId: selectedRows.value[0].id
+                    },
+                    {
+                        headers: {
+                            sessionid: localStorage.getItem("sessionid")
+                        }
+                    }
+                );
 
-            if (res.data.status === 200) {
-                ElMessage.success('取消成单成功');
-                await getClients();
-            } else {
-                ElMessage.error(res.data.message || '取消成单失败');
+                if (res.data.status === 200) {
+                    ElMessage.success("取消成单成功");
+                    await getClients();
+                } else {
+                    ElMessage.error(res.data.message || "取消成单失败");
+                }
+            } catch (error) {
+                console.error("取消成单失败:", error);
+                ElMessage.error("取消成单失败");
             }
-        } catch (error) {
-            console.error('取消成单失败:', error);
-            ElMessage.error('取消成单失败');
-        }
-    }).catch(() => {
-        // 用户点击取消按钮，不做任何操作
-    });
+        })
+        .catch(() => {
+            // 用户点击取消按钮，不做任何操作
+        });
 };
 
-// 交定金
-const paymentDialogVisible = ref(false);
-// const teacherOptions = ref([]);
+// 缴费
+const paymentDialogVisible = ref(0);
 const paymentForm = ref({
-    teacherId: '',
+    teacherId: "",
     amount: null,
     paymentMethod: 1,
-    info: ''
+    category: 1,
+    info: ""
 });
 
-const handlePayment = async () => {
+const handlePayment = async (type: number = 1) => {
     if (!selectedRows.value.length) return;
     try {
         // 设置当前用户为负责老师
         paymentForm.value.teacherId = briefUserInfo.value.id;
-        paymentDialogVisible.value = true;
+        paymentDialogVisible.value = type;
     } catch (error) {
-        console.error('操作失败:', error);
-        ElMessage.error('操作失败');
+        console.error("操作失败:", error);
+        ElMessage.error("操作失败");
     }
 };
 
-const submitPayment = async () => {
+const submitPayment = async (type: number = 1) => {
     if (!paymentForm.value.amount || paymentForm.value.amount <= 0 || !paymentForm.value.paymentMethod) {
-        ElMessage.warning('请填写必要信息');
+        ElMessage.warning("请填写必要信息");
         return;
     }
+    if (type === 2) {
+        paymentForm.value.amount = -paymentForm.value.amount;
+    }
     try {
-        const res = await request.post('/extra/submitPayment', {
-            clientId: selectedRows.value[0].id,
-            ...paymentForm.value,
-            category: 1 // 1表示定金
-        }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const res = await request.post(
+            "/extra/submitPayment",
+            {
+                clientId: selectedRows.value[0].id,
+                ...paymentForm.value
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        });
-
+        );
         if (res.data.status === 200) {
-            ElMessage.success('交定金成功');
-            paymentDialogVisible.value = false;
+            ElMessage.success(type === 1 ? "缴费成功" : "退费成功");
+            paymentDialogVisible.value = 0;
             // 重置表单
             paymentForm.value = {
-                teacherId: '',
+                teacherId: "",
                 amount: 1000,
+                category: 1,
                 paymentMethod: 1,
-                info: ''
+                info: ""
             };
             await getClients();
         } else {
-            ElMessage.error(res.data.message || '交定金失败');
+            ElMessage.error(res.data.message || "缴费失败");
         }
     } catch (error) {
-        console.error('交定金失败:', error);
-        ElMessage.error('交定金失败');
+        console.error("缴费失败:", error);
+        ElMessage.error("缴费失败");
     }
 };
 
-
 // 客户信息卡相关
-const clientInfoDialogVisible = ref(false)
-const currentClient = ref({})
+const clientInfoDialogVisible = ref(false);
+const currentClient = ref({});
 
 // 显示客户信息卡
 const showClientInfo = (client) => {
-    currentClient.value = { ...client }
-    clientInfoDialogVisible.value = true
-}
+    currentClient.value = { ...client };
+    clientInfoDialogVisible.value = true;
+};
 </script>
 
 <style scoped>
@@ -1430,7 +1439,6 @@ const showClientInfo = (client) => {
     gap: 10px;
 }
 
-
 .contract-content {
     padding: 20px;
     line-height: 1.8;
@@ -1441,7 +1449,7 @@ const showClientInfo = (client) => {
 }
 
 .clickable-name {
-    color: #409EFF;
+    color: #409eff;
     cursor: pointer;
 }
 
