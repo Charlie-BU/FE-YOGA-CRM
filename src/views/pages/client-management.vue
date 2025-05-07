@@ -262,7 +262,7 @@
         </el-dialog>
 
         <!-- 客户信息卡弹窗 -->
-        <ClientInfoCard v-model="clientInfoDialogVisible" :client="currentClient" />
+        <ClientInfoCard v-model="clientInfoDialogVisible" :clientId="currentClient.id" />
     </div>
 </template>
 
@@ -1397,7 +1397,7 @@ const submitPayment = async (type: number = 1) => {
 
 // 客户信息卡相关
 const clientInfoDialogVisible = ref(false);
-const currentClient = ref({});
+const currentClient = ref<any>({});
 
 // 显示客户信息卡
 const showClientInfo = (client) => {

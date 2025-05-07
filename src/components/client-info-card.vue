@@ -130,7 +130,7 @@
 
             <!-- 添加客户日志展示区域 -->
             <div class="client-logs">
-                <h3>客户日志</h3>
+                <h3>客户操作日志</h3>
                 <el-table :data="clientLogs" style="width: 100%">
                     <el-table-column prop="operation" label="日志内容" align="center" show-overflow-tooltip />
                     <el-table-column prop="time" label="时间" align="center" width="180">
@@ -171,11 +171,17 @@ const props = defineProps({
         type: Boolean,
         default: false
     },
-    client: {
-        type: Object,
+    clientId: {
+        type: Number,
         required: true
     }
+    // client: {
+    //     type: Object,
+    //     required: true
+    // }
 });
+
+const client = ref<any>({});
 
 const emit = defineEmits(["update:modelValue"]);
 
@@ -191,7 +197,8 @@ watch(
     () => props.modelValue,
     async (newVal) => {
         visible.value = newVal;
-        if (newVal && props.client.id) {
+        if (newVal && props.clientId) {
+            await getClientInfo();
             await Promise.all([getPaymentRecords(), getLessonRecords(), getDormInfo(), getClientLogs()]);
         }
     }
@@ -204,12 +211,37 @@ watch(
     }
 );
 
+const getClientInfo = async () => {
+    try {
+        const res = await request.post(
+            "/extra/getClientById",
+            {
+                clientId: props.clientId
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            }
+        );
+        if (res.data.status === 200) {
+            client.value = res.data.client;
+        } else {
+            ElMessage.error("获取客户信息失败");
+            return;
+        }
+    } catch (error) {
+        console.error("获取客户信息失败:", error);
+        ElMessage.error("获取客户信息失败");
+    }
+};
+
 const getPaymentRecords = async () => {
     try {
         const res = await request.post(
             "/extra/getClientPayments",
             {
-                clientId: props.client.id
+                clientId: props.clientId
             },
             {
                 headers: {
@@ -229,10 +261,10 @@ const getPaymentRecords = async () => {
     }
 };
 
-// 获取课程记录
+// 获取班级信息
 const getLessonRecords = async () => {
     try {
-        const lessonIds = props.client.lessonIds;
+        const lessonIds = client.value.lessonIds;
         const res = await request.post(
             "/course/getLessonsByIds",
             {
@@ -265,13 +297,13 @@ const overdueDays = ref(0);
 
 // 获取住宿信息
 const getDormInfo = async () => {
-    if (!props.client.bedId) return;
+    if (!client.value.bedId) return;
 
     try {
         const res = await request.post(
             "/dorm/getDormInfoByBedId",
             {
-                bedId: props.client.bedId
+                bedId: client.value.bedId
             },
             {
                 headers: {
@@ -286,8 +318,8 @@ const getDormInfo = async () => {
             bedInfo.value = res.data.bed;
 
             // 计算是否超期
-            if (props.client.bedCheckInDate && bedInfo.value.duration) {
-                const checkInDate = new Date(props.client.bedCheckInDate);
+            if (client.value.bedCheckInDate && bedInfo.value.duration) {
+                const checkInDate = new Date(client.value.bedCheckInDate);
                 const today = new Date();
                 const diffTime = Math.abs(today.getTime() - checkInDate.getTime());
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -315,8 +347,8 @@ const getStatusStep = computed(() => {
         5: 5, // 已成单
         6: 6 // 已毕业
     };
-    const clientStatus = props.client.clientStatus;
-    const processStatus = props.client.processStatus;
+    const clientStatus = client.value.clientStatus;
+    const processStatus = client.value.processStatus;
     if (processStatus === 1) {
         return statusMap[clientStatus];
     } else if (processStatus === 2) {
@@ -335,7 +367,7 @@ const getClientLogs = async () => {
         const res = await request.post(
             "/extra/getClientLogs",
             {
-                clientId: props.client.id,
+                clientId: props.clientId,
                 pageIndex: currentPage.value,
                 pageSize: pageSize.value
             },
