@@ -31,7 +31,7 @@
                 </el-descriptions-item>
                 <el-descriptions-item label="所属人 / 合作老师">{{ client.affiliatedUserName }}</el-descriptions-item>
                 <el-descriptions-item label="创建时间">{{ client.createdTime }}</el-descriptions-item>
-                <el-descriptions-item label="客户备注" :span="2">{{ client.info }}</el-descriptions-item>
+                <el-descriptions-item label="客户备注" :span="2">{{ client?.info?.join(" | ") }}</el-descriptions-item>
             </el-descriptions>
 
             <!-- 如果是已预约客户，显示预约信息 -->
@@ -86,7 +86,9 @@
                     <el-descriptions-item label="校区">{{ client.schoolName }}</el-descriptions-item>
                     <el-descriptions-item label="已学课时（周）">{{ client.learnedWeeks }}</el-descriptions-item>
                     <el-descriptions-item v-if="client.comboId" label="学习套餐">{{ client.comboName }}</el-descriptions-item>
-                    <el-descriptions-item label="学习课程">{{ client.courseNames }}</el-descriptions-item>
+                    <el-descriptions-item label="已学课程">{{ finishedCourseNames }}</el-descriptions-item>
+                    <el-descriptions-item label="在学课程">{{ ongoingCourseNames }}</el-descriptions-item>
+                    <el-descriptions-item label="未学课程">{{ notStartedCourseNames }}</el-descriptions-item>
                 </el-descriptions>
 
                 <h3 style="margin: 20px 0 15px">分班信息</h3>
@@ -175,10 +177,6 @@ const props = defineProps({
         type: Number,
         required: true
     }
-    // client: {
-    //     type: Object,
-    //     required: true
-    // }
 });
 
 const client = ref<any>({});
@@ -199,7 +197,7 @@ watch(
         visible.value = newVal;
         if (newVal && props.clientId) {
             await getClientInfo();
-            await Promise.all([getPaymentRecords(), getLessonRecords(), getDormInfo(), getClientLogs()]);
+            await Promise.all([getStudentCourses(), getPaymentRecords(), getLessonRecords(), getDormInfo(), getClientLogs()]);
         }
     }
 );
@@ -226,6 +224,7 @@ const getClientInfo = async () => {
         );
         if (res.data.status === 200) {
             client.value = res.data.client;
+            if (client.value.info) client.value.info = client.value.info.reverse();
         } else {
             ElMessage.error("获取客户信息失败");
             return;
@@ -233,6 +232,37 @@ const getClientInfo = async () => {
     } catch (error) {
         console.error("获取客户信息失败:", error);
         ElMessage.error("获取客户信息失败");
+    }
+};
+
+const finishedCourseNames = ref("");
+const ongoingCourseNames = ref("");
+const notStartedCourseNames = ref("");
+
+const getStudentCourses = async () => {
+    try {
+        const res = await request.post(
+            "/course/getStudentCourses",
+            {
+                stuId: props.clientId
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            }
+        );
+
+        if (res.data.status === 200) {
+            finishedCourseNames.value = res.data.finishedCourseNames || "";
+            ongoingCourseNames.value = res.data.ongoingCourseNames || "";
+            notStartedCourseNames.value = res.data.notStartedCourseNames || "";
+        } else {
+            finishedCourseNames.value = ongoingCourseNames.value = notStartedCourseNames.value = "";
+        }
+    } catch (error) {
+        console.error("获取交易记录失败:", error);
+        ElMessage.error("获取交易记录失败");
     }
 };
 
