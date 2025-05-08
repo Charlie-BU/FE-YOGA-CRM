@@ -1003,7 +1003,6 @@ const handleBranchChange = async (schoolId) => {
             }));
         } else {
             ElMessage.error("获取课程列表失败");
-            console.log(courseRes.data);
         }
     } catch (error) {
         console.error("获取数据失败:", error);
@@ -1070,7 +1069,6 @@ const submitReserve = async () => {
         }
     } catch (error) {
         ElMessage.error("服务器繁忙，请稍后再试");
-        console.log(error);
     }
 };
 

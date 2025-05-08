@@ -93,20 +93,20 @@
 
                 <h3 style="margin: 20px 0 15px">分班信息</h3>
                 <el-table :data="lessonRecords" style="width: 100%" class="course-table">
-                    <el-table-column prop="name" label="班级名称" align="center" min-width="120" />
-                    <el-table-column prop="courseName" label="课程名称" align="center" min-width="120" />
-                    <el-table-column prop="category" label="类别" align="center" min-width="100">
+                    <el-table-column prop="name" label="班级名称" align="center" width="180" show-overflow-tooltip />
+                    <el-table-column prop="courseName" label="课程名称" align="center" min-width="120" show-overflow-tooltip />
+                    <el-table-column prop="category" label="类别" align="center" min-width="100" show-overflow-tooltip>
                         <template #default="scope">
                             {{ conventions.getCourseCategory(scope.row.category) }}
                         </template>
                     </el-table-column>
-                    <el-table-column prop="schoolName" label="校区" align="center" min-width="120" />
-                    <el-table-column prop="startDate" label="开课日期" width="150" align="center" min-width="100" />
-                    <el-table-column prop="endDate" label="结课日期" width="150" align="center" min-width="100" />
+                    <el-table-column prop="schoolName" label="校区" align="center" min-width="120" show-overflow-tooltip />
+                    <el-table-column prop="startDate" label="开课日期" width="150" align="center" min-width="100" show-overflow-tooltip />
+                    <el-table-column prop="endDate" label="结课日期" width="150" align="center" min-width="100" show-overflow-tooltip />
 
-                    <el-table-column prop="chiefTeacherName" label="主讲人" align="center" min-width="100" />
-                    <el-table-column prop="classTeacherName" label="班主任" align="center" min-width="100" />
-                    <el-table-column prop="teachingAssistantName" label="助教" align="center" min-width="100" />
+                    <el-table-column prop="chiefTeacherName" label="主讲人" align="center" min-width="100" show-overflow-tooltip />
+                    <el-table-column prop="classTeacherName" label="班主任" align="center" min-width="100" show-overflow-tooltip />
+                    <el-table-column prop="teachingAssistantName" label="助教" align="center" min-width="100" show-overflow-tooltip />
                     <el-table-column prop="info" label="班级备注" align="center" min-width="150" show-overflow-tooltip />
                 </el-table>
             </div>

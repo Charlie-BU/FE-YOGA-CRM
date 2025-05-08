@@ -7,63 +7,57 @@
             </div>
             <el-form :model="form" ref="register" size="large">
                 <el-form-item prop="username">
-                    <el-input v-model="form.username" placeholder="姓名 *">
-                    </el-input>
+                    <el-input v-model="form.username" placeholder="姓名 *"> </el-input>
                 </el-form-item>
                 <el-form-item prop="gender">
                     <el-select v-model="form.gender" placeholder="性别 *" style="width: 100%">
                         <div v-for="(gender, index) in genders" :key="index">
-                            <el-option :label=gender.name :value=gender.id />
+                            <el-option :label="gender.name" :value="gender.id" />
                         </div>
                     </el-select>
                 </el-form-item>
                 <el-form-item prop="phone">
-                    <el-input v-model="form.phone" placeholder="联系电话">
-                    </el-input>
+                    <el-input v-model="form.phone" placeholder="联系电话"> </el-input>
                 </el-form-item>
                 <el-form-item prop="address">
-                    <el-input v-model="form.address" placeholder="地址">
-                    </el-input>
+                    <el-input v-model="form.address" placeholder="地址"> </el-input>
                 </el-form-item>
                 <el-form-item prop="department">
                     <el-select v-model="form.department" placeholder="部门 *" style="width: 100%" filterable>
                         <div v-for="(dept, index) in depts" :key="index">
-                            <el-option :label=dept.name :value=dept.id />
+                            <el-option :label="dept.name" :value="dept.id" />
                         </div>
                     </el-select>
                 </el-form-item>
                 <el-form-item prop="vocation">
                     <el-select v-model="form.vocation" placeholder="职位 *" style="width: 100%" filterable>
                         <div v-for="(voc, index) in vocations" :key="index">
-                            <el-option :label=voc.name :value=voc.id />
+                            <el-option :label="voc.name" :value="voc.id" />
                         </div>
                     </el-select>
                 </el-form-item>
                 <el-form-item prop="status">
                     <el-select v-model="form.status" placeholder="状态 *" style="width: 100%" filterable>
                         <div v-for="(sta, index) in statuses" :key="index">
-                            <el-option :label=sta.name :value=sta.id />
+                            <el-option :label="sta.name" :value="sta.id" />
                         </div>
                     </el-select>
                 </el-form-item>
                 <el-form-item prop="usertype">
                     <el-select v-model="form.usertype" placeholder="用户权限 *" style="width: 100%" filterable>
-                        <el-option label="普通用户" value=1 />
-                        <el-option label="管理员" value=2 />
+                        <el-option label="普通用户" value="1" />
+                        <el-option label="管理员" value="2" />
                     </el-select>
                 </el-form-item>
                 <el-form-item prop="password">
-                    <el-input type="password" placeholder="密码 *" v-model="form.password">
-                    </el-input>
+                    <el-input type="password" placeholder="密码 *" v-model="form.password"> </el-input>
                 </el-form-item>
                 <el-form-item prop="password2">
-                    <el-input type="password" placeholder="确认密码 *" v-model="form.password2"
-                        @keyup.enter="submitRegister">
-                    </el-input>
+                    <el-input type="password" placeholder="确认密码 *" v-model="form.password2" @keyup.enter="submitRegister"> </el-input>
                 </el-form-item>
                 <div class="button-container">
                     <el-button type="primary" size="large" @click="submitRegister">添加</el-button>
-                    <el-button type="danger" size="large" @click="router.go(-1);">返回</el-button>
+                    <el-button type="danger" size="large" @click="router.go(-1)">返回</el-button>
                 </div>
             </el-form>
         </div>
@@ -71,91 +65,93 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { ElMessage, type FormRules } from 'element-plus';
-import { Register } from '@/types/user';
-import { loginCheck } from '@/utils/login-check';
-import request from '@/utils/request';
-import { genders, statuses, vocations } from '@/utils/conventions';
+import { ref, reactive, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { ElMessage, type FormRules } from "element-plus";
+import { Register } from "@/types/user";
+import { loginCheck } from "@/utils/login-check";
+import request from "@/utils/request";
+import { genders, statuses, vocations } from "@/utils/conventions";
 
 onMounted(async () => {
     const briefUserInfo = await loginCheck();
     if (!briefUserInfo || briefUserInfo?.usertype <= 1) {
-        ElMessage.warning('您没有权限添加用户');
-        router.push('/');
+        ElMessage.warning("您没有权限添加用户");
+        router.push("/");
     }
     await getAllDepts();
-})
+});
 
 const router = useRouter();
-const depts = ref([])
+const depts = ref([]);
 
 const getAllDepts = async () => {
-    const res = await request.post('/dept/getAllDepts', null, {
+    const res = await request.post("/dept/getAllDepts", null, {
         headers: {
-            sessionid: localStorage.getItem('sessionid')
+            sessionid: localStorage.getItem("sessionid")
         }
     });
     if (res.data.status < 0) {
-        return
+        return;
     }
     depts.value = res.data.depts;
-}
+};
 
 const form = reactive<Register>({
-    username: '',
+    username: "",
     gender: null,
-    phone: '',
-    address: '',
+    phone: "",
+    address: "",
     department: null,
     vocation: null,
     status: null,
     usertype: null,
-    password: '',
-    password2: '',
+    password: "",
+    password2: ""
 });
 
 const rules: FormRules = {
-    username: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
-    gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
-    department: [{ required: true, message: '请选择部门', trigger: 'change' }],
-    vocation: [{ required: true, message: '请选择职位', trigger: 'change' }],
-    status: [{ required: true, message: '请选择人员状态', trigger: 'change' }],
-    usertype: [{ required: true, message: '请选择用户权限', trigger: 'change' }],
-    password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-    password2: [{ required: true, message: '请再次输入密码', trigger: 'blur' }],
+    username: [{ required: true, message: "请输入姓名", trigger: "blur" }],
+    gender: [{ required: true, message: "请选择性别", trigger: "change" }],
+    department: [{ required: true, message: "请选择部门", trigger: "change" }],
+    vocation: [{ required: true, message: "请选择职位", trigger: "change" }],
+    status: [{ required: true, message: "请选择人员状态", trigger: "change" }],
+    usertype: [{ required: true, message: "请选择用户权限", trigger: "change" }],
+    password: [{ required: true, message: "请输入密码", trigger: "blur" }],
+    password2: [{ required: true, message: "请再次输入密码", trigger: "blur" }]
 };
 
 const submitRegister = async () => {
     for (const rule in rules) {
-        if (form[rule as keyof Register] === null || form[rule as keyof Register] === '') {
+        if (form[rule as keyof Register] === null || form[rule as keyof Register] === "") {
             ElMessage.error(rules[rule as keyof FormRules][0].message);
             return;
         }
     }
     if (form.password !== form.password2) {
-        ElMessage.error('两次密码不一致');
+        ElMessage.error("两次密码不一致");
         return;
     }
     try {
-        const res = await request.post('/user/register', { form: form }, {
-            headers: {
-                sessionid: localStorage.getItem("sessionid")
+        const res = await request.post(
+            "/user/register",
+            { form: form },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
             }
-        });
+        );
         if (res.data.status < 0) {
             ElMessage.error(res.data.message);
-            return
+            return;
         }
         ElMessage.success(res.data.message);
-        router.push('/');
+        router.push("/");
     } catch (err) {
-        ElMessage.error('服务器繁忙，请稍后再试');
-        console.log(err);
+        ElMessage.error("服务器繁忙，请稍后再试");
     }
 };
-
 </script>
 
 <style scoped>

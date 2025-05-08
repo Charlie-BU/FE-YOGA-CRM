@@ -162,17 +162,9 @@ const baseColumns: TableColumn[] = [
 // 修改 columns 计算属性
 const columns = computed<TableColumn[]>(() => {
     if (activeTab.value === "income") {
-        return [
-            ...baseColumns.slice(0, 1),
-            { prop: "clientName", label: "客户", align: "center" },
-            ...baseColumns.slice(1)
-        ];
+        return [...baseColumns.slice(0, 1), { prop: "clientName", label: "客户", align: "center" }, ...baseColumns.slice(1)];
     } else {
-        return [
-            ...baseColumns.slice(0, 1),
-            { prop: "receiver", label: "收款方", align: "center", formatter: (row) => row.receiver || row.clientName },
-            ...baseColumns.slice(1)
-        ];
+        return [...baseColumns.slice(0, 1), { prop: "receiver", label: "收款方", align: "center", formatter: (row) => row.receiver || row.clientName }, ...baseColumns.slice(1)];
     }
 });
 const page = reactive({
@@ -211,7 +203,6 @@ const getPayments = async (isIncome = true) => {
             }
         );
         if (res.data.status != 200) {
-            console.log(res.data);
             return;
         }
         tableData.value = res.data.payments;

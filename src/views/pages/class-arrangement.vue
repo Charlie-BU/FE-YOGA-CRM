@@ -9,6 +9,7 @@
 
                 <div class="table-container">
                     <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
+                    <el-button type="primary" :icon="Search" @click="showFilterDialog">筛选查询</el-button>
                     <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true">新增</el-button>
 
                     <el-table :data="tableData" style="width: 100%; margin-top: 20px" v-loading="loading">
@@ -67,6 +68,46 @@
                 </div>
             </div>
         </div>
+
+        <!-- 筛选弹窗 -->
+        <el-dialog title="筛选条件" v-model="filterDialogVisible" width="800px">
+            <el-form :model="query" label-width="100px">
+                <el-row :gutter="20">
+                    <el-col :span="12" v-for="(item, index) in searchOpt" :key="index">
+                        <el-form-item :label="item.label">
+                            <el-input v-if="item.type === 'input'" v-model="query[item.prop]" :placeholder="`请输入${item.label.replace('：', '')}`" clearable />
+                            <el-select
+                                v-else-if="item.type === 'select'"
+                                v-model="query[item.prop]"
+                                :placeholder="`请选择${item.label.replace('：', '')}`"
+                                style="width: 100%"
+                                clearable
+                                collapse-tags
+                                collapse-tags-tooltip
+                                filterable
+                            >
+                                <el-option v-for="opt in <any>item.options" :key="opt.value" :label="opt.label" :value="opt.value" />
+                            </el-select>
+                            <el-date-picker
+                                v-else-if="item.type === 'daterange'"
+                                v-model="query[item.prop]"
+                                type="daterange"
+                                range-separator="至"
+                                :start-placeholder="item.startPlaceholder"
+                                :end-placeholder="item.endPlaceholder"
+                                style="width: 100%"
+                            />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-form>
+            <template #footer>
+                <div class="dialog-footer">
+                    <el-button @click="resetQuery">重置</el-button>
+                    <el-button type="primary" @click="handleSearch">查询</el-button>
+                </div>
+            </template>
+        </el-dialog>
 
         <!-- 班级学员列表弹窗 -->
         <el-dialog title="班级学员列表" v-model="studentsDialogVisible" width="800px" @close="handleStudentsDialogClose">
@@ -181,10 +222,8 @@
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item label="助教" prop="teachingAssistantId">
-                            <el-select v-model="formData.teachingAssistantId" placeholder="请选择助教" style="width: 100%" @change="(val) => handleTeacherChange('assistant')" filterable>
-                                <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label" :value="item.value" />
-                            </el-select>
+                        <el-form-item label="助教" prop="teachingAssistantName">
+                            <el-input v-model="formData.teachingAssistantName" placeholder="请输入助教姓名" />
                         </el-form-item>
                     </el-col>
                     <el-col :span="24">
@@ -210,7 +249,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Refresh, CirclePlusFilled } from "@element-plus/icons-vue";
+import { Refresh, CirclePlusFilled, Search } from "@element-plus/icons-vue";
 import { handleRefresh } from "@/utils/index";
 import * as conventions from "@/utils/conventions";
 import request from "@/utils/request";
@@ -268,7 +307,7 @@ const formData = ref({
     price: "",
     chiefTeacherId: "",
     classTeacherId: "",
-    teachingAssistantId: "",
+    teachingAssistantName: "",
     info: ""
 });
 
@@ -278,49 +317,32 @@ const teacherOptions = ref([]);
 
 // 获取班级列表
 const getLessons = async (schoolId = null) => {
-    loading.value = true;
     try {
+        loading.value = true;
         const params = {
             pageIndex: page.index,
-            pageSize: page.size
+            pageSize: page.size,
+            startDate: "",
+            endDate: "",
+            ...query
         };
         if (schoolId) {
             Object.assign(params, { schoolId });
         }
+        // 处理日期范围
+        if (query.timeRange && query.timeRange.length === 2) {
+            params.startDate = query.timeRange[0];
+            params.endDate = query.timeRange[1];
+        }
+        delete params.timeRange;
         const res = await request.post("/course/getLessons", params, {
-            headers: { sessionid: localStorage.getItem("sessionid") }
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
         });
+
         if (res.data.status === 200) {
-            // 获取每个班级的学员人数
-            const lessonsWithStudents = await Promise.all(
-                res.data.lessons.map(async (lesson) => {
-                    try {
-                        const studentRes = await request.post(
-                            "/course/getLessonClients",
-                            {
-                                lessonId: lesson.id
-                            },
-                            {
-                                headers: { sessionid: localStorage.getItem("sessionid") }
-                            }
-                        );
-                        return {
-                            ...lesson,
-                            studentCount: studentRes.data.total || 0,
-                            students: studentRes.data.clients || []
-                        };
-                    } catch (error) {
-                        console.error(`获取班级${lesson.id}的学员人数失败:`, error);
-                        return {
-                            ...lesson,
-                            studentCount: 0,
-                            students: []
-                        };
-                    }
-                })
-            );
-            tableData.value = lessonsWithStudents;
-            console.log(lessonsWithStudents);
+            tableData.value = res.data.lessons;
             page.total = res.data.total;
         }
     } catch (error) {
@@ -359,7 +381,7 @@ const handleBranchChange = async (branchId) => {
         formData.value.courseId = "";
         formData.value.chiefTeacherId = "";
         formData.value.classTeacherId = "";
-        formData.value.teachingAssistantId = "";
+        formData.value.teachingAssistantName = "";
         // 获取该校区的课程列表
         const courseRes = await request.post(
             "/course/getCourses",
@@ -446,13 +468,13 @@ const closeDialog = () => {
         name: "",
         schoolId: "",
         courseId: "",
-        startDate: "", // 新增开课日期字段
-        endDate: "", // 新增结课日期字段
+        startDate: "",
+        endDate: "",
         duration: "",
         price: "",
         chiefTeacherId: "",
         classTeacherId: "",
-        teachingAssistantId: "",
+        teachingAssistantName: "",
         info: ""
     };
 };
@@ -696,6 +718,67 @@ const currentClient = ref<any>({});
 const showClientInfo = (client) => {
     currentClient.value = { ...client };
     clientInfoDialogVisible.value = true;
+};
+
+// 添加筛选相关变量
+const filterDialogVisible = ref(false);
+
+const query = reactive({
+    name: "", // 班级名称
+    courseName: "", // 课程名称
+    category: "", // 班级类别
+    chiefTeacherName: "", // 主讲教师
+    classTeacherName: "", // 班主任
+    teachingAssistantName: "", // 助教
+    timeRange: [] // 开课时间范围
+});
+
+const searchOpt = ref([
+    { type: "input", label: "班级名称：", prop: "name" },
+    { type: "input", label: "课程名称：", prop: "courseName" },
+    {
+        type: "select",
+        label: "班级类别：",
+        prop: "category",
+        options: conventions.courseCategories.map((item) => ({
+            label: item.name,
+            value: item.id
+        }))
+    },
+    { type: "input", label: "主讲教师：", prop: "chiefTeacherName" },
+    { type: "input", label: "班主任：", prop: "classTeacherName" },
+    { type: "input", label: "助教：", prop: "teachingAssistantName" },
+    {
+        type: "daterange",
+        label: "开课时间：",
+        prop: "timeRange",
+        startPlaceholder: "开始日期",
+        endPlaceholder: "结束日期"
+    }
+]);
+
+// 显示筛选弹窗
+const showFilterDialog = () => {
+    filterDialogVisible.value = true;
+};
+
+// 重置查询条件
+const resetQuery = () => {
+    Object.keys(query).forEach((key) => {
+        if (key === "timeRange") {
+            query[key] = [];
+        } else {
+            query[key] = "";
+        }
+    });
+};
+
+// 处理查询
+const handleSearch = async () => {
+    if (loading.value) return;
+    filterDialogVisible.value = false;
+    page.index = 1;
+    await getLessons();
 };
 </script>
 

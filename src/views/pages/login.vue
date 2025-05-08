@@ -34,59 +34,57 @@
 </template>
 
 <script setup lang="ts">
-import { useTabsStore } from '@/store/tabs';
-import request from '@/utils/request';
+import { useTabsStore } from "@/store/tabs";
+import request from "@/utils/request";
 
-import { reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
-import type { FormRules } from 'element-plus';
+import { reactive } from "vue";
+import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
+import type { FormRules } from "element-plus";
 
 interface LoginInfo {
     username: string;
     password: string;
 }
 
-const lgStr = localStorage.getItem('login-form');
+const lgStr = localStorage.getItem("login-form");
 const defParam = lgStr ? JSON.parse(lgStr) : null;
 
 const router = useRouter();
 const form = reactive<LoginInfo>({
-    username: defParam ? defParam.username : '',
-    password: defParam ? defParam.password : '',
+    username: defParam ? defParam.username : "",
+    password: defParam ? defParam.password : ""
 });
 
 const rules: FormRules = {
     username: [
         {
             required: true,
-            message: '请输入用户名',
-            trigger: 'blur',
-        },
+            message: "请输入用户名",
+            trigger: "blur"
+        }
     ],
-    password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+    password: [{ required: true, message: "请输入密码", trigger: "blur" }]
 };
 
 const submitLogin = async () => {
     if (!form.username || !form.password) {
-        ElMessage.error('请输入完整');
+        ElMessage.error("请输入完整");
         return;
     }
     try {
-        const res = await request.post('/user/login', form);
+        const res = await request.post("/user/login", form);
         if (res.data.status < 0) {
             ElMessage.error(res.data.message);
-            return
+            return;
         }
-        ElMessage.success('登录成功');
-        localStorage.setItem('sessionid', res.data.sessionid);
-        router.push('/');
+        ElMessage.success("登录成功");
+        localStorage.setItem("sessionid", res.data.sessionid);
+        router.push("/");
+    } catch (err) {
+        ElMessage.error("服务器繁忙，请稍后再试");
     }
-    catch (err) {
-        ElMessage.error('服务器繁忙，请稍后再试');
-        console.log(err);
-    }
-}
+};
 
 const tabs = useTabsStore();
 tabs.clearTabs();
