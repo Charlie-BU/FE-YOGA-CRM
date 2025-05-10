@@ -113,30 +113,6 @@ const routes: RouteRecordRaw[] = [
                 component: () => import("../views/pages/reports/transaction-summary.vue")
             },
             {
-                path: "/inventory-in-out",
-                name: "inventory-in-out",
-                meta: {
-                    title: "物资出入库明细表"
-                },
-                component: () => import("../views/pages/reports/inventory-in-out.vue")
-            },
-            {
-                path: "/inventory-sales",
-                name: "inventory-sales",
-                meta: {
-                    title: "物资进销存表"
-                },
-                component: () => import("../views/pages/reports/inventory-sales.vue")
-            },
-            {
-                path: "/inventory-balance",
-                name: "inventory-balance",
-                meta: {
-                    title: "物资库存余额查询"
-                },
-                component: () => import("../views/pages/reports/inventory-balance.vue")
-            },
-            {
                 path: "/course-channel-stats",
                 name: "course-channel-stats",
                 meta: {
@@ -153,18 +129,10 @@ const routes: RouteRecordRaw[] = [
                 component: () => import("../views/pages/reports/staff-channel-course.vue")
             },
             {
-                path: "/personal-performance",
-                name: "personal-performance",
-                meta: {
-                    title: "个人绩效明细表"
-                },
-                component: () => import("../views/pages/reports/personal-performance.vue")
-            },
-            {
                 path: "/staff-performance",
                 name: "staff-performance",
                 meta: {
-                    title: "人员业绩核算表"
+                    title: "客服业绩明细表"
                 },
                 component: () => import("../views/pages/reports/staff-performance.vue")
             },
@@ -177,14 +145,6 @@ const routes: RouteRecordRaw[] = [
                 component: () => import("../views/pages/reports/customer-service-daily.vue")
             },
             {
-                path: "/customer-service-daily-personal",
-                name: "customer-service-daily-personal",
-                meta: {
-                    title: "客服成交数据日报表（个人）"
-                },
-                component: () => import("../views/pages/reports/customer-service-daily-personal.vue")
-            },
-            {
                 path: "/customer-service-leads",
                 name: "customer-service-leads",
                 meta: {
@@ -193,28 +153,12 @@ const routes: RouteRecordRaw[] = [
                 component: () => import("../views/pages/reports/customer-service-leads.vue")
             },
             {
-                path: "/customer-service-leads-personal",
-                name: "customer-service-leads-personal",
-                meta: {
-                    title: "客服线索数据日报表（个人）"
-                },
-                component: () => import("../views/pages/reports/customer-service-leads-personal.vue")
-            },
-            {
                 path: "/customer-service-conversion",
                 name: "customer-service-conversion",
                 meta: {
                     title: "客服转客户数据日报表"
                 },
                 component: () => import("../views/pages/reports/customer-service-conversion.vue")
-            },
-            {
-                path: "/customer-service-conversion-personal",
-                name: "customer-service-conversion-personal",
-                meta: {
-                    title: "客服转客户数据日报表（个人）"
-                },
-                component: () => import("../views/pages/reports/customer-service-conversion-personal.vue")
             },
             {
                 path: "/customer-service-summary",
