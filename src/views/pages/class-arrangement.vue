@@ -342,28 +342,37 @@ const getLessons = async (schoolId = null) => {
         });
 
         if (res.data.status === 200) {
-            res.data.lessons.map(async (item) => {
-                const res2 = await request.post(
-                    "/course/getLessonClients",
-                    {
-                        lessonId: item.id
-                    },
-                    {
-                        headers: {
-                            sessionid: localStorage.getItem("sessionid")
+            // 使用 Promise.all 等待所有异步操作完成
+            const lessonsWithStudents = await Promise.all(
+                res.data.lessons.map(async (item) => {
+                    try {
+                        const res2 = await request.post(
+                            "/course/getLessonClients",
+                            {
+                                lessonId: item.id
+                            },
+                            {
+                                headers: {
+                                    sessionid: localStorage.getItem("sessionid")
+                                }
+                            }
+                        );
+                        if (res2.data.status === 200) {
+                            return {
+                                ...item,
+                                studentCount: res2.data.total,
+                                students: res2.data.clients
+                            };
                         }
+                        return item;
+                    } catch (error) {
+                        console.error(`获取班级 ${item.id} 的学员数据失败:`, error);
+                        return item;
                     }
-                );
-                if (res2.data.status === 200) {
-                    item.studentCount = res2.data.total;
-                    item.students = res2.data.clients;
-                }
-                return {
-                    ...item
-                };
-            });
+                })
+            );
 
-            tableData.value = res.data.lessons;
+            tableData.value = lessonsWithStudents;
             page.total = res.data.total;
         }
     } catch (error) {
