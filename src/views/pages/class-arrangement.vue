@@ -37,8 +37,8 @@
                         </el-table-column>
                         <el-table-column prop="graduatedStuNumber" label="毕业人数" width="100" align="center" show-overflow-tooltip>
                             <template #default="scope">
-                                <el-button link type="primary" @click="editGraduateNum(scope.row)">
-                                    {{ scope.row.graduatedStuNumber || 0 }}
+                                <el-button link type="primary" @click="showGraduatedStudents(scope.row)">
+                                    {{ scope.row.graduatedStudentCount || 0 }}
                                 </el-button>
                             </template>
                         </el-table-column>
@@ -110,7 +110,7 @@
         </el-dialog>
 
         <!-- 班级学员列表弹窗 -->
-        <el-dialog title="班级学员列表" v-model="studentsDialogVisible" width="800px" @close="handleStudentsDialogClose">
+        <el-dialog title="班级学员列表" v-model="studentsDialogVisible" width="1000px" @close="handleStudentsDialogClose">
             <div style="margin-bottom: 10px; text-align: right">
                 <el-button type="primary" @click="showAddStudentDialog">添加学员</el-button>
             </div>
@@ -131,8 +131,10 @@
                 <el-table-column prop="phone" label="电话" align="center" show-overflow-tooltip />
                 <el-table-column prop="weixin" label="微信" align="center" show-overflow-tooltip />
                 <el-table-column prop="cooperateTime" label="成单时间" width="180" align="center" show-overflow-tooltip />
-                <el-table-column label="操作" width="100" fixed="right" align="center">
+                <el-table-column label="操作" width="250" fixed="right" align="center">
                     <template #default="scope">
+                        <el-button size="small" type="primary" @click="addNote(scope.row)">添加备注</el-button>
+                        <el-button size="small" type="success" @click="graduate(scope.row)">毕业</el-button>
                         <el-button size="small" type="danger" @click="handleRemoveStu(scope.row)">移除</el-button>
                     </template>
                 </el-table-column>
@@ -159,19 +161,31 @@
             </template>
         </el-dialog>
 
-        <!-- 编辑毕业人数弹窗 -->
-        <el-dialog title="编辑毕业人数" v-model="graduateNumDialogVisible" width="400px">
-            <el-form :model="graduateForm" label-width="100px">
-                <el-form-item label="毕业人数">
-                    <el-input-number v-model="graduateForm.graduatedStuNumber" :min="0" />
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <span class="dialog-footer">
-                    <el-button @click="graduateNumDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="submitGraduateNum">确定</el-button>
-                </span>
-            </template>
+        <!-- 毕业学员列表弹窗 -->
+        <el-dialog title="毕业学员列表" v-model="graduatedStudentsDialogVisible" width="800" @close="handleGraduatedStudentsDialogClose">
+            <el-table :data="currentGraduatedStudents" style="width: 100%">
+                <el-table-column type="index" label="序号" width="55" align="center" />
+                <el-table-column prop="name" label="姓名" width="120" align="center">
+                    <template #default="scope">
+                        <el-button link type="primary" @click.stop="showClientInfo(scope.row)" style="font-size: inherit; padding: 0">
+                            {{ scope.row.name }}
+                        </el-button>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="gender" label="性别" align="center">
+                    <template #default="scope">
+                        {{ conventions.getGender(scope.row.gender) }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="phone" label="电话" align="center" show-overflow-tooltip />
+                <el-table-column prop="weixin" label="微信" align="center" show-overflow-tooltip />
+                <el-table-column prop="cooperateTime" label="成单时间" width="180" align="center" show-overflow-tooltip />
+                <el-table-column label="操作" fixed="right" align="center">
+                    <template #default="scope">
+                        <el-button size="small" type="danger" @click="ungraduate(scope.row)">取消毕业</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
         </el-dialog>
 
         <!-- 新增 / 编辑弹窗 -->
@@ -243,6 +257,21 @@
 
         <!-- 客户信息卡弹窗 -->
         <ClientInfoCard v-model="clientInfoDialogVisible" :clientId="currentClient.id" />
+
+        <!-- 添加备注弹窗 -->
+        <el-dialog title="添加备注" v-model="noteDialogVisible" width="500px">
+            <el-form :model="noteForm" label-width="80px">
+                <el-form-item label="备注内容">
+                    <el-input v-model="noteForm.content" type="textarea" :rows="4" placeholder="请输入备注内容" />
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="noteDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="submitNote">确定</el-button>
+                </span>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
@@ -357,11 +386,24 @@ const getLessons = async (schoolId = null) => {
                                 }
                             }
                         );
-                        if (res2.data.status === 200) {
+                        const res3 = await request.post(
+                            "/course/getLessonGraduatedClients",
+                            {
+                                lessonId: item.id
+                            },
+                            {
+                                headers: {
+                                    sessionid: localStorage.getItem("sessionid")
+                                }
+                            }
+                        );
+                        if (res2.data.status === 200 && res3.data.status === 200) {
                             return {
                                 ...item,
                                 studentCount: res2.data.total,
-                                students: res2.data.clients
+                                students: res2.data.clients,
+                                graduatedStudentCount: res3.data.total,
+                                graduatedStudents: res3.data.clients
                             };
                         }
                         return item;
@@ -708,36 +750,41 @@ const showStudents = async (row) => {
     }
 };
 
-const graduateNumDialogVisible = ref(false);
-const graduateForm = ref({
-    id: null,
-    graduatedStuNumber: 0
-});
+const showGraduatedStudents = async (row) => {
+    try {
+        // 使用 Promise.all 等待所有请求完成
+        const students = await Promise.all(
+            row.graduatedStudents.map(async (each) => {
+                const res = await request.post(
+                    "/extra/getClassStudents",
+                    {
+                        stuId: each.id
+                    },
+                    {
+                        headers: { sessionid: localStorage.getItem("sessionid") }
+                    }
+                );
+                return res.data.stuInfo;
+            })
+        );
 
-const editGraduateNum = (row) => {
-    graduateForm.value = {
-        id: row.id,
-        graduatedStuNumber: row.graduatedStuNumber || 0
-    };
-    graduateNumDialogVisible.value = true;
+        currentGraduatedStudents.value = students;
+        currentLessonId.value = row.id;
+        currentLessonCourseId.value = row.courseId;
+        graduatedStudentsDialogVisible.value = true;
+    } catch (error) {
+        console.error("获取学员详情失败:", error);
+        ElMessage.error("获取学员详情失败");
+    }
 };
 
-const submitGraduateNum = async () => {
-    try {
-        const res = await request.post("/course/updateGraduateNum", graduateForm.value, {
-            headers: { sessionid: localStorage.getItem("sessionid") }
-        });
-        if (res.data.status === 200) {
-            ElMessage.success("更新成功");
-            graduateNumDialogVisible.value = false;
-            getLessons(currentSelectedSchoolId.value);
-        } else {
-            ElMessage.error(res.data.message || "更新失败");
-        }
-    } catch (error) {
-        console.error("更新失败:", error);
-        ElMessage.error("更新失败");
-    }
+const graduatedStudentsDialogVisible = ref(false);
+const currentGraduatedStudents = ref([]);
+
+// 关闭毕业学员列表弹窗
+const handleGraduatedStudentsDialogClose = () => {
+    currentGraduatedStudents.value = [];
+    graduatedStudentsDialogVisible.value = false;
 };
 
 // 客户信息卡相关
@@ -809,6 +856,128 @@ const handleSearch = async () => {
     filterDialogVisible.value = false;
     page.index = 1;
     await getLessons();
+};
+
+// 添加备注相关数据
+const noteDialogVisible = ref(false);
+const noteForm = ref({
+    studentId: "",
+    content: ""
+});
+
+// 添加备注方法
+const addNote = (row) => {
+    noteForm.value.studentId = row.id;
+    noteForm.value.content = "";
+    noteDialogVisible.value = true;
+};
+
+// 提交备注
+const submitNote = async () => {
+    try {
+        if (!noteForm.value.content.trim()) {
+            ElMessage.warning("请输入备注内容");
+            return;
+        }
+
+        const res = await request.post(
+            "/extra/addClientNote",
+            {
+                studentId: noteForm.value.studentId,
+                note: noteForm.value.content
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            }
+        );
+
+        if (res.data.status === 200) {
+            ElMessage.success("添加备注成功");
+            noteDialogVisible.value = false;
+            // 刷新学员列表
+            await getLessons(currentSelectedSchoolId.value);
+        } else {
+            ElMessage.error(res.data.message || "添加备注失败");
+        }
+    } catch (error) {
+        console.error("添加备注失败:", error);
+        ElMessage.error("添加备注失败");
+    }
+};
+
+// 毕业
+const graduate = async (row) => {
+    try {
+        await ElMessageBox.confirm("确认要将该学员毕业吗？", "提示", {
+            confirmButtonText: "确定",
+            cancelButtonText: "取消",
+            type: "warning"
+        });
+
+        const res = await request.post(
+            "/course/graduateClient",
+            {
+                lessonId: currentLessonId.value,
+                clientId: row.id
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            }
+        );
+
+        if (res.data.status === 200) {
+            ElMessage.success("操作成功");
+            await getLessons(currentSelectedSchoolId.value);
+        } else {
+            ElMessage.error(res.data.message || "操作失败");
+        }
+    } catch (error) {
+        if (error !== "cancel") {
+            console.error("操作失败:", error);
+            ElMessage.error("操作失败");
+        }
+    }
+};
+
+// 取消毕业
+const ungraduate = async (row) => {
+    try {
+        await ElMessageBox.confirm("确认要取消该学员的毕业状态吗？", "提示", {
+            confirmButtonText: "确定",
+            cancelButtonText: "取消",
+            type: "warning"
+        });
+
+        const res = await request.post(
+            "/course/ungraduateClient",
+            {
+                lessonId: currentLessonId.value,
+                clientId: row.id
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            }
+        );
+
+        if (res.data.status === 200) {
+            ElMessage.success("操作成功");
+            graduatedStudentsDialogVisible.value = false;
+            await getLessons(currentSelectedSchoolId.value);
+        } else {
+            ElMessage.error(res.data.message || "操作失败");
+        }
+    } catch (error) {
+        if (error !== "cancel") {
+            console.error("取消毕业失败:", error);
+            ElMessage.error("取消毕业失败");
+        }
+    }
 };
 </script>
 
