@@ -30,7 +30,7 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item prop="vocation">
-                    <el-select v-model="form.vocation" placeholder="职位 *" style="width: 100%" filterable>
+                    <el-select v-model="form.vocationId" placeholder="职位 *" style="width: 100%" filterable>
                         <div v-for="(voc, index) in vocations" :key="index">
                             <el-option :label="voc.name" :value="voc.id" />
                         </div>
@@ -43,12 +43,12 @@
                         </div>
                     </el-select>
                 </el-form-item>
-                <el-form-item prop="usertype">
+                <!-- <el-form-item prop="usertype">
                     <el-select v-model="form.usertype" placeholder="用户权限 *" style="width: 100%" filterable>
                         <el-option label="普通用户" value="1" />
                         <el-option label="管理员" value="2" />
                     </el-select>
-                </el-form-item>
+                </el-form-item> -->
                 <el-form-item prop="password">
                     <el-input type="password" placeholder="密码 *" v-model="form.password"> </el-input>
                 </el-form-item>
@@ -71,19 +71,21 @@ import { ElMessage, type FormRules } from "element-plus";
 import { Register } from "@/types/user";
 import { loginCheck } from "@/utils/login-check";
 import request from "@/utils/request";
-import { genders, statuses, vocations } from "@/utils/conventions";
+import { genders, statuses } from "@/utils/conventions";
 
 onMounted(async () => {
     const briefUserInfo = await loginCheck();
-    if (!briefUserInfo || briefUserInfo?.usertype <= 1) {
+    // 再确定权限
+    if (!briefUserInfo) {
         ElMessage.warning("您没有权限添加用户");
         router.push("/");
     }
-    await getAllDepts();
+    await Promise.all([getAllDepts(), getAllVocations()]);
 });
 
 const router = useRouter();
 const depts = ref([]);
+const vocations = ref([]);
 
 const getAllDepts = async () => {
     const res = await request.post("/dept/getAllDepts", null, {
@@ -97,15 +99,26 @@ const getAllDepts = async () => {
     depts.value = res.data.depts;
 };
 
+const getAllVocations = async () => {
+    const res = await request.post("/user/getAllVocations", null, {
+        headers: {
+            sessionid: localStorage.getItem("sessionid")
+        }
+    });
+    if (res.data.status < 0) {
+        return;
+    }
+    vocations.value = res.data.vocations;
+};
+
 const form = reactive<Register>({
     username: "",
     gender: null,
     phone: "",
     address: "",
     department: null,
-    vocation: null,
+    vocationId: null,
     status: null,
-    usertype: null,
     password: "",
     password2: ""
 });
@@ -116,7 +129,6 @@ const rules: FormRules = {
     department: [{ required: true, message: "请选择部门", trigger: "change" }],
     vocation: [{ required: true, message: "请选择职位", trigger: "change" }],
     status: [{ required: true, message: "请选择人员状态", trigger: "change" }],
-    usertype: [{ required: true, message: "请选择用户权限", trigger: "change" }],
     password: [{ required: true, message: "请输入密码", trigger: "blur" }],
     password2: [{ required: true, message: "请再次输入密码", trigger: "blur" }]
 };

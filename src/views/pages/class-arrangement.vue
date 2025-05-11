@@ -342,6 +342,27 @@ const getLessons = async (schoolId = null) => {
         });
 
         if (res.data.status === 200) {
+            res.data.lessons.map(async (item) => {
+                const res2 = await request.post(
+                    "/course/getLessonClients",
+                    {
+                        lessonId: item.id
+                    },
+                    {
+                        headers: {
+                            sessionid: localStorage.getItem("sessionid")
+                        }
+                    }
+                );
+                if (res2.data.status === 200) {
+                    item.studentCount = res2.data.total;
+                    item.students = res2.data.clients;
+                }
+                return {
+                    ...item
+                };
+            });
+
             tableData.value = res.data.lessons;
             page.total = res.data.total;
         }

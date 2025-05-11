@@ -10,7 +10,7 @@
 
                 <!-- 右侧用户列表 -->
                 <div class="table-container">
-                    <el-button v-if="briefUserInfo?.usertype > 1" type="warning" :icon="CirclePlusFilled" @click="router.push('/register')">添加用户</el-button>
+                    <el-button type="warning" :icon="CirclePlusFilled" @click="router.push('/register')">添加用户</el-button>
 
                     <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px" @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
                         <el-table-column
@@ -125,7 +125,7 @@ const columns = ref([
     { prop: "workNum", label: "工号", align: "center" },
     { prop: "schoolName", label: "校区", align: "center" },
     { prop: "departmentName", label: "部门", align: "center" },
-    { prop: "vocation", label: "职位", align: "center", formatter: (row) => conventions.getVocation(row.vocation) },
+    { prop: "vocationName", label: "职位", align: "center" },
     { prop: "status", label: "状态", align: "center", formatter: (row) => (row.status === 1 ? "在职" : "离职") }
 ]);
 
@@ -207,11 +207,8 @@ const options = ref<any>({
         {
             type: "select",
             label: "职位",
-            prop: "vocation",
-            options: conventions.vocations.map((item) => ({
-                label: item.name,
-                value: item.id
-            }))
+            prop: "vocationId",
+            options: []
         },
         {
             type: "select",
@@ -258,6 +255,17 @@ const handleEdit = async (row) => {
         });
         if (deptRes.data.status === 200) {
             options.value.list.find((item) => item.prop === "departmentId").options = deptRes.data.depts.map((item) => ({
+                label: item.name,
+                value: item.id
+            }));
+        }
+
+        // 获取职位列表
+        const vocationRes = await request.post("/user/getAllVocations", null, {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        });
+        if (vocationRes.data.status === 200) {
+            options.value.list.find((item) => item.prop === "vocationId").options = vocationRes.data.vocations.map((item) => ({
                 label: item.name,
                 value: item.id
             }));

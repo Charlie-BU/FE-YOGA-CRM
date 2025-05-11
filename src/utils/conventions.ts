@@ -3,51 +3,6 @@ interface Convention {
     name: string;
 }
 
-// User：职位
-export const vocations: Convention[] = [
-    {
-        id: 1,
-        name: "总经理"
-    },
-    {
-        id: 2,
-        name: "店长"
-    },
-    {
-        id: 3,
-        name: "总监"
-    },
-    {
-        id: 4,
-        name: "校长"
-    },
-    {
-        id: 5,
-        name: "咨询"
-    },
-    {
-        id: 6,
-        name: "老师"
-    },
-    {
-        id: 7,
-        name: "助理"
-    },
-    {
-        id: 8,
-        name: "员工"
-    },
-    {
-        id: 9,
-        name: "新媒体"
-    }
-];
-
-export const getVocation = (id: number): string | undefined => {
-    const vocation = vocations.find((v) => v.id === id);
-    return vocation ? vocation.name : undefined;
-};
-
 export const genders: Convention[] = [
     {
         id: 1,
@@ -317,7 +272,6 @@ export const getCourseCategory = (id: number): string | undefined => {
     const category = courseCategories.find((v) => v.id === id);
     return category ? category.name : undefined;
 };
-
 
 // Dormitory：宿舍类别
 export const dormitoryCategories: Convention[] = [

@@ -14,9 +14,8 @@ export interface Register {
     phone: string;
     address?: string;
     department?: number;
-    vocation?: number;
+    vocationId?: number;
     status?: number;
-    usertype: number;
     password: string;
     password2: string;
 }

@@ -34,6 +34,12 @@ export const menuData: Menus[] = [
         icon: "UserFilled"
     },
     {
+        id: "04-1",
+        title: "职位与权限管理",
+        index: "/vocation-management",
+        icon: "Suitcase"
+    },
+    {
         id: "05",
         title: "组织管理",
         index: "/organ-management",

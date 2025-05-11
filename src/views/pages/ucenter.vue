@@ -13,13 +13,12 @@
                         <el-divider direction="vertical" />
                         <span>{{ user?.departmentName }}</span>
                         <el-divider direction="vertical" />
-                        <span>{{ getVocation(user?.vocation) }}</span>
+                        <span>{{ user?.vocationName }}</span>
                     </div>
                     <div class="info-desc">{{ user?.usertype > 1 ? "管理员" : "普通用户" }}</div>
                 </div>
             </el-card>
-            <el-card class="user-content" shadow="hover"
-                :body-style="{ padding: '20px 50px', height: '100%', boxSizing: 'border-box' }">
+            <el-card class="user-content" shadow="hover" :body-style="{ padding: '20px 50px', height: '100%', boxSizing: 'border-box' }">
                 <el-tabs tab-position="left" v-model="activeName">
                     <!-- <el-tab-pane name="label1" label="消息通知" class="user-tabpane">
                         <TabsComp />
@@ -51,7 +50,6 @@
                             </el-form-item>
                         </el-form>
                     </el-tab-pane>
-
                 </el-tabs>
             </el-card>
         </div>
@@ -59,62 +57,65 @@
 </template>
 
 <script setup lang="ts" name="ucenter">
-import { reactive, ref, onMounted } from 'vue';
-import request from '@/utils/request';
-import 'vue-cropper/dist/index.css';
-import avatar from '@/assets/img/img.jpg';
-import { getVocation } from '@/utils/conventions';
-import { ElMessage } from 'element-plus';
+import { reactive, ref, onMounted } from "vue";
+import request from "@/utils/request";
+import "vue-cropper/dist/index.css";
+import avatar from "@/assets/img/img.jpg";
+import { ElMessage } from "element-plus";
 
 onMounted(async () => {
     await getUserInfo();
-})
+});
 
 const user = ref(null);
 const getUserInfo = async () => {
-    const res = await request.post('/user/getUserInfo', null, {
+    const res = await request.post("/user/getUserInfo", null, {
         headers: {
-            sessionid: localStorage.getItem('sessionid'),
+            sessionid: localStorage.getItem("sessionid")
         }
     });
     if (res.data.status < 0) {
-        return
+        return;
     }
     user.value = res.data.user;
-}
+};
 
 const form = reactive({
-    oldPwd: '',
-    newPwd: '',
-    newPwd2: '',
+    oldPwd: "",
+    newPwd: "",
+    newPwd2: ""
 });
 const submitModify = async () => {
     if (!form.oldPwd || !form.newPwd || !form.newPwd2) {
-        ElMessage.error('请输入完整');
+        ElMessage.error("请输入完整");
         return;
     }
     if (form.newPwd !== form.newPwd2) {
-        ElMessage.error('两次密码不一致');
+        ElMessage.error("两次密码不一致");
         return;
     }
-    const res = await request.post('/user/modifyPwd', {
-        form: form
-    }, {
-        headers: {
-            sessionid: localStorage.getItem('sessionid'),
+    const res = await request.post(
+        "/user/modifyPwd",
+        {
+            form: form
+        },
+        {
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
         }
-    })
+    );
     if (res.data.status < 0) {
         ElMessage.error(res.data.message);
         return;
     }
     ElMessage.success(res.data.message);
-    form.oldPwd = '';
-    form.newPwd = '';
-    form.newPwd2 = '';
+    form.oldPwd = "";
+    form.newPwd = "";
+    form.newPwd2 = "";
 };
 
-const activeName = ref('label3');
+const activeName = ref("label3");
 
 const avatarImg = ref(avatar);
 // const imgSrc = ref(avatar);
@@ -150,7 +151,7 @@ const avatarImg = ref(avatar);
 .user-profile-bg {
     width: 100%;
     height: 200px;
-    background-image: url('../../assets/img/ucenter-bg.jpg');
+    background-image: url("../../assets/img/ucenter-bg.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -255,7 +256,7 @@ const avatarImg = ref(avatar);
     text-align: center;
 }
 
-.user-footer>div+div {
+.user-footer > div + div {
     border-left: 1px solid rgba(83, 70, 134, 0.1);
 }
 </style>
