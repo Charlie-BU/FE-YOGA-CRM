@@ -16,3 +16,7 @@ export const mix = (color1: string, color2: string, weight: number = 0.5): strin
 export const handleRefresh = () => {
     window.location.reload();
 };
+
+export const getFileNameFromOssUrl = (url: string): string => {
+    return url.split("/").pop() || "";
+};

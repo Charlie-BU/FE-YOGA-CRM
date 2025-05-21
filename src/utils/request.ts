@@ -1,13 +1,16 @@
 import axios, { AxiosInstance, AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { ElMessage } from "element-plus";
 
+// 本地
 const DEVELOP_URL = "http://localhost:8052";
+// 本地Db2测试
+const DEVELOP_URL2 = "http://localhost:6050";
 // 使用接口反向代理
 const PRODUCTION_URL = "http://8.153.204.238:81";
 // const PRODUCTION_URL = "http://8.153.204.238:8052";
 
 const service: AxiosInstance = axios.create({
-    baseURL: DEVELOP_URL
+    baseURL: PRODUCTION_URL
     // timeout: 10000
 });
 

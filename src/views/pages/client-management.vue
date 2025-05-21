@@ -1,6 +1,5 @@
 <template>
     <div>
-        <!-- <TableSearch :query="query" :options="searchOpt" :search="handleSearch" /> -->
         <el-tabs v-model="activeTab" @tab-click="handleTabClick">
             <el-tab-pane label="全部客户" name="all"></el-tab-pane>
             <el-tab-pane label="已预约到店客户" name="reserved"></el-tab-pane>
@@ -12,9 +11,7 @@
             <el-button v-if="!currClientStatus" type="primary" :disabled="selectedRows.length !== 1" @click="handleReserve">预约到店</el-button>
             <el-button v-else type="primary" :disabled="selectedRows.length !== 1" @click="handleReserve">再次预约</el-button>
             <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1" @click="handleCancelReserve">取消预约</el-button>
-            <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 2" type="success" :disabled="selectedRows.length !== 1" @click="confirmCooperation"
-                >确认成单 - 签署合同</el-button
-            >
+            <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 2" type="success" :disabled="selectedRows.length !== 1" @click="confirmCooperation">确认成单</el-button>
             <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 1" type="danger" :disabled="selectedRows.length !== 1" @click="handleCancelCooperation">取消成单</el-button>
             <el-button v-if="currClientStatus === 4" type="primary" :disabled="selectedRows.length !== 1" @click="handlePayment(1)">缴费</el-button>
             <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1" @click="handlePayment(2)">退费</el-button>
@@ -33,6 +30,14 @@
                             <span class="clickable-name" @click.stop="showClientInfo(scope.row)">
                                 {{ scope.row.name }}
                             </span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column v-else-if="item.prop === 'contractUrl'" :prop="item.prop" :label="item.label" :width="item.width" :align="item.align" show-overflow-tooltip>
+                        <template #default="scope">
+                            <a v-if="scope.row[item.prop]" class="clickable-name" :href="scope.row[item.prop]" target="_blank" @click.stop>
+                                {{ utils.getFileNameFromOssUrl(scope.row[item.prop]) }}
+                            </a>
+                            <span v-else>-</span>
                         </template>
                     </el-table-column>
                     <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width" :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
@@ -189,41 +194,45 @@
             </template>
         </el-dialog>
 
-        <!-- 签署合同弹窗 -->
-        <el-dialog title="签署合同" v-model="contractDialogVisible" width="800px" destroy-on-close>
-            <div class="contract-content">
-                <h2 style="text-align: center">亚太瑜伽课程服务合同</h2>
-                <p>合同编号：{{ contractForm.contractNo }}</p>
-                <p>甲方（学员）：{{ selectedRows[0]?.name }}</p>
-                <p>身份证号：{{ selectedRows[0]?.IDNumber }}</p>
-                <p>联系电话：{{ selectedRows[0]?.phone }}</p>
-                <p>乙方（机构）：亚太瑜伽</p>
-                <p>校区：{{ selectedRows[0]?.schoolName }}</p>
-                <p>课程：{{ selectedRows[0]?.courseNames }}</p>
-                <p>签约日期：{{ contractForm.cooperateTime }}</p>
+        <!-- 确认成单弹窗 -->
+        <el-dialog title="确认成单" v-model="contractDialogVisible" width="600px" destroy-on-close>
+            <div class="contract-dialog-content">
+                <el-upload
+                    class="contract-upload"
+                    action="#"
+                    :auto-upload="false"
+                    :on-change="handleFileChange"
+                    :before-upload="beforeUpload"
+                    :limit="1"
+                    :on-exceed="handleExceed"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    drag
+                >
+                    <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+                    <div class="el-upload__text">将文件拖到此处，或 <em>点击上传</em></div>
+                    <template #tip>
+                        <div class="el-upload__tip">只能上传一个jpg/png/pdf文件，且不超过10MB</div>
+                    </template>
+                </el-upload>
 
-                <div class="contract-terms">
-                    <h3>合同条款：</h3>
-                    <p>1. 课程内容：乙方根据甲方选择的课程提供专业的瑜伽培训服务。</p>
-                    <p>2. 课程期限：自签约日起12个月内有效。</p>
-                    <p>3. 双方权利义务：</p>
-                    <p>&nbsp;&nbsp;&nbsp;&nbsp;3.1 乙方应提供专业的教学服务和必要的场地设施。</p>
-                    <p>&nbsp;&nbsp;&nbsp;&nbsp;3.2 甲方应遵守场馆规章制度，按时参加课程。</p>
-                    <p>4. 其他未尽事宜，双方友好协商解决。</p>
-                </div>
-
-                <div class="signature" style="margin-top: 50px">
-                    <p>甲方签字：____________</p>
-                    <p>乙方签字：___上海烁伽健身服务有限公司___</p>
-                    <p>日期：{{ contractForm.cooperateTime }}</p>
+                <div class="contract-info" v-if="selectedFile">
+                    <div class="file-info">
+                        <el-icon><document /></el-icon>
+                        <span>{{ selectedFile.name }}</span>
+                        <el-button type="danger" link @click="clearFile" class="delete-file">
+                            <el-icon><delete /></el-icon>
+                        </el-button>
+                    </div>
                 </div>
             </div>
+
             <template #footer>
-                <span class="dialog-footer">
+                <div class="dialog-footer">
                     <el-button @click="contractDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="exportContract">导出合同</el-button>
-                    <el-button type="primary" @click="submitContract">确认签署</el-button>
-                </span>
+                    <el-button type="success" @click="uploadContract" :disabled="!selectedFile">
+                        <el-icon><upload /></el-icon> 上传合同 - 确认成单
+                    </el-button>
+                </div>
             </template>
         </el-dialog>
 
@@ -269,17 +278,16 @@
 <script setup lang="ts" name="system-user">
 import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage, ElMessageBox, vLoading } from "element-plus";
-import { Download, Setting, Search, Refresh } from "@element-plus/icons-vue";
+import { Download, Setting, Search, Refresh, UploadFilled, Document, Upload, Check, Delete } from "@element-plus/icons-vue";
 import { User } from "@/types/user";
 import request from "@/utils/request";
 import * as conventions from "@/utils/conventions";
 import * as XLSX from "xlsx";
 import ClientInfoCard from "@/components/client-info-card.vue";
-// 导出合同需要
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { loginCheck } from "@/utils/login-check";
-import { handleRefresh } from "@/utils/index";
+// import { handleRefresh } from "@/utils/index";
+
+import * as utils from "@/utils/index";
 
 const briefUserInfo = ref(null);
 
@@ -289,6 +297,11 @@ onMounted(async () => {
     await getClients();
     initColumnSettings();
 });
+
+const handleRefresh = async () => {
+    if (loading.value) return; // 如果正在加载，则不执行
+    await getClients(); // 重新获取客户数据
+};
 
 const handleSizeChange = async (val: number) => {
     if (loading.value) return; // 如果正在加载，则不执行
@@ -476,7 +489,7 @@ const defaultColumns = [
     {
         prop: "info",
         label: "客户备注",
-        width: 150,
+        width: 250,
         align: "center",
         formatter: (row) => (row.info ? [...row.info].reverse().join(" | ") : "")
     }
@@ -515,13 +528,13 @@ const secondColumns = [
     { prop: "nextTalkDate", label: "下次沟通日期", width: 150, align: "center" },
     { prop: "processStatus", label: "跟进状态", width: 150, align: "center", formatter: (row) => (row.processStatus === 1 ? "未成单" : row.processStatus === 2 ? "已成单" : "") },
     { prop: "cooperateTime", label: "成单时间", width: 150, align: "center" },
-    { prop: "contractNo", label: "合同编号", width: 150, align: "center" },
+    { prop: "contractUrl", label: "合同", width: 150, align: "center" },
     { prop: "createdTime", label: "创建时间", width: 150, align: "center" },
     { prop: "fromSource", label: "渠道来源", width: 150, align: "center", formatter: (row) => conventions.getFromSource(row.fromSource) },
     {
         prop: "info",
         label: "客户备注",
-        width: 150,
+        width: 200,
         align: "center",
         formatter: (row) => (row.info ? [...row.info].reverse().join(" | ") : "")
     }
@@ -915,11 +928,15 @@ const handleReserve = async () => {
     try {
         // 获取校区列表和套餐列表
         await Promise.all([
-            request.post("/dept/getAllSchools", null, {
-                headers: {
-                    sessionid: localStorage.getItem("sessionid")
+            request.post(
+                "/dept/getAllSchools",
+                {},
+                {
+                    headers: {
+                        sessionid: localStorage.getItem("sessionid")
+                    }
                 }
-            }),
+            ),
             getComboOptions()
         ]).then(([branchRes]) => {
             if (branchRes.data.status === 200) {
@@ -1199,68 +1216,79 @@ const exportToExcel = async () => {
         });
 };
 
-// 确认成单 / 签署合同逻辑
+// 确认成单逻辑
 const contractDialogVisible = ref(false);
 const contractForm = ref({
-    contractNo: "",
     cooperateTime: ""
 });
 
 const confirmCooperation = () => {
     if (!selectedRows.value.length) return;
-    // 生成合同编号
-    contractForm.value.contractNo = `HT${new Date().getTime()}`;
-    // 设置签约时间
+    // 设置成单时间
     contractForm.value.cooperateTime = new Date().toLocaleDateString();
     contractDialogVisible.value = true;
 };
 
-// 导出合同
-const exportContract = async () => {
-    try {
-        const contractElement = document.querySelector(".contract-content");
-        if (!contractElement) {
-            ElMessage.error("获取合同内容失败");
-            return;
-        }
+const selectedFile = ref(null);
 
-        const canvas = await html2canvas(contractElement as HTMLElement, {
-            scale: 2, // 提高清晰度
-            useCORS: true,
-            logging: false
+// 文件选择前的验证
+const beforeUpload = (file) => {
+    const isValidType = ["image/jpeg", "image/png", "application/pdf"].includes(file.type);
+    const isLt10M = file.size / 1024 / 1024 < 10;
+
+    if (!isValidType) {
+        ElMessage.error("只能上传JPG/PNG/PDF格式的文件！");
+        return false;
+    }
+    if (!isLt10M) {
+        ElMessage.error("文件大小不能超过10MB！");
+        return false;
+    }
+    return true;
+};
+
+// 文件选择变化时的处理
+const handleFileChange = (file) => {
+    selectedFile.value = file;
+};
+
+// 处理超出文件数量限制
+const handleExceed = () => {
+    ElMessage.warning("只能上传一个文件");
+};
+
+// 清除已选文件
+const clearFile = () => {
+    selectedFile.value = null;
+};
+
+// 上传合同
+const uploadContract = async () => {
+    if (!selectedFile.value) {
+        ElMessage.warning("请先选择要上传的文件");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile.value.raw);
+    formData.append("clientId", selectedRows.value[0].id);
+
+    try {
+        const res = await request.post("/extra/uploadContract", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+                sessionid: localStorage.getItem("sessionid")
+            }
         });
 
-        const contentWidth = canvas.width;
-        const contentHeight = canvas.height;
-
-        // A4纸的尺寸[595.28,841.89]
-        const pageHeight = (contentWidth / 592.28) * 841.89;
-        let leftHeight = contentHeight;
-        let position = 0;
-        const imgWidth = 595.28;
-        const imgHeight = (592.28 / contentWidth) * contentHeight;
-
-        const pdf = new jsPDF("p", "pt", "a4");
-
-        if (leftHeight < pageHeight) {
-            pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 0, 0, imgWidth, imgHeight);
+        if (res.data.status === 200) {
+            await submitContract();
         } else {
-            while (leftHeight > 0) {
-                pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 0, position, imgWidth, imgHeight);
-                leftHeight -= pageHeight;
-                position -= 841.89;
-                if (leftHeight > 0) {
-                    pdf.addPage();
-                }
-            }
+            ElMessage.error(res.data.message || "合同上传失败");
         }
-
-        const fileName = `瑜伽课程服务合同_${selectedRows.value[0]?.name}_${contractForm.value.contractNo}.pdf`;
-        pdf.save(fileName);
-        ElMessage.success("合同导出成功");
     } catch (error) {
-        console.error("合同导出失败:", error);
-        ElMessage.error("合同导出失败");
+        console.error("合同上传失败:", error);
+        ElMessage.error("合同上传失败");
     }
 };
 
@@ -1270,7 +1298,6 @@ const submitContract = async () => {
             "/extra/confirmCooperation",
             {
                 clientId: selectedRows.value[0].id,
-                contractNo: contractForm.value.contractNo,
                 cooperateTime: contractForm.value.cooperateTime
             },
             {
@@ -1281,15 +1308,15 @@ const submitContract = async () => {
         );
 
         if (res.data.status === 200) {
-            ElMessage.success("签约成功");
+            ElMessage.success("成单成功");
             contractDialogVisible.value = false;
             getClients();
         } else {
-            ElMessage.error(res.data.message || "签约失败");
+            ElMessage.error(res.data.message || "成单失败");
         }
     } catch (error) {
-        console.error("签约失败:", error);
-        ElMessage.error("签约失败");
+        console.error("成单失败:", error);
+        ElMessage.error("成单失败");
     }
 };
 
@@ -1437,15 +1464,6 @@ const showClientInfo = (client) => {
     gap: 10px;
 }
 
-.contract-content {
-    padding: 20px;
-    line-height: 1.8;
-}
-
-.contract-terms {
-    margin: 20px 0;
-}
-
 .clickable-name {
     color: #409eff;
     cursor: pointer;
@@ -1460,6 +1478,62 @@ const showClientInfo = (client) => {
 }
 
 .dialog-footer {
-    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 20px;
+}
+
+.contract-dialog-content {
+    padding: 20px;
+}
+
+.contract-upload {
+    width: 100%;
+    border: 2px dashed var(--el-border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: var(--el-transition-duration);
+}
+
+.contract-upload:hover {
+    border-color: var(--el-color-primary);
+}
+
+.el-upload__text {
+    color: var(--el-text-color-regular);
+    font-size: 14px;
+    text-align: center;
+    margin: 10px 0;
+}
+
+.el-upload__text em {
+    color: var(--el-color-primary);
+    font-style: normal;
+}
+
+.contract-info {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: var(--el-fill-color-lighter);
+    border-radius: 4px;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--el-text-color-regular);
+    justify-content: space-between;
+}
+
+.delete-file {
+    margin-left: auto;
+}
+
+.el-icon {
+    vertical-align: middle;
 }
 </style>

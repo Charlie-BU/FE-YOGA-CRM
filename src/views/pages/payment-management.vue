@@ -125,7 +125,7 @@
 import { ref, reactive, onMounted, watch, computed } from "vue";
 import { ElMessage, ElMessageBox, vLoading } from "element-plus";
 import { CirclePlusFilled, Refresh } from "@element-plus/icons-vue";
-import { handleRefresh } from "@/utils/index";
+// import { handleRefresh } from "@/utils/index";
 import request from "@/utils/request";
 import * as conventions from "@/utils/conventions";
 import { getUserInfo } from "@/utils/login-check";
@@ -136,6 +136,11 @@ onMounted(async () => {
     userInfo.value = await getUserInfo();
     await getPayments(activeTab.value === "income");
 });
+
+const handleRefresh = async () => {
+    if (loading.value) return; // 如果正在加载，则不执行
+    await getPayments(activeTab.value === "income");
+};
 
 // 表格相关
 // 首先定义列的接口类型

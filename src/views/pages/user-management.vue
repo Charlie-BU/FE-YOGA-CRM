@@ -117,16 +117,16 @@ const handleSearch = async () => {
 // 表格相关
 const columns = ref([
     { type: "index", label: "序号", width: 55, align: "center" },
-    { prop: "username", label: "姓名", align: "center" },
+    { prop: "username", label: "姓名", align: "center", width: 150 },
     { prop: "gender", label: "性别", align: "center", formatter: (row) => conventions.getGender(row.gender) },
-    { prop: "phone", label: "电话", align: "center" },
-    { prop: "address", label: "地址", align: "center" },
-    { prop: "usertype", label: "用户类型", align: "center", formatter: (row) => (row.usertype === 1 ? "普通用户" : "管理员") },
-    { prop: "workNum", label: "工号", align: "center" },
-    { prop: "schoolName", label: "校区", align: "center" },
-    { prop: "departmentName", label: "部门", align: "center" },
-    { prop: "vocationName", label: "职位", align: "center" },
-    { prop: "status", label: "状态", align: "center", formatter: (row) => (row.status === 1 ? "在职" : "离职") }
+    { prop: "phone", label: "电话", align: "center", width: 150 },
+    { prop: "address", label: "地址", align: "center", width: 150 },
+    { prop: "usertype", label: "用户类型", align: "center", width: 120, formatter: (row) => (row.usertype === 1 ? "普通用户" : "管理员") },
+    { prop: "workNum", label: "工号", align: "center", width: 150 },
+    { prop: "schoolName", label: "校区", align: "center", width: 120 },
+    { prop: "departmentName", label: "部门", align: "center", width: 150 },
+    { prop: "vocationName", label: "职位", align: "center", width: 100 },
+    { prop: "status", label: "状态", align: "center", width: 100, formatter: (row) => (row.status === 1 ? "在职" : "离职") }
 ]);
 
 const page = reactive({
@@ -239,9 +239,13 @@ const closeDialog = () => {
 const handleEdit = async (row) => {
     try {
         // 获取校区列表
-        const schoolRes = await request.post("/dept/getAllSchools", null, {
-            headers: { sessionid: localStorage.getItem("sessionid") }
-        });
+        const schoolRes = await request.post(
+            "/dept/getAllSchools",
+            {},
+            {
+                headers: { sessionid: localStorage.getItem("sessionid") }
+            }
+        );
         if (schoolRes.data.status === 200) {
             options.value.list.find((item) => item.prop === "schoolId").options = schoolRes.data.schools.map((item) => ({
                 label: item.name,

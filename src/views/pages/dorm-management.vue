@@ -232,7 +232,7 @@
 import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { CirclePlusFilled, Refresh } from "@element-plus/icons-vue";
-import { handleRefresh } from "@/utils/index";
+// import { handleRefresh } from "@/utils/index";
 import * as conventions from "@/utils/conventions";
 import request from "@/utils/request";
 
@@ -244,6 +244,12 @@ onMounted(async () => {
         ElMessage.error("初始化数据失败");
     }
 });
+
+const handleRefresh = async () => {
+    if (loading.value) return; // 如果正在加载，则不执行
+    await getDormitories(currentSelectedSchoolId.value);
+    await getOverdueBeds(); // 同时刷新超期床位数据
+};
 
 // 校区树
 const treeData = computed(() => {

@@ -28,7 +28,17 @@
                             </span>
                         </template>
                     </el-table-column>
-                    <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width" :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
+                    <el-table-column
+                        v-else-if="item.prop === 'gender' || item.prop === 'age'"
+                        :prop="item.prop"
+                        :label="item.label"
+                        :width="item.width"
+                        :align="item.align"
+                        :formatter="item.formatter"
+                        show-overflow-tooltip
+                    />
+
+                    <el-table-column v-else :prop="item.prop" :label="item.label" :min-width="150" :width="item.width" :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
                 </template>
 
                 <el-table-column label="操作" width="220" fixed="right" align="center">
@@ -203,7 +213,7 @@ import { CirclePlusFilled, Download, Upload, Setting, Search, Refresh } from "@e
 import { User } from "@/types/user";
 import request from "@/utils/request";
 import * as conventions from "@/utils/conventions";
-import { handleRefresh } from "@/utils/index";
+// import { handleRefresh } from "@/utils/index";
 import * as XLSX from "xlsx";
 
 onMounted(async () => {
@@ -211,6 +221,11 @@ onMounted(async () => {
     initColumnSettings();
     await getAllUsers(); // 添加这一行
 });
+
+const handleRefresh = async () => {
+    if (loading.value) return; // 如果正在加载，则不执行
+    await getClients(); // 直接调用获取数据的方法
+};
 
 const userOptions = ref([]);
 
@@ -228,7 +243,7 @@ const getAllUsers = async () => {
         );
         if (res.data.status === 200) {
             userOptions.value = res.data.users.map((user) => ({
-                label: user.username,
+                label: user.schoolName + " - " + user.username,
                 value: user.id
             }));
         }
@@ -376,7 +391,7 @@ const allColumns = ref([
     { prop: "fromSource", label: "渠道来源", width: 150, align: "center", formatter: (row) => conventions.getFromSource(row.fromSource) },
     { prop: "gender", label: "性别", align: "center", formatter: (row) => conventions.getGender(row.gender) },
     { prop: "age", label: "年龄", align: "center" },
-    { prop: "IDNumber", label: "身份证", align: "center" },
+    { prop: "IDNumber", label: "身份证", align: "center", width: 180 },
     { prop: "phone", label: "电话", align: "center" },
     { prop: "weixin", label: "微信", align: "center" },
     { prop: "QQ", label: "QQ", align: "center" },
@@ -391,7 +406,7 @@ const allColumns = ref([
     {
         prop: "info",
         label: "客户备注",
-        width: 150,
+        width: 250,
         align: "center",
         formatter: (row) => (row.info ? [...row.info].reverse().join(" | ") : "")
     }

@@ -6,11 +6,19 @@
                 <el-table-column type="selection" width="55" align="center" />
                 <template v-for="item in columns" :key="item.prop">
                     <el-table-column v-if="item.type === 'index'" :type="item.type" :label="item.label" :width="item.width" :align="item.align" show-overflow-tooltip />
-                    <el-table-column v-else-if="item.slot" :prop="item.prop" :label="item.label" :width="item.width" :align="item.align" show-overflow-tooltip>
+                    <el-table-column v-else-if="item.slot" :prop="item.prop" :label="item.label" :width="item.width" :align="item.align" :formatter="item.formatter" show-overflow-tooltip>
                         <template #default="scope">
                             <span class="clickable-name" @click.stop="showClientInfo(scope.row)">
                                 {{ scope.row[item.prop as keyof typeof scope.row] }}
                             </span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column v-else-if="item.prop === 'contractUrl'" :prop="item.prop" :label="item.label" :width="item.width" :align="item.align" show-overflow-tooltip>
+                        <template #default="scope">
+                            <a v-if="scope.row[item.prop]" class="clickable-name" :href="scope.row[item.prop]" target="_blank" @click.stop>
+                                {{ utils.getFileNameFromOssUrl(scope.row[item.prop]) }}
+                            </a>
+                            <span v-else>-</span>
                         </template>
                     </el-table-column>
                     <el-table-column v-else :prop="item.prop" :label="item.label" :width="item.width" :align="item.align" :formatter="item.formatter" show-overflow-tooltip />
@@ -45,12 +53,13 @@
 <script setup lang="ts" name="system-user">
 import { ref, reactive, onMounted } from "vue";
 import { ElMessage, ElMessageBox, vLoading } from "element-plus";
-import { User } from "@/types/user";
 import request from "@/utils/request";
 import TableSearch from "@/components/table-search.vue";
 import { FormOptionList } from "@/types/form-option";
 import * as conventions from "@/utils/conventions";
 import ClientInfoCard from "@/components/client-info-card.vue";
+
+import * as utils from "@/utils/index";
 
 onMounted(async () => {
     await getClients();
@@ -99,14 +108,19 @@ const columns = ref([
         }
     },
     { prop: "schoolName", label: "校区", width: 120, align: "center" },
-    { prop: "affiliatedUserName", label: "所属人 / 合作老师", width: 120, align: "center" },
-    { prop: "courseNames", label: "课程", width: 120, align: "center" },
+    { prop: "affiliatedUserName", label: "所属人 / 合作老师", width: 150, align: "center" },
+    { prop: "courseNames", label: "课程", align: "center", width: 200 },
     { prop: "address", label: "地区", width: 120, align: "center" },
     { prop: "processStatus", label: "客户状态", width: 120, align: "center", formatter: (row) => conventions.getClientStatus(row.clientStatus) },
-    { prop: "cooperateTime", label: "成单时间", width: 120, align: "center" },
-    { prop: "contractNo", label: "合同编号", width: 120, align: "center" },
-    { prop: "fromSource", label: "渠道来源", width: 120, align: "center", formatter: (row) => conventions.getFromSource(row.fromSource) },
-    { prop: "info", label: "客户备注", width: 120, align: "center" }
+    { prop: "cooperateTime", label: "成单时间", width: 150, align: "center" },
+    {
+        prop: "contractUrl",
+        label: "合同",
+        width: 150,
+        align: "center"
+    },
+    { prop: "fromSource", label: "渠道来源", width: 150, align: "center", formatter: (row) => conventions.getFromSource(row.fromSource) },
+    { prop: "info", label: "客户备注", width: 250, align: "center" }
 ]);
 const page = reactive({
     index: 1,

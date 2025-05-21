@@ -190,7 +190,7 @@
 import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { CirclePlusFilled, Refresh } from "@element-plus/icons-vue";
-import { handleRefresh } from "@/utils/index";
+// import { handleRefresh } from "@/utils/index";
 import * as conventions from "@/utils/conventions";
 import request from "@/utils/request";
 
@@ -202,6 +202,17 @@ onMounted(async () => {
         ElMessage.error("初始化数据失败");
     }
 });
+
+const handleRefresh = async () => {
+    // 根据当前激活的标签页决定刷新哪个表格
+    if (activeTab.value === "course") {
+        if (loading.value) return; // 如果正在加载，则不执行
+        await getCourses(currentSelectedSchoolId.value);
+    } else if (activeTab.value === "combo") {
+        if (comboLoading.value) return; // 如果正在加载，则不执行
+        await getCombos(currentSelectedSchoolId.value);
+    }
+};
 
 const handleSizeChange = async (val: number) => {
     if (loading.value) return;

@@ -1,6 +1,7 @@
 <template>
     <div>
         <div class="container">
+            <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
             <!-- <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button> -->
             <!-- <el-button type="warning" :icon="CirclePlusFilled" @click="handleAdd('school')">新增校区</el-button> -->
             <el-table :data="vocationData" style="width: 100%; margin-top: 20px">
@@ -13,9 +14,8 @@
                     :formatter="
                         (row) => {
                             if (!row.authority) return '';
-                            const authIds = row.authority;
                             return authorityOptions
-                                .filter((auth) => authIds.includes(auth.id))
+                                .filter((auth) => row.authority.includes(auth.id))
                                 .map((auth) => auth.name)
                                 .join(' | ');
                         }
@@ -55,13 +55,17 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { CirclePlusFilled, Refresh } from "@element-plus/icons-vue";
-import { handleRefresh } from "@/utils/index";
+import { Refresh } from "@element-plus/icons-vue";
+// import { handleRefresh } from "@/utils/index";
 import request from "@/utils/request";
 
 onMounted(async () => {
     await Promise.all([getAllVocations(), getAllAuthorities()]);
 });
+
+const handleRefresh = async () => {
+    await Promise.all([getAllVocations(), getAllAuthorities()]);
+};
 
 const vocationData = ref(null);
 

@@ -86,7 +86,7 @@
                                 collapse-tags-tooltip
                                 filterable
                             >
-                                <el-option v-for="opt in <any>item.options" :key="opt.value" :label="opt.label" :value="opt.value" />
+                                <el-option v-for="opt in (item.options as Array<{label: string; value: string | number}>)" :key="opt.value" :label="opt.label" :value="opt.value" />
                             </el-select>
                             <el-date-picker
                                 v-else-if="item.type === 'daterange'"
@@ -279,10 +279,22 @@
 import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Refresh, CirclePlusFilled, Search } from "@element-plus/icons-vue";
-import { handleRefresh } from "@/utils/index";
+// import { handleRefresh } from "@/utils/index";
 import * as conventions from "@/utils/conventions";
 import request from "@/utils/request";
 import ClientInfoCard from "@/components/client-info-card.vue";
+
+interface SearchOption {
+    label: string;
+    prop: string;
+    type: "input" | "select" | "daterange";
+    options?: Array<{
+        label: string;
+        value: string | number;
+    }>;
+    startPlaceholder?: string;
+    endPlaceholder?: string;
+}
 
 onMounted(async () => {
     try {
@@ -292,6 +304,11 @@ onMounted(async () => {
         ElMessage.error("初始化数据失败");
     }
 });
+
+const handleRefresh = async () => {
+    if (loading.value) return; // 如果正在加载，则不执行
+    await getLessons(currentSelectedSchoolId.value);
+};
 
 // 校区树
 const treeData = computed(() => {
@@ -810,7 +827,7 @@ const query = reactive({
     timeRange: [] // 开课时间范围
 });
 
-const searchOpt = ref([
+const searchOpt = ref<SearchOption[]>([
     { type: "input", label: "班级名称：", prop: "name" },
     { type: "input", label: "课程名称：", prop: "courseName" },
     {

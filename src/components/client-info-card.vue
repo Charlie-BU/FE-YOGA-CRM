@@ -48,7 +48,18 @@
                         <span class="status-highlight">{{ client.processStatus === 1 ? "未成单" : client.processStatus === 2 ? "已成单" : "" }}</span>
                     </el-descriptions-item>
                     <el-descriptions-item label="成单时间">{{ client.cooperateTime }}</el-descriptions-item>
-                    <el-descriptions-item label="合同编号">{{ client.contractNo }}</el-descriptions-item>
+                    <el-descriptions-item label="合同">
+                        <template v-if="client.contractUrl">
+                            <a 
+                                :href="client.contractUrl" 
+                                target="_blank" 
+                                class="contract-link"
+                            >
+                                {{ utils.getFileNameFromOssUrl(client.contractUrl) }}
+                            </a>
+                        </template>
+                        <template v-else>-</template>
+                    </el-descriptions-item>
                 </el-descriptions>
             </div>
 
@@ -167,6 +178,7 @@ import { ref, watch, computed } from "vue";
 import * as conventions from "@/utils/conventions";
 import request from "@/utils/request";
 import { ElMessage } from "element-plus";
+import * as utils from "@/utils/index";
 
 const props = defineProps({
     modelValue: {
@@ -538,5 +550,15 @@ const handleSizeChange = (val: number) => {
 
 :deep(.el-step__title.is-process) {
     color: #409eff;
+}
+
+.contract-link {
+    color: #409EFF;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.contract-link:hover {
+    text-decoration: underline;
 }
 </style>
