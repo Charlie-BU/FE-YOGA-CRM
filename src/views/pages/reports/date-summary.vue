@@ -11,9 +11,15 @@
                     <el-row :gutter="20">
                         <el-col :span="24">
                             <el-form-item label="汇总时间">
-                                <el-date-picker v-model="queryParams.timeRange" type="daterange" range-separator="至"
-                                    start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD"
-                                    style="width: 100%" />
+                                <el-date-picker
+                                    v-model="queryParams.timeRange"
+                                    type="daterange"
+                                    range-separator="至"
+                                    start-placeholder="开始日期"
+                                    end-placeholder="结束日期"
+                                    value-format="YYYY-MM-DD"
+                                    style="width: 100%"
+                                />
                             </el-form-item>
                         </el-col>
                     </el-row>
@@ -26,13 +32,19 @@
                 </template>
             </el-dialog>
 
-            <el-table ref="tableRef" :data="tableData" style="width: 100%" border :cell-style="{ textAlign: 'center' }"
+            <el-table
+                ref="tableRef"
+                :data="tableData"
+                style="width: 100%"
+                border
+                :cell-style="{ textAlign: 'center' }"
                 :header-cell-style="{
                     textAlign: 'center',
                     backgroundColor: '#f5f7fa',
                     color: '#606266',
                     fontWeight: 'bold'
-                }">
+                }"
+            >
                 <el-table-column label="日期" width="120" fixed show-overflow-tooltip>
                     <template #default="scope">
                         {{ scope.row.date }}
@@ -52,9 +64,7 @@
                     <el-table-column prop="totalToClient" label="总转客户" align="center" show-overflow-tooltip />
                     <el-table-column prop="totalDealed" label="总报名" align="center" show-overflow-tooltip />
                     <el-table-column prop="totalConversion" label="总转化率" align="center" show-overflow-tooltip>
-                        <template #default="scope">
-                            {{ calculateRate(scope.row.totalDealed, scope.row.totalToClient) }}%
-                        </template>
+                        <template #default="scope"> {{ calculateRate(scope.row.totalDealed, scope.row.totalToClient) }}% </template>
                     </el-table-column>
                 </el-table-column>
 
@@ -63,9 +73,7 @@
                     <el-table-column prop="bwAdd" label="商务通加" align="center" show-overflow-tooltip />
                     <el-table-column prop="bwSignup" label="商务通报" align="center" show-overflow-tooltip />
                     <el-table-column prop="bwConversion" label="商转化率" align="center show-overflow-tooltip">
-                        <template #default="scope">
-                            {{ calculateRate(scope.row.bwSignup, scope.row.bwAdd) }}%
-                        </template>
+                        <template #default="scope"> {{ calculateRate(scope.row.bwSignup, scope.row.bwAdd) }}% </template>
                     </el-table-column>
                 </el-table-column>
 
@@ -74,9 +82,7 @@
                     <el-table-column prop="redAdd" label="红推" align="center" show-overflow-tooltip />
                     <el-table-column prop="redSignup" label="红推报" align="center" show-overflow-tooltip />
                     <el-table-column prop="redConversion" label="红推转化率" align="center" show-overflow-tooltip>
-                        <template #default="scope">
-                            {{ calculateRate(scope.row.redSignup, scope.row.redAdd) }}%
-                        </template>
+                        <template #default="scope"> {{ calculateRate(scope.row.redSignup, scope.row.redAdd) }}% </template>
                     </el-table-column>
                 </el-table-column>
 
@@ -85,9 +91,7 @@
                     <el-table-column prop="infoAdd" label="信息流加" align="center" show-overflow-tooltip />
                     <el-table-column prop="infoSignup" label="信息流报" align="center" show-overflow-tooltip />
                     <el-table-column prop="infoConversion" label="信转化率" align="center" show-overflow-tooltip>
-                        <template #default="scope">
-                            {{ calculateRate(scope.row.infoSignup, scope.row.infoAdd) }}%
-                        </template>
+                        <template #default="scope"> {{ calculateRate(scope.row.infoSignup, scope.row.infoAdd) }}% </template>
                     </el-table-column>
                 </el-table-column>
 
@@ -144,28 +148,27 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Search, Download } from '@element-plus/icons-vue'
-import request from '@/utils/request'
-import { ElMessage } from 'element-plus'
-import * as XLSX from 'xlsx'
+import { ref, onMounted } from "vue";
+import { Search, Download } from "@element-plus/icons-vue";
+import request from "@/utils/request";
+import { ElMessage } from "element-plus";
+import * as XLSX from "xlsx";
 
-const loading = ref(false)
-const filterDialogVisible = ref(false)
-const tableData = ref([])
+const loading = ref(false);
+const filterDialogVisible = ref(false);
+const tableData = ref([]);
 const queryParams = ref({
     timeRange: [
-        new Date(new Date().getFullYear(), new Date().getMonth(), 1).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
-        new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')
+        new Date(new Date().setDate(new Date().getDate())).toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-"),
+        new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-")
     ]
-})
-
+});
 
 // 计算转化率
 const calculateRate = (numerator, denominator) => {
-    if (!denominator) return 0
-    return ((numerator / denominator) * 100).toFixed(2)
-}
+    if (!denominator) return 0;
+    return ((numerator / denominator) * 100).toFixed(2);
+};
 
 // 查询数据
 const handleQuery = async () => {
@@ -173,7 +176,7 @@ const handleQuery = async () => {
     try {
         const [startDate, endDate] = queryParams.value.timeRange || [];
         if (!startDate || !endDate) {
-            ElMessage.warning('请选择时间范围');
+            ElMessage.warning("请选择时间范围");
             loading.value = false;
             return;
         }
@@ -186,18 +189,22 @@ const handleQuery = async () => {
         const start = new Date(startDate);
         const end = new Date(endDate);
         while (start <= end) {
-            dateList.push(start.toISOString().split('T')[0]);
+            dateList.push(start.toISOString().split("T")[0]);
             start.setDate(start.getDate() + 1);
         }
 
         // 逐个请求每一天的数据
         for (const date of dateList) {
             try {
-                const res = await request.post("/user/getDateSummaryDataPerDay", { date }, {
-                    headers: {
-                        sessionid: localStorage.getItem("sessionid")
+                const res = await request.post(
+                    "/user/getDateSummaryDataPerDay",
+                    { date },
+                    {
+                        headers: {
+                            sessionid: localStorage.getItem("sessionid")
+                        }
                     }
-                });
+                );
 
                 if (res.data.status === 200) {
                     // 将新数据添加到表格中
@@ -209,10 +216,9 @@ const handleQuery = async () => {
                 console.error(`获取 ${date} 数据失败:`, error);
             }
         }
-
     } catch (error) {
-        console.error('查询数据失败:', error);
-        ElMessage.error('查询数据失败');
+        console.error("查询数据失败:", error);
+        ElMessage.error("查询数据失败");
     } finally {
         loading.value = false;
         filterDialogVisible.value = false;
@@ -222,35 +228,99 @@ const handleQuery = async () => {
 // 重置查询
 const resetQuery = () => {
     queryParams.value = {
-        timeRange: [],
-    }
-}
+        timeRange: []
+    };
+};
 
 // 显示筛选弹窗
 const showFilterDialog = () => {
-    filterDialogVisible.value = true
-}
+    filterDialogVisible.value = true;
+};
 
 // 导出数据
 const handleExport = () => {
     // 检查是否有数据
     if (!tableData.value || tableData.value.length === 0) {
-        ElMessage.warning('暂无数据可导出');
+        ElMessage.warning("暂无数据可导出");
         return;
     }
 
     // 定义表头
     const headers = [
-        ['日期', '报名城市数据', '', '', '', '总体数据', '', '', '商务通数据', '', '', '红推数据', '', '', '信息流数据', '', '',
-            '点评数据', '', '电话数据', '', '小红书数据', '', '抖音数据', '', '推荐/介绍数据', '', '自己进店数据', '', '公众号数据', '', '视频号数据', ''],
-        ['', '报上海', '报北京', '报广州', '报成都', '总转客户', '总报名', '总转化率', '商务通加', '商务通报', '商转化率',
-            '红推加', '红推报', '红推转化率', '信息流加', '信息流报', '信转化率', '点评加', '点评报', '电话加', '电话报',
-            '小红书加', '小红书报', '抖音加', '抖音报', '推荐/介绍加', '推荐/介绍报', '自己进店加', '自己进店报',
-            '公众号加', '公众号报', '视频号加', '视频号报']
+        [
+            "日期",
+            "报名城市数据",
+            "",
+            "",
+            "",
+            "总体数据",
+            "",
+            "",
+            "商务通数据",
+            "",
+            "",
+            "红推数据",
+            "",
+            "",
+            "信息流数据",
+            "",
+            "",
+            "点评数据",
+            "",
+            "电话数据",
+            "",
+            "小红书数据",
+            "",
+            "抖音数据",
+            "",
+            "推荐/介绍数据",
+            "",
+            "自己进店数据",
+            "",
+            "公众号数据",
+            "",
+            "视频号数据",
+            ""
+        ],
+        [
+            "",
+            "报上海",
+            "报北京",
+            "报广州",
+            "报成都",
+            "总转客户",
+            "总报名",
+            "总转化率",
+            "商务通加",
+            "商务通报",
+            "商转化率",
+            "红推加",
+            "红推报",
+            "红推转化率",
+            "信息流加",
+            "信息流报",
+            "信转化率",
+            "点评加",
+            "点评报",
+            "电话加",
+            "电话报",
+            "小红书加",
+            "小红书报",
+            "抖音加",
+            "抖音报",
+            "推荐/介绍加",
+            "推荐/介绍报",
+            "自己进店加",
+            "自己进店报",
+            "公众号加",
+            "公众号报",
+            "视频号加",
+            "视频号报"
+        ]
     ];
 
     // 处理数据
-    const data = tableData.value.map(row => {
+    const data = tableData.value.map((row) => {
         return [
             row.date,
             row.shanghaiCount || 0,
@@ -295,11 +365,11 @@ const handleExport = () => {
     const ws = XLSX.utils.aoa_to_sheet(exportData);
 
     // 设置列宽
-    ws['!cols'] = Array(33).fill({ wch: 12 }); // 设置所有列宽为12个字符
-    ws['!cols'][0] = { wch: 15 }; // 日期列宽设置为15个字符
+    ws["!cols"] = Array(33).fill({ wch: 12 }); // 设置所有列宽为12个字符
+    ws["!cols"][0] = { wch: 15 }; // 日期列宽设置为15个字符
 
     // 设置单元格合并
-    ws['!merges'] = [
+    ws["!merges"] = [
         { s: { r: 0, c: 1 }, e: { r: 0, c: 4 } }, // 报名城市数据
         { s: { r: 0, c: 5 }, e: { r: 0, c: 7 } }, // 总体数据
         { s: { r: 0, c: 8 }, e: { r: 0, c: 10 } }, // 商务通数据
@@ -312,19 +382,19 @@ const handleExport = () => {
         { s: { r: 0, c: 25 }, e: { r: 0, c: 26 } }, // 推荐/介绍数据
         { s: { r: 0, c: 27 }, e: { r: 0, c: 28 } }, // 自己进店数据
         { s: { r: 0, c: 29 }, e: { r: 0, c: 30 } }, // 公众号数据
-        { s: { r: 0, c: 31 }, e: { r: 0, c: 32 } }  // 视频号数据
+        { s: { r: 0, c: 31 }, e: { r: 0, c: 32 } } // 视频号数据
     ];
 
     // 设置单元格样式
     for (let i = 0; i < exportData.length; i++) {
         for (let j = 0; j < exportData[i].length; j++) {
             const cellRef = XLSX.utils.encode_cell({ r: i, c: j });
-            if (!ws[cellRef]) ws[cellRef] = { v: '' };
-            
+            if (!ws[cellRef]) ws[cellRef] = { v: "" };
+
             // 设置所有单元格居中对齐
             ws[cellRef].s = {
-                alignment: { horizontal: 'center', vertical: 'center' },
-                font: { name: '微软雅黑' }
+                alignment: { horizontal: "center", vertical: "center" },
+                font: { name: "微软雅黑" }
             };
 
             // 表头加粗
@@ -336,21 +406,19 @@ const handleExport = () => {
 
     // 创建工作簿
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '日期数据汇总');
+    XLSX.utils.book_append_sheet(wb, ws, "日期数据汇总");
 
     // 获取时间范围作为文件名
     const [startDate, endDate] = queryParams.value.timeRange || [];
-    const fileName = startDate && endDate 
-        ? `日期数据汇总_${startDate}_${endDate}.xlsx`
-        : `日期数据汇总_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const fileName = startDate && endDate ? `日期数据汇总_${startDate}_${endDate}.xlsx` : `日期数据汇总_${new Date().toISOString().split("T")[0]}.xlsx`;
 
     // 导出文件
     XLSX.writeFile(wb, fileName);
 };
 
 onMounted(() => {
-    handleQuery()
-})
+    handleQuery();
+});
 </script>
 
 <style scoped>
@@ -405,7 +473,7 @@ onMounted(() => {
 
 /* 确保固定列的阴影效果 */
 .el-table--border .el-table__fixed-right {
-    box-shadow: -2px 0 8px rgba(0, 0, 0, .15);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
 }
 
 /* 添加横向滚动容器样式 */

@@ -94,8 +94,8 @@ const filterDialogVisible = ref(false);
 const tableData = ref([]);
 const queryParams = ref({
     timeRange: [
-        new Date(new Date().getFullYear(), new Date().getMonth(), 1).toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-"),
-        new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-")
+        new Date(new Date().setDate(new Date().getDate())).toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-"),
+        new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-")
     ],
     schoolId: "" // 添加校区ID字段
 });

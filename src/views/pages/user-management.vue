@@ -241,7 +241,9 @@ const handleEdit = async (row) => {
         // 获取校区列表
         const schoolRes = await request.post(
             "/dept/getAllSchools",
-            {},
+            {
+                withNet: true
+            },
             {
                 headers: { sessionid: localStorage.getItem("sessionid") }
             }
@@ -404,7 +406,9 @@ const getSchools = async () => {
     try {
         const res = await request.post(
             "/dept/getAllSchools",
-            {},
+            {
+                withNet: true
+            },
             {
                 headers: { sessionid: localStorage.getItem("sessionid") }
             }

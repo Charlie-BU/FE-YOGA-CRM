@@ -10,7 +10,7 @@
             <el-button type="warning" :icon="CirclePlusFilled" @click="editModelVisible = true">新增</el-button>
             <el-button type="primary" :disabled="!selectedRows.length" @click="handleAssign">分配</el-button>
             <el-button type="danger" :disabled="!selectedRows.length" @click="handleUnassign">取消分配</el-button>
-            <el-button type="success" :disabled="!selectedRows.length" @click="handleToClient">转客户</el-button>
+            <el-button type="success" :disabled="!selectedRows.length" @click="handleToClient()">转客户</el-button>
             <div style="float: right">
                 <el-tooltip effect="dark" content="列设置" placement="top">
                     <el-button type="primary" :icon="Setting" circle @click="columnSettingVisible = true"></el-button>
@@ -812,7 +812,7 @@ const handleUnassign = async () => {
         });
 };
 
-const handleToClient = async (clientId) => {
+const handleToClient = async (clientId = null) => {
     if (!clientId && !selectedRows.value.length) return;
 
     ElMessageBox.confirm("确认将选中的线索转为正式客户吗？", "提示", {
@@ -866,14 +866,24 @@ const exportToExcel = async () => {
         type: "warning"
     })
         .then(async () => {
+            if (!page.total) {
+                ElMessage.warning("没有数据可导出");
+                return;
+            }
+            if (page.total > 1000) {
+                ElMessage.warning("导出数据量过大（>1000），建议先进行筛选后导出");
+                return;
+            }
             try {
                 loading.value = true;
                 const res = await request.post(
                     "/extra/getClueClients",
                     {
-                        pageIndex: 1,
-                        pageSize: 99999,
-                        name: query.name
+                        pageIndex: page.index,
+                        pageSize: 1000,
+                        ...query,
+                        startTime: query.timeRange?.[0] || "",
+                        endTime: query.timeRange?.[1] || ""
                     },
                     {
                         headers: {

@@ -157,7 +157,10 @@ const loading = ref(false);
 const filterDialogVisible = ref(false);
 const tableData = ref([]);
 const queryParams = ref({
-    timeRange: []
+    timeRange: [
+        new Date(new Date().setDate(new Date().getDate() - 1)).toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-"),
+        new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-")
+    ]
 });
 
 // 计算转化率
@@ -198,7 +201,10 @@ const handleQuery = async () => {
 // 重置查询
 const resetQuery = () => {
     queryParams.value = {
-        timeRange: []
+        timeRange: [
+            new Date(new Date().setDate(new Date().getDate() - 1)).toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-"),
+            new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "-")
+        ]
     };
 };
 

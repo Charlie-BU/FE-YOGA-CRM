@@ -294,16 +294,16 @@ const submitForm = async (type: "department" | "school") => {
 // 添加树状结构相关数据
 const selectedSchoolId = ref("");
 const treeData = computed(() => {
-    return [{
-        id: "",
-        name: "全部校区",
-        children: schoolData.value
-            .filter(school => school.name !== "网络部")
-            .map((school) => ({
+    return [
+        {
+            id: "",
+            name: "全部校区",
+            children: schoolData.value.map((school) => ({
                 id: school.id,
                 name: school.name
             }))
-    }];
+        }
+    ];
 });
 
 // 添加树节点点击处理函数

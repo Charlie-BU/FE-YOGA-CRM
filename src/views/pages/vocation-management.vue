@@ -38,7 +38,7 @@
                 </el-form-item>
                 <el-form-item label="权限">
                     <el-select v-model="editForm.authorities" multiple placeholder="请选择权限" style="width: 100%">
-                        <el-option v-for="item in authorityOptions" :key="item.id" :label="item.name" :value="item.id" />
+                        <el-option v-for="item in authorityOptions" :key="item.id" :label="item.module + ' - ' + item.name" :value="item.id" />
                     </el-select>
                 </el-form-item>
             </el-form>

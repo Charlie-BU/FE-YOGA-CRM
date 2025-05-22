@@ -1139,15 +1139,29 @@ const exportToExcel = async () => {
         type: "warning"
     })
         .then(async () => {
+            if (!page.total) {
+                ElMessage.warning("没有数据可导出");
+                return;
+            }
+            if (page.total > 800) {
+                ElMessage.warning("导出数据量过大（>800），建议先进行筛选后导出");
+                return;
+            }
             try {
                 loading.value = true;
                 const res = await request.post(
                     "/extra/getClients",
                     {
                         clientStatus: currClientStatus.value,
-                        pageIndex: 1,
-                        pageSize: 99999,
-                        name: query.name
+                        pageIndex: page.index,
+                        pageSize: 800,
+                        ...query,
+                        startTime: query.timeRange?.[0] || "",
+                        endTime: query.timeRange?.[1] || "",
+                        appointStartDate: query.appointDateRange?.[0] || "",
+                        appointEndDate: query.appointDateRange?.[1] || "",
+                        nextTalkStartDate: query.nextTalkDateRange?.[0] || "",
+                        nextTalkEndDate: query.nextTalkDateRange?.[1] || ""
                     },
                     {
                         headers: {
