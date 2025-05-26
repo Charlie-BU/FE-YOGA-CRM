@@ -33,6 +33,14 @@ const routes: RouteRecordRaw[] = [
                 component: () => import(/* webpackChunkName: "clue-sea" */ "../views/pages/clue-sea.vue")
             },
             {
+                path: "/clue-search",
+                name: "clue-search",
+                meta: {
+                    title: "线索查找"
+                },
+                component: () => import(/* webpackChunkName: "clue-sea" */ "../views/pages/clue-search.vue")
+            },
+            {
                 path: "/client-management",
                 name: "client-management",
                 meta: {

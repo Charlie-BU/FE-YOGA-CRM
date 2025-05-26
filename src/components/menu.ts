@@ -16,6 +16,12 @@ export const menuData: Menus[] = [
         icon: "Share"
     },
     {
+        id: "011",
+        title: "线索查找",
+        index: "/clue-search",
+        icon: "Search"
+    },
+    {
         id: "02",
         title: "客户管理",
         index: "/client-management",

@@ -60,7 +60,7 @@
                             :total="page.total"
                             @current-change="changePage"
                             @size-change="handleSizeChange"
-                            :page-sizes="[10, 20, 50, 100]"
+                            :page-sizes="[5, 10, 20, 50, 100]"
                             layout="sizes, total, prev, pager, next"
                         >
                         </el-pagination>
@@ -221,11 +221,16 @@
                             <el-date-picker v-model="formData.endDate" type="date" placeholder="请选择结课日期" style="width: 100%" value-format="YYYY-MM-DD" />
                         </el-form-item>
                     </el-col>
-                    <el-col :span="12">
+                    <!-- <el-col :span="12">
                         <el-form-item label="* 主讲教师" prop="chiefTeacherId">
                             <el-select v-model="formData.chiefTeacherId" placeholder="请选择主讲教师" style="width: 100%" @change="(val) => handleTeacherChange('chief')" filterable>
                                 <el-option v-for="item in teacherOptions" :key="item.value" :label="item.label" :value="item.value" />
                             </el-select>
+                        </el-form-item>
+                    </el-col> -->
+                    <el-col :span="12">
+                        <el-form-item label="* 主讲教师" prop="chiefTeacherName">
+                            <el-input v-model="formData.chiefTeacherName" placeholder="请输入主讲教师姓名" />
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -335,7 +340,7 @@ const handleNodeClick = async (node) => {
 const loading = ref(false);
 const page = reactive({
     index: 1,
-    size: 10,
+    size: 5,
     total: 0
 });
 
@@ -351,7 +356,7 @@ const formData = ref({
     endDate: "", // 新增结课日期字段
     duration: "",
     price: "",
-    chiefTeacherId: "",
+    chiefTeacherName: "",
     classTeacherId: "",
     teachingAssistantName: "",
     info: ""
@@ -468,7 +473,7 @@ const handleBranchChange = async (branchId) => {
     try {
         // 清空相关字段
         formData.value.courseId = "";
-        formData.value.chiefTeacherId = "";
+        formData.value.chiefTeacherName = "";
         formData.value.classTeacherId = "";
         formData.value.teachingAssistantName = "";
         // 获取该校区的课程列表
@@ -561,7 +566,7 @@ const closeDialog = () => {
         endDate: "",
         duration: "",
         price: "",
-        chiefTeacherId: "",
+        chiefTeacherName: "",
         classTeacherId: "",
         teachingAssistantName: "",
         info: ""

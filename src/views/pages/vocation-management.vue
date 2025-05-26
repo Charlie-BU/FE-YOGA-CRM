@@ -2,6 +2,7 @@
     <div>
         <div class="container">
             <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
+            <el-button type="warning" :icon="CirclePlusFilled" @click="addVocationVisible = true">添加职位</el-button>
             <!-- <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button> -->
             <!-- <el-button type="warning" :icon="CirclePlusFilled" @click="handleAdd('school')">新增校区</el-button> -->
             <el-table :data="vocationData" style="width: 100%; margin-top: 20px">
@@ -49,13 +50,28 @@
                 </span>
             </template>
         </el-dialog>
+
+        <!-- 新增职位弹窗 -->
+        <el-dialog title="新增职位" v-model="addVocationVisible" width="500px" destroy-on-close :close-on-click-modal="false">
+            <el-form ref="dormFormRef" label-width="100px">
+                <el-form-item label="职位名称" prop="name">
+                    <el-input v-model="vocationName" placeholder="请输入职位名称" />
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="addVocationVisible = false">取消</el-button>
+                    <el-button type="primary" @click="addVocation">确定</el-button>
+                </span>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Refresh } from "@element-plus/icons-vue";
+import { Refresh, CirclePlusFilled } from "@element-plus/icons-vue";
 // import { handleRefresh } from "@/utils/index";
 import request from "@/utils/request";
 
@@ -68,6 +84,7 @@ const handleRefresh = async () => {
 };
 
 const vocationData = ref(null);
+const addVocationVisible = ref(false);
 
 // 获取职位列表
 const getAllVocations = async () => {
@@ -151,6 +168,34 @@ const handleSave = async () => {
     } catch (error) {
         console.error("更新失败:", error);
         ElMessage.error("更新失败");
+    }
+};
+
+const vocationName = ref("");
+const addVocation = async () => {
+    if (!vocationName.value) {
+        ElMessage.warning("请输入职位名称");
+        return;
+    }
+    try {
+        const res = await request.post(
+            "/user/addVocation",
+            {
+                name: vocationName.value
+            },
+            {
+                headers: { sessionid: localStorage.getItem("sessionid") }
+            }
+        );
+        if (res.data.status === 200) {
+            ElMessage.success("添加成功");
+            addVocationVisible.value = false;
+            vocationName.value = "";
+            await getAllVocations(); // 刷新列表
+        }
+    } catch (error) {
+        console.error("添加失败:", error);
+        ElMessage.error("添加失败");
     }
 };
 </script>

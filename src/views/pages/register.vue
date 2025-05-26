@@ -88,11 +88,15 @@ const depts = ref([]);
 const vocations = ref([]);
 
 const getAllDepts = async () => {
-    const res = await request.post("/dept/getAllDepts", null, {
-        headers: {
-            sessionid: localStorage.getItem("sessionid")
+    const res = await request.post(
+        "/dept/getAllDepts",
+        {},
+        {
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
         }
-    });
+    );
     if (res.data.status < 0) {
         return;
     }

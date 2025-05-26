@@ -4,7 +4,7 @@
             <el-tab-pane label="收入管理" name="income">
                 <div class="container">
                     <el-button type="primary" :icon="Refresh" @click="handleRefresh">刷新</el-button>
-                    <el-button type="warning" :icon="CirclePlusFilled" @click="handleAdd">新增</el-button>
+                    <!-- <el-button type="warning" :icon="CirclePlusFilled" @click="handleAdd">新增</el-button> -->
 
                     <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px" @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
                         <!-- 保持原有的表格内容 -->

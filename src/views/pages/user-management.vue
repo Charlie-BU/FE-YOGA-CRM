@@ -58,6 +58,16 @@
                     <el-col v-for="(item, index) in options.list" :key="index" :span="options.span">
                         <el-form-item :label="item.label" :prop="item.prop" :rules="item.rules || (item.required ? [{ required: true, message: `请输入${item.label}`, trigger: 'blur' }] : [])">
                             <el-input v-if="item.type === 'input'" v-model="formData[item.prop]" :type="item.inputType || 'text'" :placeholder="`请输入${item.label}`" />
+                            <el-select
+                                v-else-if="item.prop === 'schoolId'"
+                                v-model="formData[item.prop]"
+                                :placeholder="`请选择${item.label}`"
+                                style="width: 100%"
+                                @change="handleSchoolChange"
+                                filterable
+                            >
+                                <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label" :value="opt.value" />
+                            </el-select>
                             <el-select v-else-if="item.type === 'select'" v-model="formData[item.prop]" :placeholder="`请选择${item.label}`" style="width: 100%" filterable>
                                 <el-option v-for="opt in item.options" :key="opt.value" :label="opt.label" :value="opt.value" />
                             </el-select>
@@ -168,6 +178,35 @@ const getUsers = async (schoolId = null) => {
     }
 };
 
+const getUsersByDept = async (deptId = null) => {
+    loading.value = true;
+    try {
+        const params = {
+            pageIndex: page.index,
+            pageSize: page.size,
+            name: query.name
+        };
+        // 只有当 deptId 不为 null 时才添加到请求参数
+        if (deptId !== null) {
+            Object.assign(params, { deptId });
+        }
+        const res = await request.post("/user/getAllUsers", params, {
+            headers: {
+                sessionid: localStorage.getItem("sessionid")
+            }
+        });
+        if (res.data.status != 200) {
+            return;
+        }
+        tableData.value = res.data.users;
+        page.total = res.data.total;
+    } catch (error) {
+        console.error("获取数据失败:", error);
+    } finally {
+        loading.value = false;
+    }
+};
+
 const changePage = async (val: number) => {
     if (loading.value) return; // 如果正在加载，则不执行
     page.index = val;
@@ -256,9 +295,13 @@ const handleEdit = async (row) => {
         }
 
         // 获取部门列表
-        const deptRes = await request.post("/dept/getAllDepts", null, {
-            headers: { sessionid: localStorage.getItem("sessionid") }
-        });
+        const deptRes = await request.post(
+            "/dept/getAllDepts",
+            { schoolId: row.schoolId },
+            {
+                headers: { sessionid: localStorage.getItem("sessionid") }
+            }
+        );
         if (deptRes.data.status === 200) {
             options.value.list.find((item) => item.prop === "departmentId").options = deptRes.data.depts.map((item) => ({
                 label: item.name,
@@ -282,6 +325,25 @@ const handleEdit = async (row) => {
     } catch (error) {
         console.error("获取数据失败:", error);
         ElMessage.error("获取数据失败");
+    }
+};
+
+const currSchoolId = ref(null);
+const handleSchoolChange = async (schoolId) => {
+    currSchoolId.value = schoolId;
+    // 获取部门列表
+    const deptRes = await request.post(
+        "/dept/getAllDepts",
+        { schoolId: currSchoolId.value },
+        {
+            headers: { sessionid: localStorage.getItem("sessionid") }
+        }
+    );
+    if (deptRes.data.status === 200) {
+        options.value.list.find((item) => item.prop === "departmentId").options = deptRes.data.depts.map((item) => ({
+            label: item.name,
+            value: item.id
+        }));
     }
 };
 
@@ -401,7 +463,10 @@ const handleRowClick = (row) => {
 const selectedSchoolId = ref(null);
 const schoolData = ref([]);
 
-// 获取校区列表
+// 添加部门数据的响应式变量
+const departmentsMap = ref(new Map());
+
+// 修改获取校区列表的方法，同时获取每个校区的部门
 const getSchools = async () => {
     try {
         const res = await request.post(
@@ -415,6 +480,19 @@ const getSchools = async () => {
         );
         if (res.data.status === 200) {
             schoolData.value = res.data.schools;
+            // 获取每个校区的部门
+            for (const school of res.data.schools) {
+                const deptRes = await request.post(
+                    "/dept/getAllDepts",
+                    { schoolId: school.id },
+                    {
+                        headers: { sessionid: localStorage.getItem("sessionid") }
+                    }
+                );
+                if (deptRes.data.status === 200) {
+                    departmentsMap.value.set(school.id, deptRes.data.depts);
+                }
+            }
         }
     } catch (error) {
         console.error("获取校区列表失败:", error);
@@ -422,15 +500,22 @@ const getSchools = async () => {
     }
 };
 
-// 添加树形数据计算属性
+// 修改树形数据计算属性为同步方式
 const treeData = computed(() => {
     return [
         {
             id: "",
             name: "全部校区",
+            type: "root",
             children: schoolData.value.map((school) => ({
                 id: school.id,
-                name: school.name
+                name: school.name,
+                type: "school",
+                children: (departmentsMap.value.get(school.id) || []).map((dept) => ({
+                    id: dept.id,
+                    name: dept.name,
+                    type: "department"
+                }))
             }))
         }
     ];
@@ -438,9 +523,26 @@ const treeData = computed(() => {
 
 // 添加树节点点击处理函数
 const handleNodeClick = async (node) => {
-    selectedSchoolId.value = node.id;
     page.index = 1; // 重置页码
-    await getUsers(node.id);
+    if (node.type === "department") {
+        // 如果点击的是部门节点，则传入部门ID
+        await getUsersByDept(node.id);
+    } else {
+        // 如果点击的是校区节点或根节点，保持原有逻辑
+        selectedSchoolId.value = node.id;
+        await getUsers(node.id);
+    }
+};
+
+// 添加查找父级校区的辅助函数
+const findParentSchool = (deptId) => {
+    for (const school of schoolData.value) {
+        const depts = school.departments || [];
+        if (depts.some((dept) => dept.id === deptId)) {
+            return school;
+        }
+    }
+    return null;
 };
 </script>
 
