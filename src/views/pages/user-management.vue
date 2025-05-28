@@ -136,7 +136,8 @@ const columns = ref([
     { prop: "schoolName", label: "校区", align: "center", width: 120 },
     { prop: "departmentName", label: "部门", align: "center", width: 150 },
     { prop: "vocationName", label: "职位", align: "center", width: 100 },
-    { prop: "status", label: "状态", align: "center", width: 100, formatter: (row) => (row.status === 1 ? "在职" : "离职") }
+    { prop: "status", label: "状态", align: "center", width: 100, formatter: (row) => (row.status === 1 ? "在职" : "离职") },
+    { prop: "status", label: "线索可见类型", align: "center", width: 150, formatter: (row) => conventions.getClientVisible(row.clientVisible) }
 ]);
 
 const page = reactive({
@@ -257,6 +258,15 @@ const options = ref<any>({
                 { label: "在职", value: 1 },
                 { label: "离职", value: 2 }
             ]
+        },
+        {
+            type: "select",
+            label: "线索可见类型",
+            prop: "clientVisible",
+            options: conventions.clientVisibles.map((item) => ({
+                label: item.name,
+                value: item.id
+            }))
         }
     ]
 });
@@ -319,7 +329,9 @@ const handleEdit = async (row) => {
                 value: item.id
             }));
         }
-        formData.value = JSON.parse(JSON.stringify(row));
+        formData.value = Object.fromEntries(
+            ["id", "username", "gender", "phone", "address", "workNum", "schoolId", "departmentId", "vocationId", "status", "clientVisible"].map((key) => [key, row[key]])
+        );
         isEdit.value = true;
         editModelVisible.value = true;
     } catch (error) {

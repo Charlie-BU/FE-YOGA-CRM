@@ -36,6 +36,30 @@ export const getStatus = (id: number): string | undefined => {
     return status ? status.name : undefined;
 };
 
+// User：客户可见类型
+export const clientVisibles: Convention[] = [
+    {
+        id: 1,
+        name: "仅本人相关"
+    },
+    {
+        id: 2,
+        name: "本校区"
+    },
+    {
+        id: 3,
+        name: "本部门"
+    },
+    {
+        id: 4,
+        name: "全部"
+    }
+];
+export const getClientVisible = (id: number): string | undefined => {
+    const clientVisible = clientVisibles.find((v) => v.id === id);
+    return clientVisible ? clientVisible.name : undefined;
+};
+
 // Client：渠道来源
 export const fromSources: Convention[] = [
     {
