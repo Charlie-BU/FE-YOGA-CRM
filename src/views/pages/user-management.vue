@@ -211,7 +211,11 @@ const getUsersByDept = async (deptId = null) => {
 const changePage = async (val: number) => {
     if (loading.value) return; // 如果正在加载，则不执行
     page.index = val;
-    await getUsers(selectedSchoolId.value);
+    if (selectedDeptId.value) {
+        await getUsersByDept(selectedDeptId.value);
+    } else {
+        await getUsers(selectedSchoolId.value);
+    }
 };
 
 // 编辑弹窗相关
@@ -374,7 +378,11 @@ const submitForm = async () => {
                 if (res.data.status === 200) {
                     ElMessage.success("编辑成功");
                     closeDialog();
-                    getUsers();
+                    if (selectedDeptId.value) {
+                        getUsersByDept(selectedDeptId.value);
+                    } else {
+                        getUsers(selectedSchoolId.value);
+                    }
                 } else {
                     ElMessage.error(res.data.message || "编辑失败");
                 }
@@ -408,7 +416,11 @@ const handleInitPwd = async (row: User) => {
                 );
                 if (res.data.status === 200) {
                     ElMessage.success("初始化成功，初始密码为 12345");
-                    getUsers();
+                    if (selectedDeptId.value) {
+                        getUsersByDept(selectedDeptId.value);
+                    } else {
+                        getUsers(selectedSchoolId.value);
+                    }
                 } else {
                     ElMessage.error(res.data.message || "密码初始化失败");
                 }
@@ -444,7 +456,11 @@ const handleDelete = (row: User) => {
                 );
                 if (res.data.status === 200) {
                     ElMessage.success("删除成功");
-                    getUsers();
+                    if (selectedDeptId.value) {
+                        getUsersByDept(selectedDeptId.value);
+                    } else {
+                        getUsers(selectedSchoolId.value);
+                    }
                 } else {
                     ElMessage.error(res.data.message || "删除失败");
                 }
@@ -473,6 +489,7 @@ const handleRowClick = (row) => {
 
 // 添加树状结构相关数据
 const selectedSchoolId = ref(null);
+const selectedDeptId = ref(null);
 const schoolData = ref([]);
 
 // 添加部门数据的响应式变量
@@ -538,9 +555,11 @@ const handleNodeClick = async (node) => {
     page.index = 1; // 重置页码
     if (node.type === "department") {
         // 如果点击的是部门节点，则传入部门ID
+        selectedDeptId.value = node.id;
         await getUsersByDept(node.id);
     } else {
-        // 如果点击的是校区节点或根节点，保持原有逻辑
+        // 如果点击的是校区节点或根节点，清空部门id
+        selectedDeptId.value = null;
         selectedSchoolId.value = node.id;
         await getUsers(node.id);
     }

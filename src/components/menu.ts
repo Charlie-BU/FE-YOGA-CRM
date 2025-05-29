@@ -16,7 +16,7 @@ export const menuData: Menus[] = [
         icon: "Share"
     },
     {
-        id: "011",
+        id: "01-1",
         title: "线索查找",
         index: "/clue-search",
         icon: "Search"
@@ -93,12 +93,6 @@ export const menuData: Menus[] = [
                 index: "/transaction-summary",
                 title: "收入支出汇总表"
             },
-            // {
-            //     id: "010-6",
-            //     pid: "1",
-            //     index: "/course-channel-stats",
-            //     title: "课程按渠道分类统计表"
-            // },
             {
                 id: "010-16",
                 pid: "1",
@@ -356,3 +350,38 @@ export const menuData: Menus[] = [
     //     ]
     // }
 ];
+
+export const menuDataSearchOnly: Menus[] = [
+    {
+        id: "01-1",
+        title: "线索查找",
+        index: "/clue-search",
+        icon: "Search"
+    }
+];
+
+// 暂弃用
+export const visibleMap = {
+    "0": [],
+    "01": [],
+    "01-1": [],
+    "02": [],
+    "03": [],
+    "04": [],
+    "04-1": [],
+    "05": [],
+    "06": [],
+    "07": [],
+    "08": [],
+    "09": [],
+    "010": [],
+    "010-1": [],
+    "010-2": [],
+    "010-16": [],
+    "010-17": [],
+    "010-12": [],
+    "010-14": [],
+    "010-10": [],
+    "010-9": [],
+    "011": []
+};

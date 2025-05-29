@@ -18,6 +18,8 @@ export const loginCheck = async () => {
         }
         // briefUserInfo
         const briefUserInfo = res.data.data;
+        localStorage.setItem("usertype", JSON.stringify(briefUserInfo?.usertype));
+        localStorage.setItem("auth", JSON.stringify(briefUserInfo?.authority));
         return briefUserInfo;
     } catch (error) {
         return null;

@@ -1,8 +1,7 @@
 <template>
     <div class="sidebar">
-        <el-menu class="sidebar-el-menu" :default-active="onRoutes" :collapse="sidebar.collapse"
-            :background-color="sidebar.bgColor" :text-color="sidebar.textColor" router>
-            <template v-for="item in menuData">
+        <el-menu class="sidebar-el-menu" :default-active="onRoutes" :collapse="sidebar.collapse" :background-color="sidebar.bgColor" :text-color="sidebar.textColor" router>
+            <template v-for="item in menu">
                 <template v-if="item.children">
                     <el-sub-menu :index="item.index" :key="item.index">
                         <template #title>
@@ -14,8 +13,7 @@
                         <template v-for="subItem in item.children">
                             <el-sub-menu v-if="subItem.children" :index="subItem.index" :key="subItem.index">
                                 <template #title>{{ subItem.title }}</template>
-                                <el-menu-item v-for="(threeItem, i) in subItem.children" :key="i"
-                                    :index="threeItem.index">
+                                <el-menu-item v-for="(threeItem, i) in subItem.children" :key="i" :index="threeItem.index">
                                     {{ threeItem.title }}
                                 </el-menu-item>
                             </el-sub-menu>
@@ -39,15 +37,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useSidebarStore } from '../store/sidebar';
-import { useRoute } from 'vue-router';
-import { menuData } from '@/components/menu';
+import { computed } from "vue";
+import { useSidebarStore } from "../store/sidebar";
+import { useRoute } from "vue-router";
+import { menuData, menuDataSearchOnly } from "@/components/menu";
 
 const route = useRoute();
 const onRoutes = computed(() => {
     return route.path;
 });
+
+const usertype = localStorage.getItem("usertype");
+const userAuth = localStorage.getItem("auth");
+const menu = userAuth === "[50]" && usertype === "1" ? menuDataSearchOnly : menuData;
 
 const sidebar = useSidebarStore();
 </script>
