@@ -2,6 +2,8 @@
     <div>
         <TableSearch :query="query" :options="searchOpt" :search="handleSearch" />
         <div class="container">
+            <el-button type="primary" :disabled="selectedRows.length !== 1" @click="handlePayment(1)">缴费</el-button>
+            <el-button type="danger" :disabled="selectedRows.length !== 1" @click="handlePayment(2)">退费</el-button>
             <el-table ref="tableRef" :data="tableData" style="width: 100%; margin-top: 20px" @selection-change="handleSelectionChange" @row-click="handleRowClick" v-loading="loading">
                 <el-table-column type="selection" width="55" align="center" />
                 <template v-for="item in columns" :key="item.prop">
@@ -47,21 +49,60 @@
         </div>
         <!-- 客户信息卡弹窗 -->
         <ClientInfoCard v-model="clientInfoDialogVisible" :clientId="currentClient.id" />
+
+        <!-- 缴费 / 退费弹窗 -->
+        <el-dialog :title="paymentDialogVisible === 1 ? '缴费' : '退费'" v-if="paymentDialogVisible !== 0" v-model="paymentDialogVisible" width="500px" destroy-on-close>
+            <el-form :model="paymentForm" label-width="120px">
+                <el-form-item label="* 金额（元）:">
+                    <el-input-number v-model="paymentForm.amount" :min="1" :max="999999" style="width: 100%" />
+                </el-form-item>
+                <el-form-item label="* 费用项目:">
+                    <el-select v-model="paymentForm.category" placeholder="请选择费用项目" style="width: 100%" filterable>
+                        <el-option v-for="item in conventions.paymentCategories" :key="item.id" :label="item.name" :value="item.id" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="* 交易方式:">
+                    <el-select v-model="paymentForm.paymentMethod" placeholder="请选择交易方式" style="width: 100%" filterable>
+                        <el-option v-for="item in conventions.paymentMethods" :key="item.id" :label="item.name" :value="item.id" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="负责老师:">
+                    <!-- 默认当前用户 -->
+                    <el-select v-model="paymentForm.teacherId" :placeholder="briefUserInfo?.username" disabled style="width: 100%">
+                        <el-option :label="briefUserInfo?.username" :value="briefUserInfo?.id" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="客户备注:">
+                    <el-input v-model="paymentForm.info" type="textarea" :rows="3" placeholder="请输入备注信息"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="paymentDialogVisible = 0">取消</el-button>
+                    <el-button type="primary" @click="submitPayment(paymentDialogVisible)">确定</el-button>
+                </span>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts" name="system-user">
 import { ref, reactive, onMounted } from "vue";
 import { ElMessage, ElMessageBox, vLoading } from "element-plus";
+import { Refresh } from "@element-plus/icons-vue"; // 添加Refresh图标
 import request from "@/utils/request";
 import TableSearch from "@/components/table-search.vue";
 import { FormOptionList } from "@/types/form-option";
 import * as conventions from "@/utils/conventions";
 import ClientInfoCard from "@/components/client-info-card.vue";
+import { loginCheck } from "@/utils/login-check"; // 添加loginCheck
 
 import * as utils from "@/utils/index";
 
+const briefUserInfo = ref(null); // 添加用户信息
+
 onMounted(async () => {
+    briefUserInfo.value = await loginCheck(); // 获取用户信息
     await getClients();
 });
 
@@ -254,6 +295,70 @@ const cancelGraduate = (row) => {
             // 取消操作，不做任何处理
         });
 };
+
+// 缴费相关
+const paymentDialogVisible = ref(0);
+const paymentForm = ref({
+    teacherId: "",
+    amount: 1000,
+    paymentMethod: 1,
+    category: 1,
+    info: ""
+});
+
+const handlePayment = async (type: number = 1) => {
+    if (!selectedRows.value.length) return;
+    try {
+        // 设置当前用户为负责老师
+        paymentForm.value.teacherId = briefUserInfo.value.id;
+        paymentDialogVisible.value = type;
+    } catch (error) {
+        console.error("操作失败:", error);
+        ElMessage.error("操作失败");
+    }
+};
+
+const submitPayment = async (type: number = 1) => {
+    if (!paymentForm.value.amount || paymentForm.value.amount <= 0 || !paymentForm.value.paymentMethod) {
+        ElMessage.warning("请填写必要信息");
+        return;
+    }
+    if (type === 2) {
+        paymentForm.value.amount = -paymentForm.value.amount;
+    }
+    try {
+        const res = await request.post(
+            "/extra/submitPayment",
+            {
+                clientId: selectedRows.value[0].id,
+                ...paymentForm.value
+            },
+            {
+                headers: {
+                    sessionid: localStorage.getItem("sessionid")
+                }
+            }
+        );
+        if (res.data.status === 200) {
+            ElMessage.success(type === 1 ? "缴费成功" : "退费成功");
+            paymentDialogVisible.value = 0;
+            // 重置表单
+            paymentForm.value = {
+                teacherId: "",
+                amount: 1000,
+                category: 1,
+                paymentMethod: 1,
+                info: ""
+            };
+            await getClients();
+        } else {
+            ElMessage.error(res.data.message || "操作失败");
+        }
+    } catch (error) {
+        console.error("操作失败:", error);
+        ElMessage.error("操作失败");
+    }
+};
 </script>
 
 <style scoped>
@@ -268,5 +373,12 @@ const cancelGraduate = (row) => {
 
 .el-table :deep(.cell) {
     white-space: nowrap;
+}
+
+.dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 20px;
 }
 </style>

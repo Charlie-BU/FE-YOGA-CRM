@@ -13,8 +13,10 @@
             <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1" @click="handleCancelReserve">取消预约</el-button>
             <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 2" type="success" :disabled="selectedRows.length !== 1" @click="confirmCooperation">确认成单</el-button>
             <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 1" type="danger" :disabled="selectedRows.length !== 1" @click="handleCancelCooperation">取消成单</el-button>
-            <el-button v-if="currClientStatus === 4" type="primary" :disabled="selectedRows.length !== 1" @click="handlePayment(1)">缴费</el-button>
-            <el-button v-if="currClientStatus === 4" type="danger" :disabled="selectedRows.length !== 1" @click="handlePayment(2)">退费</el-button>
+
+            <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 2" type="success" :disabled="selectedRows.length !== 1" @click="upload">上传合同</el-button>
+            <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 1" type="primary" :disabled="selectedRows.length !== 1" @click="handlePayment(1)">缴费</el-button>
+            <el-button v-if="currClientStatus === 4 && selectedRows[0]?.processStatus !== 1" type="danger" :disabled="selectedRows.length !== 1" @click="handlePayment(2)">退费</el-button>
             <div style="float: right">
                 <el-tooltip effect="dark" content="列设置" placement="top">
                     <el-button type="primary" :icon="Setting" circle @click="columnSettingVisible = true"></el-button>
@@ -1133,6 +1135,12 @@ const handleRowClick = (row) => {
 };
 
 const exportToExcel = async () => {
+    const auth = JSON.parse(localStorage.getItem("auth"));
+    const usertype = JSON.parse(localStorage.getItem("usertype"));
+    if (!auth.includes(52) && usertype === 1) {
+        ElMessage.warning("无权限进行该操作");
+        return;
+    }
     ElMessageBox.confirm("确认导出客户数据？", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
@@ -1236,7 +1244,7 @@ const contractForm = ref({
     cooperateTime: ""
 });
 
-const confirmCooperation = () => {
+const upload = () => {
     if (!selectedRows.value.length) return;
     // 设置成单时间
     contractForm.value.cooperateTime = new Date().toLocaleDateString();
@@ -1296,7 +1304,9 @@ const uploadContract = async () => {
         });
 
         if (res.data.status === 200) {
-            await submitContract();
+            ElMessage.success("合同上传成功");
+            contractDialogVisible.value = false;
+            getClients();
         } else {
             ElMessage.error(res.data.message || "合同上传失败");
         }
@@ -1306,7 +1316,7 @@ const uploadContract = async () => {
     }
 };
 
-const submitContract = async () => {
+const confirmContract = async () => {
     try {
         const res = await request.post(
             "/extra/confirmCooperation",
@@ -1332,6 +1342,16 @@ const submitContract = async () => {
         console.error("成单失败:", error);
         ElMessage.error("成单失败");
     }
+};
+
+const confirmCooperation = async () => {
+    ElMessageBox.confirm("确认将该客户成单吗？", "警告", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+    }).then(async () => {
+        await confirmContract();
+    });
 };
 
 const handleCancelCooperation = () => {

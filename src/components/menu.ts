@@ -351,37 +351,61 @@ export const menuData: Menus[] = [
     // }
 ];
 
-export const menuDataSearchOnly: Menus[] = [
-    {
-        id: "01-1",
-        title: "线索查找",
-        index: "/clue-search",
-        icon: "Search"
-    }
-];
+// export const menuDataSearchOnly: Menus[] = [
+//     {
+//         id: "01-1",
+//         title: "线索查找",
+//         index: "/clue-search",
+//         icon: "Search"
+//     }
+// ];
 
-// 暂弃用
 export const visibleMap = {
-    "0": [],
-    "01": [],
-    "01-1": [],
-    "02": [],
-    "03": [],
-    "04": [],
-    "04-1": [],
-    "05": [],
-    "06": [],
-    "07": [],
-    "08": [],
-    "09": [],
-    "010": [],
-    "010-1": [],
-    "010-2": [],
-    "010-16": [],
-    "010-17": [],
-    "010-12": [],
-    "010-14": [],
-    "010-10": [],
-    "010-9": [],
-    "011": []
+    "0": [
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+        51, 52
+    ],
+    "01": [5, 8, 9, 10, 16, 51],
+    "01-1": [50],
+    "02": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 51, 52],
+    "03": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 51, 52],
+    "04": [1, 2, 3, 4, 49],
+    "04-1": [49],
+    "05": [32, 33, 34, 35, 36, 37],
+    "06": [21, 22, 23, 24, 25, 26],
+    "07": [18, 19, 20],
+    "08": [27, 28, 29, 30, 31],
+    "09": [38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48],
+    // "010": [55, 56, 57, 58, 59, 60, 61, 62],
+    // 细化报表
+    "010-1": [55],
+    "010-2": [56],
+    "010-16": [57],
+    "010-17": [58],
+    "010-12": [59],
+    "010-14": [60],
+    "010-10": [61],
+    "010-9": [62],
+    "011": [54]
+};
+
+export const getVisibleMenus = (auth: number[]): Menus[] => {
+    // 递归检查菜单项是否可见
+    const checkMenuVisible = (menu: Menus): boolean => {
+        // 检查当前菜单项的权限
+        const requiredPermissions = visibleMap[menu.id];
+        const hasPermission = requiredPermissions ? requiredPermissions.some((permId) => auth.includes(permId)) : true; // 如果没有定义权限要求，默认可见
+
+        // 如果有子菜单，递归检查子菜单
+        if (menu.children && menu.children.length > 0) {
+            menu.children = menu.children.filter(checkMenuVisible);
+            // 如果所有子菜单都不可见，则父菜单也不可见
+            return menu.children.length > 0 && hasPermission;
+        }
+
+        return hasPermission;
+    };
+
+    // 过滤整个菜单树
+    return menuData.filter(checkMenuVisible);
 };

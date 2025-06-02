@@ -128,8 +128,16 @@
                         {{ conventions.getGender(scope.row.gender) }}
                     </template>
                 </el-table-column>
-                <el-table-column prop="phone" label="电话" align="center" show-overflow-tooltip />
-                <el-table-column prop="weixin" label="微信" align="center" show-overflow-tooltip />
+                <el-table-column prop="phone" label="电话" align="center" show-overflow-tooltip>
+                    <template #default="scope">
+                        {{ hidePhone(scope.row.phone) }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="weixin" label="微信" align="center" show-overflow-tooltip>
+                    <template #default="scope">
+                        {{ hideWeixin(scope.row.weixin) }}
+                    </template>
+                </el-table-column>
                 <el-table-column prop="cooperateTime" label="成单时间" width="180" align="center" show-overflow-tooltip />
                 <el-table-column label="操作" width="250" fixed="right" align="center">
                     <template #default="scope">
@@ -177,8 +185,16 @@
                         {{ conventions.getGender(scope.row.gender) }}
                     </template>
                 </el-table-column>
-                <el-table-column prop="phone" label="电话" align="center" show-overflow-tooltip />
-                <el-table-column prop="weixin" label="微信" align="center" show-overflow-tooltip />
+                <el-table-column prop="phone" label="电话" align="center" show-overflow-tooltip>
+                    <template #default="scope">
+                        {{ hidePhone(scope.row.phone) }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="weixin" label="微信" align="center" show-overflow-tooltip>
+                    <template #default="scope">
+                        {{ hideWeixin(scope.row.weixin) }}
+                    </template>
+                </el-table-column>
                 <el-table-column prop="cooperateTime" label="成单时间" width="180" align="center" show-overflow-tooltip />
                 <el-table-column label="操作" fixed="right" align="center">
                     <template #default="scope">
@@ -284,7 +300,7 @@
 import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Refresh, CirclePlusFilled, Search } from "@element-plus/icons-vue";
-// import { handleRefresh } from "@/utils/index";
+import { hidePhone, hideWeixin } from "@/utils/index";
 import * as conventions from "@/utils/conventions";
 import request from "@/utils/request";
 import ClientInfoCard from "@/components/client-info-card.vue";

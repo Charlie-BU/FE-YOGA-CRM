@@ -130,7 +130,7 @@
                     </el-col>
                     <el-col :span="12">
                         <el-form-item label="课时" prop="duration">
-                            <el-input v-model="formData.duration" type="number" placeholder="请输入课时（周）" />
+                            <el-input v-model="formData.duration" placeholder="请输入课时" />
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -450,7 +450,7 @@ const handleDelete = (row) => {
             );
             if (res.data.status === 200) {
                 ElMessage.success("删除成功");
-                getCourses();
+                handleRefresh();
             } else {
                 ElMessage.error(res.data.message || "删除失败");
             }
@@ -474,7 +474,7 @@ const submitForm = async () => {
                 if (res.data.status === 200) {
                     ElMessage.success(isEdit.value ? "编辑成功" : "添加成功");
                     closeDialog();
-                    getCourses();
+                    handleRefresh();
                 } else {
                     ElMessage.error(res.data.message || "操作失败");
                 }
@@ -642,7 +642,7 @@ const handleDeleteCombo = (row) => {
             );
             if (res.data.status === 200) {
                 ElMessage.success("删除成功");
-                getCombos();
+                handleRefresh();
             } else {
                 ElMessage.error(res.data.message || "删除失败");
             }
@@ -666,7 +666,7 @@ const submitComboForm = async () => {
                 if (res.data.status === 200) {
                     ElMessage.success(isEditCombo.value ? "编辑成功" : "添加成功");
                     closeComboDialog();
-                    getCombos();
+                    handleRefresh();
                 } else {
                     ElMessage.error(res.data.message || "操作失败");
                 }

@@ -20,3 +20,11 @@ export const handleRefresh = () => {
 export const getFileNameFromOssUrl = (url: string): string => {
     return url.split("/").pop() || "";
 };
+
+export const hidePhone = (phone: string): string => {
+    return phone.replace(/^(\d{3})\d{4}(\d{4})$/, "$1****$2");
+};
+
+export const hideWeixin = (weixin: string): string => {
+    return weixin.replace(/^(\w{3})\w+(\w{2})$/, "$1****$2");
+};

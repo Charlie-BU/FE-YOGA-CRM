@@ -727,10 +727,12 @@ const handleBranchChange = async (branchId) => {
             }
         );
         if (userRes.data.status === 200) {
-            schoolTeacherOptions.value = userRes.data.users.map((item) => ({
-                label: item.username,
-                value: item.id
-            }));
+            schoolTeacherOptions.value = userRes.data.users
+                .filter((item) => item.departmentName.includes("客服"))
+                .map((item) => ({
+                    label: item.username,
+                    value: item.id
+                }));
         }
     } catch (error) {
         console.error("获取用户列表失败:", error);
@@ -860,6 +862,12 @@ const handleRowClick = (row) => {
 };
 
 const exportToExcel = async () => {
+    const auth = JSON.parse(localStorage.getItem("auth"));
+    const usertype = JSON.parse(localStorage.getItem("usertype"));
+    if (!auth.includes(51) && usertype === 1) {
+        ElMessage.warning("无权限进行该操作");
+        return;
+    }
     ElMessageBox.confirm("确认导出线索公海数据？", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",

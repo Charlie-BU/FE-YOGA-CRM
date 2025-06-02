@@ -50,11 +50,7 @@
                     <el-descriptions-item label="成单时间">{{ client.cooperateTime }}</el-descriptions-item>
                     <el-descriptions-item label="合同">
                         <template v-if="client.contractUrl">
-                            <a 
-                                :href="client.contractUrl" 
-                                target="_blank" 
-                                class="contract-link"
-                            >
+                            <a :href="client.contractUrl" target="_blank" class="contract-link">
                                 {{ utils.getFileNameFromOssUrl(client.contractUrl) }}
                             </a>
                         </template>
@@ -237,6 +233,14 @@ const getClientInfo = async () => {
         if (res.data.status === 200) {
             client.value = res.data.client;
             if (client.value.info) client.value.info = client.value.info.reverse();
+        } else if (res.data.status === -2) {
+            ElMessage.error(res.data.message);
+            client.value = {};
+            paymentRecords.value = [];
+            lessonRecords.value = [];
+            clientLogs.value = [];
+            visible.value = false;
+            return;
         } else {
             ElMessage.error("获取客户信息失败");
             return;
@@ -553,7 +557,7 @@ const handleSizeChange = (val: number) => {
 }
 
 .contract-link {
-    color: #409EFF;
+    color: #409eff;
     text-decoration: none;
     cursor: pointer;
 }

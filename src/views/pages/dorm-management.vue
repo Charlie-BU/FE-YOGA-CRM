@@ -268,6 +268,11 @@ const treeData = computed(() => {
 const currentSelectedSchoolId = ref(null);
 // 添加树节点点击处理函数
 const handleNodeClick = async (node) => {
+    const usertype = JSON.parse(localStorage.getItem("usertype"));
+    if (usertype === 1) {
+        ElMessage.error("您只能查看自己所在校区的公寓信息");
+        return;
+    }
     dormPage.index = 1;
     currentSelectedSchoolId.value = node.id;
     await getDormitories(node.id);

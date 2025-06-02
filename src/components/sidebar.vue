@@ -40,17 +40,21 @@
 import { computed } from "vue";
 import { useSidebarStore } from "../store/sidebar";
 import { useRoute } from "vue-router";
-import { menuData, menuDataSearchOnly } from "@/components/menu";
+import { getVisibleMenus, menuData } from "@/components/menu";
 
 const route = useRoute();
 const onRoutes = computed(() => {
     return route.path;
 });
 
-const usertype = localStorage.getItem("usertype");
-const userAuth = localStorage.getItem("auth");
-const menu = userAuth === "[50]" && usertype === "1" ? menuDataSearchOnly : menuData;
-
+const usertype = JSON.parse(localStorage.getItem("usertype"));
+const userAuth = JSON.parse(localStorage.getItem("auth"));
+let menu = null;
+if (usertype > 1) {
+    menu = menuData;
+} else {
+    menu = getVisibleMenus(userAuth);
+}
 const sidebar = useSidebarStore();
 </script>
 
