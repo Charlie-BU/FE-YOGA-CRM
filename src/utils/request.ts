@@ -10,8 +10,8 @@ const PRODUCTION_URL = "http://8.153.204.238:81";
 // const PRODUCTION_URL = "http://8.153.204.238:8052";
 
 const service: AxiosInstance = axios.create({
-    baseURL: PRODUCTION_URL,
-    timeout: 20000
+    baseURL: PRODUCTION_URL
+    // timeout: 20000
 });
 
 service.interceptors.request.use(

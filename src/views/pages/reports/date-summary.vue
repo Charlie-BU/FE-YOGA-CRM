@@ -197,7 +197,7 @@ const handleQuery = async () => {
         for (const date of dateList) {
             try {
                 const res = await request.post(
-                    "/user/getDateSummaryDataPerDay",
+                    "http://8.153.204.238:85/user/getDateSummaryDataPerDay",
                     { date },
                     {
                         headers: {
@@ -417,7 +417,7 @@ const handleExport = () => {
 };
 
 onMounted(() => {
-    handleQuery();
+    // handleQuery();
 });
 </script>
 

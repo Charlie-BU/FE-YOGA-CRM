@@ -178,7 +178,7 @@ const handleQuery = async () => {
             startDate,
             endDate
         };
-        const res = await request.post("/user/getCustomerServiceSummaryData", params, {
+        const res = await request.post("http://8.153.204.238:85/user/getCustomerServiceSummaryData", params, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
             }
@@ -379,7 +379,7 @@ const handleExport = () => {
 };
 
 onMounted(() => {
-    handleQuery();
+    // handleQuery();
 });
 </script>
 

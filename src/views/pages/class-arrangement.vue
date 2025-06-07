@@ -130,12 +130,12 @@
                 </el-table-column>
                 <el-table-column prop="phone" label="电话" align="center" show-overflow-tooltip>
                     <template #default="scope">
-                        {{ hidePhone(scope.row.phone) }}
+                        {{ scope.row.phone ? hidePhone(scope.row.phone) : "-" }}
                     </template>
                 </el-table-column>
                 <el-table-column prop="weixin" label="微信" align="center" show-overflow-tooltip>
                     <template #default="scope">
-                        {{ hideWeixin(scope.row.weixin) }}
+                        {{ scope.row.weixin ? hideWeixin(scope.row.weixin) : "-" }}
                     </template>
                 </el-table-column>
                 <el-table-column prop="cooperateTime" label="成单时间" width="180" align="center" show-overflow-tooltip />
@@ -187,12 +187,12 @@
                 </el-table-column>
                 <el-table-column prop="phone" label="电话" align="center" show-overflow-tooltip>
                     <template #default="scope">
-                        {{ hidePhone(scope.row.phone) }}
+                        {{ scope.row.phone ? hidePhone(scope.row.phone) : "-" }}
                     </template>
                 </el-table-column>
                 <el-table-column prop="weixin" label="微信" align="center" show-overflow-tooltip>
                     <template #default="scope">
-                        {{ hideWeixin(scope.row.weixin) }}
+                        {{ scope.row.weixin ? hideWeixin(scope.row.weixin) : "-" }}
                     </template>
                 </el-table-column>
                 <el-table-column prop="cooperateTime" label="成单时间" width="180" align="center" show-overflow-tooltip />
@@ -409,51 +409,55 @@ const getLessons = async (schoolId = null) => {
         });
 
         if (res.data.status === 200) {
-            // 使用 Promise.all 等待所有异步操作完成
-            const lessonsWithStudents = await Promise.all(
-                res.data.lessons.map(async (item) => {
-                    try {
-                        const res2 = await request.post(
-                            "/course/getLessonClients",
-                            {
-                                lessonId: item.id
-                            },
-                            {
-                                headers: {
-                                    sessionid: localStorage.getItem("sessionid")
-                                }
-                            }
-                        );
-                        const res3 = await request.post(
-                            "/course/getLessonGraduatedClients",
-                            {
-                                lessonId: item.id
-                            },
-                            {
-                                headers: {
-                                    sessionid: localStorage.getItem("sessionid")
-                                }
-                            }
-                        );
-                        if (res2.data.status === 200 && res3.data.status === 200) {
-                            return {
-                                ...item,
-                                studentCount: res2.data.total,
-                                students: res2.data.clients,
-                                graduatedStudentCount: res3.data.total,
-                                graduatedStudents: res3.data.clients
-                            };
-                        }
-                        return item;
-                    } catch (error) {
-                        console.error(`获取班级 ${item.id} 的学员数据失败:`, error);
-                        return item;
-                    }
-                })
-            );
-
-            tableData.value = lessonsWithStudents;
+            // 先渲染基本数据
+            tableData.value = res.data.lessons.map((item) => ({
+                ...item,
+                studentCount: "加载中",
+                students: [],
+                graduatedStudentCount: "加载中",
+                graduatedStudents: []
+            }));
             page.total = res.data.total;
+
+            // 然后异步加载每个班级的学员信息
+            res.data.lessons.forEach(async (item, index) => {
+                try {
+                    const res2 = await request.post(
+                        "/course/getLessonClients",
+                        {
+                            lessonId: item.id
+                        },
+                        {
+                            headers: {
+                                sessionid: localStorage.getItem("sessionid")
+                            }
+                        }
+                    );
+                    const res3 = await request.post(
+                        "/course/getLessonGraduatedClients",
+                        {
+                            lessonId: item.id
+                        },
+                        {
+                            headers: {
+                                sessionid: localStorage.getItem("sessionid")
+                            }
+                        }
+                    );
+                    if (res2.data.status === 200 && res3.data.status === 200) {
+                        // 更新对应索引的数据
+                        tableData.value[index] = {
+                            ...tableData.value[index],
+                            studentCount: res2.data.total,
+                            students: res2.data.clients,
+                            graduatedStudentCount: res3.data.total,
+                            graduatedStudents: res3.data.clients
+                        };
+                    }
+                } catch (error) {
+                    console.error(`获取班级 ${item.id} 的学员数据失败:`, error);
+                }
+            });
         }
     } catch (error) {
         console.error("获取班级列表失败:", error);

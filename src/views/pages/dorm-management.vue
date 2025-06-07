@@ -131,7 +131,7 @@
                         {{ conventions.getBedCategory(scope.row.category) }}
                     </template>
                 </el-table-column>
-                <el-table-column prop="duration" label="时限（周）" width="120" align="center" />
+                <!-- <el-table-column prop="duration" label="时限（周）" width="120" align="center" /> -->
                 <el-table-column prop="status" label="状态" width="100" align="center">
                     <template #default="scope">
                         {{ scope.row.isVacant ? "空闲" : "已住" }}
@@ -155,6 +155,16 @@
                             </span>
                         </el-tooltip>
                         <span v-else>{{ scope.row.bedCheckInDate || "-" }}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="bedCheckOutDate" label="离住时间" width="120" align="center">
+                    <template #default="scope">
+                        <el-tooltip v-if="isOverdue(scope.row)" effect="dark" :content="`已超期${getOverdueDays(scope.row)}天`" placement="top">
+                            <span :style="{ color: isOverdue(scope.row) ? '#ff4949' : '' }">
+                                {{ scope.row.bedCheckOutDate || "-" }}
+                            </span>
+                        </el-tooltip>
+                        <span v-else>{{ scope.row.bedCheckOutDate || "-" }}</span>
                     </template>
                 </el-table-column>
                 <el-table-column label="操作" width="250" fixed="right" align="center">
@@ -181,9 +191,9 @@
                         <el-option :label="'下铺'" :value="3" />
                     </el-select>
                 </el-form-item>
-                <el-form-item label="时限（周）" prop="duration">
+                <!-- <el-form-item label="时限（周）" prop="duration">
                     <el-input-number v-model="bedForm.duration" :min="1" />
-                </el-form-item>
+                </el-form-item> -->
             </el-form>
             <template #footer>
                 <span class="dialog-footer">
@@ -200,6 +210,9 @@
                     <el-select v-model="checkInForm.studentId" placeholder="请选择学员" style="width: 100%" filterable>
                         <el-option v-for="item in studentOptions" :key="item.value" :label="item.label" :value="item.value" />
                     </el-select>
+                </el-form-item>
+                <el-form-item label="离住日期" prop="checkOutDate">
+                    <el-date-picker v-model="checkInForm.checkOutDate" type="date" placeholder="请选择离住日期" style="width: 100%" value-format="YYYY-MM-DD" />
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -598,22 +611,22 @@ const bedFormRef = ref();
 const bedForm = ref({
     roomId: "",
     bedNumber: 1,
-    category: 1,
-    duration: 16
+    category: 1
+    // duration: 1000
 });
 
 const bedRules = {
     bedNumber: [{ required: true, message: "请输入床号", trigger: "blur" }],
-    category: [{ required: true, message: "请选择床位类型", trigger: "change" }],
-    duration: [{ required: true, message: "请输入时间期限", trigger: "blur" }]
+    category: [{ required: true, message: "请选择床位类型", trigger: "change" }]
+    // duration: [{ required: true, message: "请输入时间期限", trigger: "blur" }]
 };
 
 const showAddBedDialog = () => {
     bedForm.value = {
         roomId: currentRoom.value.id,
         bedNumber: 1,
-        category: 1,
-        duration: 16
+        category: 1
+        // duration: 16
     };
     isEditBed.value = false;
     editBedVisible.value = true;
@@ -630,8 +643,8 @@ const closeBedDialog = () => {
     bedForm.value = {
         roomId: "",
         bedNumber: 1,
-        category: 1,
-        duration: 16
+        category: 1
+        // duration: 16
     };
     bedFormRef.value?.resetFields();
 };
@@ -705,13 +718,15 @@ const checkInDialogVisible = ref(false);
 const checkInFormRef = ref();
 const checkInForm = ref({
     studentId: "",
+    checkOutDate: "",
     bedId: ""
 });
 const studentOptions = ref([]);
 const currentBed = ref(null);
 
 const checkInRules = {
-    studentId: [{ required: true, message: "请选择学员", trigger: "change" }]
+    studentId: [{ required: true, message: "请选择学员", trigger: "change" }],
+    checkOutDate: [{ required: true, message: "请选择离住日期", trigger: "change" }]
 };
 
 // 获取学员列表
@@ -742,6 +757,7 @@ const handleCheckIn = async (row) => {
     currentBed.value = row;
     checkInForm.value = {
         studentId: "",
+        checkOutDate: "",
         bedId: row.id
     };
     await getStudents();
@@ -757,7 +773,8 @@ const submitCheckIn = async () => {
                     "/dorm/assignBed",
                     {
                         bedId: currentBed.value.id,
-                        studentId: checkInForm.value.studentId
+                        studentId: checkInForm.value.studentId,
+                        checkOutDate: checkInForm.value.checkOutDate
                     },
                     {
                         headers: { sessionid: localStorage.getItem("sessionid") }
@@ -818,28 +835,30 @@ const handleCheckOut = (row) => {
         }
     });
 };
-// 在 script setup 中添加以下函数
+
 const isOverdue = (row) => {
-    if (!row.bedCheckInDate || !row.duration) return false;
+    if (!row.bedCheckOutDate) return false;
 
-    const checkInDate = new Date(row.bedCheckInDate);
+    const checkOutDate = new Date(row.bedCheckOutDate);
     const today = new Date();
-    const diffTime = Math.abs(today.getTime() - checkInDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // 将周数转换为天数进行比较
-    return diffDays > row.duration * 7;
+    // 如果离住日期在今天之前，则已超期
+    return checkOutDate < today;
 };
+
 const getOverdueDays = (row) => {
-    if (!row.bedCheckInDate || !row.duration) return 0;
+    if (!row.bedCheckOutDate) return 0;
 
-    const checkInDate = new Date(row.bedCheckInDate);
+    const checkOutDate = new Date(row.bedCheckOutDate);
     const today = new Date();
-    const diffTime = Math.abs(today.getTime() - checkInDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const overdueDays = diffDays - row.duration * 7;
 
-    return overdueDays > 0 ? overdueDays : 0;
+    // 只有当超期时才计算天数
+    if (checkOutDate >= today) return 0;
+
+    const diffTime = Math.abs(today.getTime() - checkOutDate.getTime());
+    const overdueDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1;
+
+    return overdueDays;
 };
 
 // 超期床位相关

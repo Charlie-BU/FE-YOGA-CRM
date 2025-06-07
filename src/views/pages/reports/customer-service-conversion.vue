@@ -112,7 +112,7 @@ const handleQuery = async () => {
             endDate,
             schoolId: queryParams.value.schoolId
         };
-        const res = await request.post("/user/getCustomerServiceConversionData", params, {
+        const res = await request.post("http://8.153.204.238:85/user/getCustomerServiceConversionData", params, {
             headers: {
                 sessionid: localStorage.getItem("sessionid")
             }
@@ -239,7 +239,7 @@ const getSchools = async () => {
 };
 
 onMounted(() => {
-    handleQuery();
+    // handleQuery();
 });
 </script>
 

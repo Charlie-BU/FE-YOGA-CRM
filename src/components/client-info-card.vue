@@ -129,6 +129,7 @@
                     <el-descriptions-item label="床位号">{{ bedInfo.bedNumber }}</el-descriptions-item>
                     <el-descriptions-item label="床位类型">{{ conventions.getBedCategory(bedInfo.category) }}</el-descriptions-item>
                     <el-descriptions-item label="入住时间">{{ client.bedCheckInDate }}</el-descriptions-item>
+                    <el-descriptions-item label="离住时间">{{ client.bedCheckOutDate }}</el-descriptions-item>
                     <el-descriptions-item label="状态" :span="2">
                         <span :style="{ color: isOverdue ? '#ff4949' : '#93ff40' }">
                             {{ isOverdue ? "已超期" + overdueDays + "天" : "正常" }}
@@ -364,16 +365,16 @@ const getDormInfo = async () => {
             bedInfo.value = res.data.bed;
 
             // 计算是否超期
-            if (client.value.bedCheckInDate && bedInfo.value.duration) {
-                const checkInDate = new Date(client.value.bedCheckInDate);
+            if (client.value.bedCheckOutDate) {
+                const checkOutDate = new Date(client.value.bedCheckOutDate);
                 const today = new Date();
-                const diffTime = Math.abs(today.getTime() - checkInDate.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                const durationDays = bedInfo.value.duration * 7;
 
-                isOverdue.value = diffDays > durationDays;
+                // 如果离住日期在今天之前，则已超期
+                isOverdue.value = checkOutDate < today;
+
                 if (isOverdue.value) {
-                    overdueDays.value = diffDays - durationDays;
+                    const diffTime = Math.abs(today.getTime() - checkOutDate.getTime());
+                    overdueDays.value = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1;
                 }
             }
         }
