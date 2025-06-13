@@ -489,13 +489,15 @@ const getSchools = async () => {
 };
 
 // 处理校区切换
-const handleBranchChange = async (branchId) => {
+const handleBranchChange = async (branchId, remain = false) => {
     try {
-        // 清空相关字段
-        formData.value.courseId = "";
-        formData.value.chiefTeacherName = "";
-        formData.value.classTeacherId = "";
-        formData.value.teachingAssistantName = "";
+        if (!remain) {
+            // 清空相关字段
+            formData.value.courseId = "";
+            formData.value.chiefTeacherName = "";
+            formData.value.classTeacherId = "";
+            formData.value.teachingAssistantName = "";
+        }
         // 获取该校区的课程列表
         const courseRes = await request.post(
             "/course/getCourses",
@@ -528,10 +530,12 @@ const handleBranchChange = async (branchId) => {
             }
         );
         if (userRes.data.status === 200) {
-            teacherOptions.value = userRes.data.users.map((item) => ({
-                label: item.username,
-                value: item.id
-            }));
+            teacherOptions.value = userRes.data.users
+                .filter((item) => item.departmentName.includes("客服"))
+                .map((item) => ({
+                    label: item.username,
+                    value: item.id
+                }));
         }
     } catch (error) {
         console.error("获取用户列表失败:", error);
@@ -598,7 +602,7 @@ const handleEdit = (row) => {
     isEdit.value = true;
     editModelVisible.value = true;
     // 触发校区变更，加载该校区的教师列表
-    handleBranchChange(row.schoolId);
+    handleBranchChange(row.schoolId, true);
 };
 
 const handleDelete = (row) => {
