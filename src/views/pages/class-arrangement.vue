@@ -382,8 +382,26 @@ const schoolOptions = ref([]);
 const courseOptions = ref([]);
 const teacherOptions = ref([]);
 
+const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}T00:00:00.000Z`;
+};
+
 // 获取班级列表
 const getLessons = async (schoolId = null) => {
+    let startTime = "";
+    let endTime = "";
+    if (query.timeRange && query.timeRange.length === 2) {
+        const startDate = new Date(query.timeRange[0]);
+        startTime = formatDate(startDate);
+        
+        const endDate1 = new Date(query.timeRange[1]);
+        const endDate = new Date(endDate1.getTime() + 24 * 60 * 60 * 1000);
+        endTime = formatDate(endDate);
+    }
+
     try {
         loading.value = true;
         const params = {
@@ -398,8 +416,8 @@ const getLessons = async (schoolId = null) => {
         }
         // 处理日期范围
         if (query.timeRange && query.timeRange.length === 2) {
-            params.startDate = query.timeRange[0];
-            params.endDate = query.timeRange[1];
+            params.startDate = startTime;
+            params.endDate = endTime;
         }
         delete params.timeRange;
         const res = await request.post("/course/getLessons", params, {

@@ -684,9 +684,50 @@ const getSchools = async () => {
     }
 };
 
+const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}T00:00:00.000Z`;
+};
+
 const getClients = async () => {
     loading.value = true;
     try {
+        let startTime = "";
+        let endTime = "";
+        
+        if (query.timeRange && query.timeRange.length === 2) {          
+            const startDate = new Date(query.timeRange[0]);
+            startTime = formatDate(startDate);
+            
+            const endDate1 = new Date(query.timeRange[1]);
+            const endDate = new Date(endDate1.getTime() + 24 * 60 * 60 * 1000);
+            endTime = formatDate(endDate);
+        }
+
+        let appointStartDate = "";
+        let appointEndDate = "";
+        if (query.appointDateRange && query.appointDateRange.length === 2) {
+            const startDate = new Date(query.appointDateRange[0]);
+            appointStartDate = formatDate(startDate);
+            
+            const endDate1 = new Date(query.appointDateRange[1]);
+            const endDate = new Date(endDate1.getTime() + 24 * 60 * 60 * 1000);
+            appointEndDate = formatDate(endDate);
+        }
+
+        let nextTalkStartDate = "";
+        let nextTalkEndDate = "";
+        if (query.nextTalkDateRange && query.nextTalkDateRange.length === 2) {
+            const startDate = new Date(query.nextTalkDateRange[0]);
+            nextTalkStartDate = formatDate(startDate);
+            
+            const endDate1 = new Date(query.nextTalkDateRange[1]);
+            const endDate = new Date(endDate1.getTime() + 24 * 60 * 60 * 1000);
+            nextTalkEndDate = formatDate(endDate);
+        }
+
         const res = await request.post(
             "/extra/getClients",
             {
@@ -694,12 +735,12 @@ const getClients = async () => {
                 pageIndex: page.index,
                 pageSize: page.size,
                 ...query,
-                startTime: query.timeRange?.[0] || "",
-                endTime: query.timeRange?.[1] || "",
-                appointStartDate: query.appointDateRange?.[0] || "",
-                appointEndDate: query.appointDateRange?.[1] || "",
-                nextTalkStartDate: query.nextTalkDateRange?.[0] || "",
-                nextTalkEndDate: query.nextTalkDateRange?.[1] || ""
+                startTime: startTime,
+                endTime: endTime,
+                appointStartDate: appointStartDate,
+                appointEndDate: appointEndDate,
+                nextTalkStartDate: nextTalkStartDate,
+                nextTalkEndDate: nextTalkEndDate
             },
             {
                 headers: {

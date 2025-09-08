@@ -497,18 +497,40 @@ const loading = ref(false);
 const getClients = async () => {
     loading.value = true;
     try {
+        // 处理日期，确保使用正确的时区
+        let startTime = "";
+        let endTime = "";
+        
+        if (query.timeRange && query.timeRange.length === 2) {
+            // 直接使用用户选择的日期，不进行时区转换
+            // 格式化为YYYY-MM-DDT00:00:00.000Z格式
+            const formatDate = (date: Date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}T00:00:00.000Z`;
+            };
+            
+            const startDate = new Date(query.timeRange[0]);
+            startTime = formatDate(startDate);
+            
+            const endDate1 = new Date(query.timeRange[1]);
+            const endDate = new Date(endDate1.getTime() + 24 * 60 * 60 * 1000);
+            endTime = formatDate(endDate);
+        }
+        
         const res = await request.post(
             "/extra/getClueClients",
             {
                 pageIndex: page.index,
                 pageSize: page.size,
                 ...query,
-                startTime: query.timeRange?.[0] || "",
-                endTime: query.timeRange?.[1] || ""
+                startTime: startTime,
+                endTime: endTime
             },
             {
                 headers: {
-                    sessionid: localStorage.getItem("sessionid")
+                    sessionid: localStorage.getItem("sessionid") || ""
                 }
             }
         );
